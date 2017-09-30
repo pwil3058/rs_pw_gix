@@ -26,12 +26,45 @@ pub type Row = Vec<gtk::Value>;
 // Macros
 #[macro_export]
 macro_rules! set_row_values {
-    ( $s:ident, $i:ident, $r:expr ) => {
+    ( $s:expr, $i:expr, $r:expr ) => {
         {
             assert_eq!($s.get_n_columns(), $r.len() as i32);
             for (index, item) in $r.iter().enumerate() {
                 $s.set_value(&$i, index as u32, &item);
             }
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! append_row_to {
+    ( $r:expr, $s:expr ) => {
+        {
+            let iter = $s.append();
+            set_row_values!($s, iter, $r);
+            iter
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! inert_row_in_at {
+    ( $r:expr, $s:expr, $p:expr ) => {
+        {
+            let iter = $s.insert($p);
+            set_row_values!($s, iter, $r);
+            iter
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! prepend_row_to {
+    ( $r:expr, $s:expr ) => {
+        {
+            let iter = $s.prepend();
+            set_row_values!($s, iter, $r);
+            iter
         }
     }
 }
@@ -59,10 +92,7 @@ pub trait SimpleRowOps {
     fn get_list_store(&self) -> gtk::ListStore;
 
     fn append_row(&self, row: &Row) -> gtk::TreeIter {
-        let list_store = self.get_list_store();
-        let iter = list_store.append();
-        set_row_values!(list_store, iter, row);
-        iter
+        append_row_to!(row, self.get_list_store())
     }
 
     fn find_row_where<F>(&self, this_is_the_row: F) -> Option<(i32, gtk::TreeIter)>
@@ -105,17 +135,11 @@ pub trait SimpleRowOps {
     }
 
     fn insert_row(&self, position: i32, row: &Row) -> gtk::TreeIter {
-        let list_store = self.get_list_store();
-        let iter = list_store.insert(position);
-        set_row_values!(list_store, iter, row);
-        iter
+        inert_row_in_at!(row, self.get_list_store(), position)
     }
 
     fn prepend_row(&self, row: &Row)  -> gtk::TreeIter {
-        let list_store = self.get_list_store();
-        let iter = list_store.prepend();
-        set_row_values!(list_store, iter, row);
-        iter
+        prepend_row_to!(row, self.get_list_store())
     }
 
     // NB: this function assumes that all rows are unique and that order isn't important
