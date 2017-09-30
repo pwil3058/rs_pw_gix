@@ -48,7 +48,7 @@ macro_rules! append_row_to {
 }
 
 #[macro_export]
-macro_rules! inert_row_in_at {
+macro_rules! insert_row_in_at {
     ( $r:expr, $s:expr, $p:expr ) => {
         {
             let iter = $s.insert($p);
@@ -135,7 +135,7 @@ pub trait SimpleRowOps {
     }
 
     fn insert_row(&self, position: i32, row: &Row) -> gtk::TreeIter {
-        inert_row_in_at!(row, self.get_list_store(), position)
+        insert_row_in_at!(row, self.get_list_store(), position)
     }
 
     fn prepend_row(&self, row: &Row)  -> gtk::TreeIter {
@@ -245,6 +245,31 @@ pub trait RowBuffer<RawData: Default> {
         let core = self.get_core();
         let rows = core.borrow().rows.clone();
         rows
+    }
+}
+
+pub trait Updateable<RawData: Default>: SimpleRowOps {
+    fn get_row_buffer(&self) -> Rc<RowBuffer<RawData>>;
+    fn continue_auto_update(&self) -> bool;
+
+    fn repopulate(&mut self) {
+        let list_store = self.get_list_store();
+        let row_buffer = self.get_row_buffer();
+
+        list_store.clear();
+        row_buffer.init();
+        for row in row_buffer.get_rows().iter() {
+            append_row_to!(row, list_store);
+        }
+    }
+
+    fn update(&self) {
+        let row_buffer = self.get_row_buffer();
+
+        if !row_buffer.is_current() { // this does a raw data update
+            row_buffer.finalise();
+            self.update_with(&row_buffer.get_rows());
+        };
     }
 }
 
