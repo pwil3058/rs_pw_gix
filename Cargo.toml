@@ -4,3 +4,11 @@ version = "0.1.0"
 authors = ["Peter Williams <pwil3058@gmail.com>"]
 
 [dependencies]
+gdk = "0.6.0"
+gio = "0.2.0"
+gtk = "0.2.0"
+
+fs2 = "0.4.2"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
