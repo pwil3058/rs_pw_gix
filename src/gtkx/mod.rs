@@ -13,6 +13,9 @@
 // limitations under the License.
 
 pub mod combo_box_text;
+#[macro_use]
+pub mod value;
+#[macro_use]
 pub mod list_store;
 
 pub mod recollect {
