@@ -86,7 +86,6 @@ macro_rules! get_rows_values_from {
     }
 }
 
-
 #[macro_export]
 macro_rules! set_row_values {
     ( $s:expr, $i:expr, $r:expr ) => {
@@ -136,7 +135,7 @@ macro_rules! insert_row_in_after {
 macro_rules! insert_row_in_before {
     ( $r:expr, $s:expr, $i:expr ) => {
         {
-            let iter = $s.insert_befores($i);
+            let iter = $s.insert_before($i);
             set_row_values!($s, &iter, $r);
             iter
         }
@@ -172,9 +171,22 @@ macro_rules! matches_list_row {
     }
 }
 
+#[macro_export]
+macro_rules! len_of {
+    ( $s:expr ) => {
+        {
+            $s.iter_n_children(None)
+        }
+    }
+}
+
 // Traits
 pub trait SimpleRowOps {
     fn get_list_store(&self) -> gtk::ListStore;
+
+    fn len(&self) -> i32 {
+        len_of!(&self.get_list_store())
+    }
 
     fn append_row(&self, row: &Row) -> gtk::TreeIter {
         append_row_to!(row, self.get_list_store())
@@ -219,8 +231,28 @@ pub trait SimpleRowOps {
         }
     }
 
+    fn get_row_values(&self, iter: &gtk::TreeIter) -> Row {
+        get_row_values_from!(&self.get_list_store(), iter)
+    }
+
+    fn get_row_values_at(&self, position: i32) -> Option<Row> {
+        get_row_values_from_at!(&self.get_list_store(), position)
+    }
+
+    fn get_rows_values(&self) -> Vec<Row> {
+        get_rows_values_from!(&self.get_list_store())
+    }
+
     fn insert_row(&self, position: i32, row: &Row) -> gtk::TreeIter {
         insert_row_in_at!(row, &self.get_list_store(), position)
+    }
+
+    fn insert_row_after(&self, iter: &gtk::TreeIter, row: &Row) -> gtk::TreeIter {
+        insert_row_in_after!(row, &self.get_list_store(), iter)
+    }
+
+    fn insert_row_before(&self, iter: &gtk::TreeIter, row: &Row) -> gtk::TreeIter {
+        insert_row_in_before!(row, &self.get_list_store(), iter)
     }
 
     fn prepend_row(&self, row: &Row)  -> gtk::TreeIter {
@@ -333,11 +365,11 @@ pub trait RowBuffer<RawData: Default> {
     }
 }
 
+// TODO: write unit tests for Updateable trait
 pub trait Updateable<RawData: Default>: SimpleRowOps {
     fn get_row_buffer(&self) -> Rc<RowBuffer<RawData>>;
-    fn continue_auto_update(&self) -> bool;
 
-    fn repopulate(&mut self) {
+    fn repopulate(&self) {
         let list_store = self.get_list_store();
         let row_buffer = self.get_row_buffer();
 
@@ -459,42 +491,51 @@ mod tests {
         }
 
         let test_list_store = TestListStore::new();
+        assert_eq!(test_list_store.len(), 0);
         let row1 = vec!["one".to_value(), "two".to_value(), "three".to_value()];
         let row2 = vec!["four".to_value(), "five".to_value(), "six".to_value()];
         let row3 = vec!["seven".to_value(), "eight".to_value(), "nine".to_value()];
+
         test_list_store.append_row(&row1);
+        assert_eq!(test_list_store.len(), 1);
         assert_eq!(test_list_store.find_row_index(&row1), Some(0));
         assert_eq!(test_list_store.find_row_index(&row2), None);
         assert_eq!(test_list_store.find_row_index(&row3), None);
-        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 0).unwrap(), row1));
-        assert!(get_row_values_from_at!(&test_list_store.list_store, 1).is_none());
+        assert!(are_equal_rows!(test_list_store.get_row_values_at(0).unwrap(), row1));
+        assert!(test_list_store.get_row_values_at(1).is_none());
+
         test_list_store.prepend_row(&row2);
+        assert_eq!(test_list_store.len(), 2);
         assert_eq!(test_list_store.find_row_index(&row1), Some(1));
         assert_eq!(test_list_store.find_row_index(&row2), Some(0));
         assert_eq!(test_list_store.find_row_index(&row3), None);
-        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 0).unwrap(), row2));
-        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 1).unwrap(), row1));
-        assert!(get_row_values_from_at!(&test_list_store.list_store, 2).is_none());
+        assert!(are_equal_rows!(test_list_store.get_row_values_at(0).unwrap(), row2));
+        assert!(are_equal_rows!(test_list_store.get_row_values_at(1).unwrap(), row1));
+        assert!(test_list_store.get_row_values_at(2).is_none());
+
         test_list_store.insert_row(1, &row3);
+        assert_eq!(test_list_store.len(), 3);
         assert_eq!(test_list_store.find_row_index(&row1), Some(2));
         assert_eq!(test_list_store.find_row_index(&row2), Some(0));
         assert_eq!(test_list_store.find_row_index(&row3), Some(1));
-        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 0).unwrap(), row2));
-        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 1).unwrap(), row3));
-        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 2).unwrap(), row1));
-        assert!(get_row_values_from_at!(&test_list_store.list_store, 3).is_none());
+        assert!(are_equal_rows!(test_list_store.get_row_values_at(0).unwrap(), row2));
+        assert!(are_equal_rows!(test_list_store.get_row_values_at(1).unwrap(), row3));
+        assert!(are_equal_rows!(test_list_store.get_row_values_at(2).unwrap(), row1));
+        assert!(test_list_store.get_row_values_at(3).is_none());
+
         let row4 = vec!["ten".to_value(), "eleven".to_value(), "twelve".to_value()];
         let rows = vec![row1.clone(), row2.clone(), row4.clone()];
         test_list_store.update_with(&rows);
+        assert_eq!(test_list_store.len(), 3);
         assert_eq!(test_list_store.find_row_index(&row1), Some(1));
         assert_eq!(test_list_store.find_row_index(&row2), Some(0));
         assert_eq!(test_list_store.find_row_index(&row3), None);
         assert_eq!(test_list_store.find_row_index(&row4), Some(2));
-        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 0).unwrap(), row2));
-        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 1).unwrap(), row1));
-        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 2).unwrap(), row4));
-        assert!(get_row_values_from_at!(&test_list_store.list_store, 3).is_none());
-        assert_eq!(get_rows_values_from!(&test_list_store.list_store).len(), 3);
+        assert!(are_equal_rows!(test_list_store.get_row_values_at(0).unwrap(), row2));
+        assert!(are_equal_rows!(test_list_store.get_row_values_at(1).unwrap(), row1));
+        assert!(are_equal_rows!(test_list_store.get_row_values_at(2).unwrap(), row4));
+        assert!(test_list_store.get_row_values_at(3).is_none());
+        assert_eq!(test_list_store.get_rows_values().len(), 3);
     }
 
 }
