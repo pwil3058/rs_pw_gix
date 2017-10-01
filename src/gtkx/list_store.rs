@@ -367,11 +367,12 @@ pub trait RowBuffer<RawData: Default> {
 
 // TODO: write unit tests for Updateable trait
 pub trait Updateable<RawData: Default>: SimpleRowOps {
-    fn get_row_buffer(&self) -> Rc<RowBuffer<RawData>>;
+    fn get_row_buffer(&self) -> Rc<RefCell<RowBuffer<RawData>>>;
 
     fn repopulate(&self) {
         let list_store = self.get_list_store();
-        let row_buffer = self.get_row_buffer();
+        let row_buffer_rc = self.get_row_buffer();
+        let row_buffer = row_buffer_rc.borrow();
 
         list_store.clear();
         row_buffer.init();
@@ -381,7 +382,8 @@ pub trait Updateable<RawData: Default>: SimpleRowOps {
     }
 
     fn update(&self) {
-        let row_buffer = self.get_row_buffer();
+        let row_buffer_rc = self.get_row_buffer();
+        let row_buffer = row_buffer_rc.borrow();
 
         if !row_buffer.is_current() { // this does a raw data update
             row_buffer.finalise();
