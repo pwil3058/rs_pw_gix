@@ -25,12 +25,75 @@ pub type Row = Vec<gtk::Value>;
 
 // Macros
 #[macro_export]
+macro_rules! are_equal_rows {
+    ( $r1:expr, $r2:expr ) => {
+        {
+            assert_eq!($r1.len(), $r2.len());
+            let mut result = true;
+            for i in 0..$r1.len() {
+                if !are_eq_values!($r1[i], $r2[i]) {
+                    result = false;
+                    break
+                }
+            };
+            result
+        }
+    }
+}
+
+// NB: when done with the returned row it's items need to be unset?
+#[macro_export]
+macro_rules! get_row_values_from {
+    ( $s:expr, $i:expr ) => {
+        {
+            let mut row = Row::new();
+            let n = $s.get_n_columns();
+            for index in 0..n {
+                row.push($s.get_value($i, index))
+            };
+            row
+        }
+    }
+}
+
+// NB: when done with the returned row it's items need to be unset?
+#[macro_export]
+macro_rules! get_row_values_from_at {
+    ( $s:expr, $p:expr ) => {
+        {
+            match $s.iter_nth_child(None, $p) {
+                Some(iter) => Some(get_row_values_from!($s, &iter)),
+                None => None
+            }
+        }
+    }
+}
+
+// NB: when done with the returned rows their items need to be unset?
+#[macro_export]
+macro_rules! get_rows_values_from {
+    ( $s:expr ) => {
+        {
+            let mut rows: Vec<Row> = Vec::new();
+            if let Some(iter) = $s.get_iter_first(){
+                while $s.iter_is_valid(&iter) {
+                    rows.push(get_row_values_from!($s, &iter));
+                    $s.iter_next(&iter);
+                }
+            };
+            rows
+        }
+    }
+}
+
+
+#[macro_export]
 macro_rules! set_row_values {
     ( $s:expr, $i:expr, $r:expr ) => {
         {
             assert_eq!($s.get_n_columns(), $r.len() as i32);
             for (index, item) in $r.iter().enumerate() {
-                $s.set_value(&$i, index as u32, &item);
+                $s.set_value($i, index as u32, &item);
             }
         }
     }
@@ -41,7 +104,7 @@ macro_rules! append_row_to {
     ( $r:expr, $s:expr ) => {
         {
             let iter = $s.append();
-            set_row_values!($s, iter, $r);
+            set_row_values!($s, &iter, $r);
             iter
         }
     }
@@ -52,7 +115,29 @@ macro_rules! insert_row_in_at {
     ( $r:expr, $s:expr, $p:expr ) => {
         {
             let iter = $s.insert($p);
-            set_row_values!($s, iter, $r);
+            set_row_values!($s, &iter, $r);
+            iter
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! insert_row_in_after {
+    ( $r:expr, $s:expr, $i:expr ) => {
+        {
+            let iter = $s.insert_after($i);
+            set_row_values!($s, &iter, $r);
+            iter
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! insert_row_in_before {
+    ( $r:expr, $s:expr, $i:expr ) => {
+        {
+            let iter = $s.insert_befores($i);
+            set_row_values!($s, &iter, $r);
             iter
         }
     }
@@ -63,7 +148,7 @@ macro_rules! prepend_row_to {
     ( $r:expr, $s:expr ) => {
         {
             let iter = $s.prepend();
-            set_row_values!($s, iter, $r);
+            set_row_values!($s, &iter, $r);
             iter
         }
     }
@@ -76,7 +161,7 @@ macro_rules! matches_list_row {
             assert_eq!($s.get_n_columns(), $r.len() as i32);
             let mut result = true;
             for (index, item) in $r.iter().enumerate() {
-                let value = $s.get_value(&$i, index as i32);
+                let value = $s.get_value($i, index as i32);
                 if !are_eq_values!(item, value) {
                     result = false;
                     break
@@ -135,11 +220,11 @@ pub trait SimpleRowOps {
     }
 
     fn insert_row(&self, position: i32, row: &Row) -> gtk::TreeIter {
-        insert_row_in_at!(row, self.get_list_store(), position)
+        insert_row_in_at!(row, &self.get_list_store(), position)
     }
 
     fn prepend_row(&self, row: &Row)  -> gtk::TreeIter {
-        prepend_row_to!(row, self.get_list_store())
+        prepend_row_to!(row, &self.get_list_store())
     }
 
     // NB: this function assumes that all rows are unique and that order isn't important
@@ -150,7 +235,7 @@ pub trait SimpleRowOps {
             while list_store.iter_is_valid(&iter) {
                 let mut found = false;
                 for row in rows.iter() {
-                    if matches_list_row!(row, list_store, iter) {
+                    if matches_list_row!(row, &list_store, &iter) {
                         found = true;
                         break;
                     }
@@ -259,7 +344,7 @@ pub trait Updateable<RawData: Default>: SimpleRowOps {
         list_store.clear();
         row_buffer.init();
         for row in row_buffer.get_rows().iter() {
-            append_row_to!(row, list_store);
+            append_row_to!(row, &list_store);
         }
     }
 
@@ -381,14 +466,23 @@ mod tests {
         assert_eq!(test_list_store.find_row_index(&row1), Some(0));
         assert_eq!(test_list_store.find_row_index(&row2), None);
         assert_eq!(test_list_store.find_row_index(&row3), None);
+        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 0).unwrap(), row1));
+        assert!(get_row_values_from_at!(&test_list_store.list_store, 1).is_none());
         test_list_store.prepend_row(&row2);
         assert_eq!(test_list_store.find_row_index(&row1), Some(1));
         assert_eq!(test_list_store.find_row_index(&row2), Some(0));
         assert_eq!(test_list_store.find_row_index(&row3), None);
+        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 0).unwrap(), row2));
+        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 1).unwrap(), row1));
+        assert!(get_row_values_from_at!(&test_list_store.list_store, 2).is_none());
         test_list_store.insert_row(1, &row3);
         assert_eq!(test_list_store.find_row_index(&row1), Some(2));
         assert_eq!(test_list_store.find_row_index(&row2), Some(0));
         assert_eq!(test_list_store.find_row_index(&row3), Some(1));
+        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 0).unwrap(), row2));
+        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 1).unwrap(), row3));
+        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 2).unwrap(), row1));
+        assert!(get_row_values_from_at!(&test_list_store.list_store, 3).is_none());
         let row4 = vec!["ten".to_value(), "eleven".to_value(), "twelve".to_value()];
         let rows = vec![row1.clone(), row2.clone(), row4.clone()];
         test_list_store.update_with(&rows);
@@ -396,6 +490,11 @@ mod tests {
         assert_eq!(test_list_store.find_row_index(&row2), Some(0));
         assert_eq!(test_list_store.find_row_index(&row3), None);
         assert_eq!(test_list_store.find_row_index(&row4), Some(2));
+        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 0).unwrap(), row2));
+        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 1).unwrap(), row1));
+        assert!(are_equal_rows!(get_row_values_from_at!(&test_list_store.list_store, 2).unwrap(), row4));
+        assert!(get_row_values_from_at!(&test_list_store.list_store, 3).is_none());
+        assert_eq!(get_rows_values_from!(&test_list_store.list_store).len(), 3);
     }
 
 }
