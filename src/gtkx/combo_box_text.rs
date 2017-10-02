@@ -21,6 +21,20 @@ pub trait SortedUnique {
     fn remove_text_item(&self, item: &str) -> bool;
     fn insert_text_item(&self, item: &str) -> i32;
     fn set_active_text(&self, item: &str);
+
+    fn update_with(&self, new_item_list: &Vec<String>) {
+        let current_item_list = self.get_text_items();
+        for item in &current_item_list {
+            if !new_item_list.contains(&item) {
+                self.remove_text_item(&item);
+            }
+        }
+        for item in new_item_list {
+            if !current_item_list.contains(&item) {
+                self.insert_text_item(&item);
+            }
+        }
+    }
 }
 
 impl SortedUnique for gtk::ComboBoxText {
@@ -122,6 +136,14 @@ mod tests {
         ]);
         assert_ne!(cbt.get_text_items(), vec![
             "five", "one", "six", "ten", "three", "zero"
+        ]);
+        cbt.update_with(&vec![
+            "five".to_string(), "one".to_string(), "ten".to_string(),
+            "three".to_string(), "zero".to_string(), "twelve".to_string(),
+            "aa".to_string(), "zz".to_string()
+        ]);
+        assert_eq!(cbt.get_text_items(), vec![
+            "aa", "five", "one", "ten", "three", "twelve", "zero", "zz"
         ]);
     }
 }
