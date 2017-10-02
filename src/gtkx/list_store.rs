@@ -180,36 +180,20 @@ macro_rules! len_of {
     }
 }
 
-// Traits
 pub trait SimpleRowOps {
-    fn get_list_store(&self) -> gtk::ListStore;
-
-    fn len(&self) -> i32 {
-        len_of!(&self.get_list_store())
-    }
-
-    fn append_row(&self, row: &Row) -> gtk::TreeIter {
-        append_row_to!(row, self.get_list_store())
-    }
-
+    fn len(&self) -> i32;
+    fn append_row(&self, row: &Row) -> gtk::TreeIter;
     fn find_row_where<F>(&self, this_is_the_row: F) -> Option<(i32, gtk::TreeIter)>
-        where F: Fn(&gtk::ListStore, &gtk::TreeIter) -> bool
-    {
-        let list_store = self.get_list_store();
-        let mut index: i32 = 0;
-        if let Some(iter) = list_store.get_iter_first() {
-            loop {
-                if this_is_the_row(&list_store, &iter) {
-                    return Some((index, iter));
-                };
-                index += 1;
-                if !list_store.iter_next(&iter) {
-                    break;
-                }
-            }
-        };
-        None
-    }
+        where F: Fn(&gtk::ListStore, &gtk::TreeIter) -> bool;
+    fn get_row_values(&self, iter: &gtk::TreeIter) -> Row;
+    fn get_row_values_at(&self, position: i32) -> Option<Row>;
+    fn get_rows_values(&self) -> Vec<Row>;
+    fn insert_row(&self, position: i32, row: &Row) -> gtk::TreeIter;
+    fn insert_row_after(&self, iter: &gtk::TreeIter, row: &Row) -> gtk::TreeIter;
+    fn insert_row_before(&self, iter: &gtk::TreeIter, row: &Row) -> gtk::TreeIter;
+    fn prepend_row(&self, row: &Row)  -> gtk::TreeIter;
+    fn repopulate_with(&self, rows: &Vec<Row>);
+    fn update_with(&self, rows: &Vec<Row>);
 
     fn find_row(&self, row: &Row) -> Option<(i32, gtk::TreeIter)> {
         self.find_row_where(
@@ -230,53 +214,88 @@ pub trait SimpleRowOps {
             None => None
         }
     }
+}
+
+// Traits
+impl SimpleRowOps for gtk::ListStore {
+    fn len(&self) -> i32 {
+        len_of!(&self)
+    }
+
+    fn append_row(&self, row: &Row) -> gtk::TreeIter {
+        append_row_to!(row, self)
+    }
+
+    fn find_row_where<F>(&self, this_is_the_row: F) -> Option<(i32, gtk::TreeIter)>
+        where F: Fn(&gtk::ListStore, &gtk::TreeIter) -> bool
+    {
+        let mut index: i32 = 0;
+        if let Some(iter) = self.get_iter_first() {
+            loop {
+                if this_is_the_row(self, &iter) {
+                    return Some((index, iter));
+                };
+                index += 1;
+                if !self.iter_next(&iter) {
+                    break;
+                }
+            }
+        };
+        None
+    }
 
     fn get_row_values(&self, iter: &gtk::TreeIter) -> Row {
-        get_row_values_from!(&self.get_list_store(), iter)
+        get_row_values_from!(self, iter)
     }
 
     fn get_row_values_at(&self, position: i32) -> Option<Row> {
-        get_row_values_from_at!(&self.get_list_store(), position)
+        get_row_values_from_at!(self, position)
     }
 
     fn get_rows_values(&self) -> Vec<Row> {
-        get_rows_values_from!(&self.get_list_store())
+        get_rows_values_from!(self)
     }
 
     fn insert_row(&self, position: i32, row: &Row) -> gtk::TreeIter {
-        insert_row_in_at!(row, &self.get_list_store(), position)
+        insert_row_in_at!(row, self, position)
     }
 
     fn insert_row_after(&self, iter: &gtk::TreeIter, row: &Row) -> gtk::TreeIter {
-        insert_row_in_after!(row, &self.get_list_store(), iter)
+        insert_row_in_after!(row, self, iter)
     }
 
     fn insert_row_before(&self, iter: &gtk::TreeIter, row: &Row) -> gtk::TreeIter {
-        insert_row_in_before!(row, &self.get_list_store(), iter)
+        insert_row_in_before!(row, self, iter)
     }
 
     fn prepend_row(&self, row: &Row)  -> gtk::TreeIter {
-        prepend_row_to!(row, &self.get_list_store())
+        prepend_row_to!(row, self)
+    }
+
+    fn repopulate_with(&self, rows: &Vec<Row>) {
+        self.clear();
+        for row in rows.iter() {
+            append_row_to!(row, self);
+        }
     }
 
     // NB: this function assumes that all rows are unique and that order isn't important
     fn update_with(&self, rows: &Vec<Row>) {
-        let list_store = self.get_list_store();
         // First remove the rows that have gone away
-        if let Some(iter) = list_store.get_iter_first() {
-            while list_store.iter_is_valid(&iter) {
+        if let Some(iter) = self.get_iter_first() {
+            while self.iter_is_valid(&iter) {
                 let mut found = false;
                 for row in rows.iter() {
-                    if matches_list_row!(row, &list_store, &iter) {
+                    if matches_list_row!(row, self, &iter) {
                         found = true;
                         break;
                     }
                 }
                 if !found {
                     // NB: this call updates the iter
-                    list_store.remove(&iter);
+                    self.remove(&iter);
                 } else {
-                    list_store.iter_next(&iter);
+                    self.iter_next(&iter);
                 }
             }
         }
@@ -365,20 +384,16 @@ pub trait RowBuffer<RawData: Default> {
     }
 }
 
-// TODO: write unit tests for Updateable trait
-pub trait Updateable<RawData: Default>: SimpleRowOps {
+pub trait BufferedUpdate<RawData: Default, L: SimpleRowOps> {
+    fn get_list_store(&self) -> L;
     fn get_row_buffer(&self) -> Rc<RefCell<RowBuffer<RawData>>>;
 
     fn repopulate(&self) {
-        let list_store = self.get_list_store();
         let row_buffer_rc = self.get_row_buffer();
         let row_buffer = row_buffer_rc.borrow();
 
-        list_store.clear();
         row_buffer.init();
-        for row in row_buffer.get_rows().iter() {
-            append_row_to!(row, &list_store);
-        }
+        self.get_list_store().repopulate_with(&row_buffer.get_rows());
     }
 
     fn update(&self) {
@@ -387,7 +402,7 @@ pub trait Updateable<RawData: Default>: SimpleRowOps {
 
         if !row_buffer.is_current() { // this does a raw data update
             row_buffer.finalise();
-            self.update_with(&row_buffer.get_rows());
+            self.get_list_store().update_with(&row_buffer.get_rows());
         };
     }
 }
@@ -461,7 +476,7 @@ mod tests {
         buffer.set_id(1);
         assert!(!buffer.is_current());
         assert_eq!(buffer.get_rows().len(), 0);
-        buffer.reset();
+        buffer.finalise();
         assert!(buffer.is_current());
         let rows = buffer.get_rows();
         assert_eq!(rows[0][0].get(), Some("one"));
@@ -475,24 +490,9 @@ mod tests {
             gtk::init();
         }
 
-        struct TestListStore {
-            list_store: gtk::ListStore
-        }
+        use gtkx::list_store::SimpleRowOps;
 
-        impl TestListStore {
-            pub fn new() -> TestListStore {
-                let list_store = gtk::ListStore::new(&[gtk::Type::String, gtk::Type::String, gtk::Type::String]);
-                TestListStore{list_store: list_store}
-            }
-        }
-
-        impl SimpleRowOps for TestListStore {
-            fn get_list_store(&self) -> gtk::ListStore {
-                self.list_store.clone()
-            }
-        }
-
-        let test_list_store = TestListStore::new();
+        let test_list_store = gtk::ListStore::new(&[gtk::Type::String, gtk::Type::String, gtk::Type::String]);
         assert_eq!(test_list_store.len(), 0);
         let row1 = vec!["one".to_value(), "two".to_value(), "three".to_value()];
         let row2 = vec!["four".to_value(), "five".to_value(), "six".to_value()];
