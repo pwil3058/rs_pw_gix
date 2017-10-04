@@ -3,6 +3,7 @@ extern crate glib;
 extern crate gtk;
 
 extern crate fs2;
+extern crate num;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -10,6 +11,7 @@ extern crate serde_json;
 
 pub mod gdkx;
 pub mod gtkx;
+pub mod rgb_math;
 
 pub mod recollect {
     use std::collections::HashMap;
