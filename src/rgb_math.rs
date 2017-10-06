@@ -13,9 +13,10 @@
 // limitations under the License.
 
 use std;
+use std::cmp::{Ordering, PartialOrd};
 use std::convert::From;
 use std::f64::consts;
-use std::ops::{Index, Div, Mul, Add, Sub};
+use std::ops::{Index, Div, Mul, Add, Sub, Neg};
 
 use gdk;
 
@@ -37,6 +38,24 @@ macro_rules! is_normalised {
     }
 }
 
+macro_rules! normalise {
+    ( $f:expr ) => {
+        {
+            let mut result = $f;
+            if result > consts::PI {
+                while result > consts::PI {
+                    result -= 2.0 * consts::PI;
+                }
+            } else if result < -consts::PI {
+                while result < -consts::PI {
+                    result += 2.0 * consts::PI;
+                }
+            }
+            result
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Copy)]
 pub struct GRGB<T: Num + PartialOrd> {
     red: T,
@@ -44,10 +63,16 @@ pub struct GRGB<T: Num + PartialOrd> {
     blue: T
 }
 
-impl<T: Num + PartialOrd> GRGB<T> {
-    pub fn new(red: T, green: T, blue: T) -> GRGB<T> {
-        GRGB::<T>{red: red, blue: blue, green: green}
+impl<T: Num + PartialOrd> From<(T, T, T)> for GRGB<T> {
+    fn from(rgb: (T, T, T)) -> GRGB<T> {
+        GRGB::<T>{red: rgb.0, green: rgb.1, blue: rgb.2}
     }
+}
+
+impl<T: Num + PartialOrd> GRGB<T> {
+    //pub fn new(red: T, green: T, blue: T) -> GRGB<T> {
+        //GRGB::<T>{red: red, blue: blue, green: green}
+    //}
 
     pub fn indices_value_order(&self) -> (u8, u8, u8) {
         if self.red > self.green {
@@ -211,11 +236,7 @@ const COT_120: f64 = 0.5773502691896256;
 const RGB_TO_X_VECTOR: [f64; 3] = [1.0, COS_120, COS_120];
 const RGB_TO_Y_VECTOR: [f64; 3] = [0.0, SIN_120, -SIN_120];
 
-const PI_30: f64 = consts::FRAC_PI_6;
-const PI_45: f64 = consts::FRAC_PI_4;
-const PI_60: f64 = consts::FRAC_PI_3;
-const PI_120: f64 = consts::FRAC_PI_3 * 2.0;
-const PI_180: f64 = consts::PI;
+const PI_120: Angle = Angle(consts::FRAC_PI_3 * 2.0);
 
 macro_rules! rgb_x_coord {
     ( $rgb:expr ) => {
@@ -237,6 +258,18 @@ macro_rules! rgb_y_coord {
 struct XY {
     x: f64,
     y: f64
+}
+
+impl From<(f64, f64)> for XY {
+    fn from(xy: (f64, f64)) -> XY {
+        XY{x: xy.0, y: xy.1}
+    }
+}
+
+impl From<RGB> for XY {
+    fn from(rgb: RGB) -> XY {
+        XY{x: rgb_x_coord!(rgb), y: rgb_y_coord!(rgb)}
+    }
 }
 
 impl From<XY> for RGB {
@@ -276,12 +309,6 @@ impl From<XY> for RGB8 {
     }
 }
 
-impl From<RGB> for XY {
-    fn from(rgb: RGB) -> XY {
-        XY{x: rgb_x_coord!(rgb), y: rgb_y_coord!(rgb)}
-    }
-}
-
 impl RGB {
     pub fn all_are_proportions(&self) -> bool {
         is_proportion!(self.red) && is_proportion!(self.green) && is_proportion!(self.blue)
@@ -312,15 +339,14 @@ impl RGB {
     //higher level wrapper function to adjust/restore the chroma value.
     //In some cases maintaining bof chroma and value will not be
     //possible due to the complex relationship between value and chroma.
-    pub fn components_rotated(&self, delta_hue_angle: f64) -> RGB {
-        assert!(is_normalised!(delta_hue_angle));
-        fn calc_ks(delta_hue_angle: f64) -> (f64, f64) {
+    pub fn components_rotated(&self, delta_hue_angle: Angle) -> RGB {
+        fn calc_ks(delta_hue_angle: Angle) -> (f64, f64) {
             let a = delta_hue_angle.sin();
             let b = (PI_120 - delta_hue_angle).sin();
             let c = a + b;
             (b / c, a / c)
         }
-        if delta_hue_angle > 0.0 {
+        if delta_hue_angle > Angle(0.0) {
             if delta_hue_angle > PI_120 {
                 let ks = calc_ks(delta_hue_angle - PI_120);
                 return RGB{red: self.ff((2, 1), ks), green: self.ff((0, 2), ks), blue: self.ff((1, 0), ks)}
@@ -328,7 +354,7 @@ impl RGB {
                 let ks = calc_ks(delta_hue_angle);
                 return RGB{red: self.ff((0, 2), ks), green: self.ff((1, 0), ks), blue: self.ff((2, 1), ks)}
             }
-        } else if delta_hue_angle < 0.0 {
+        } else if delta_hue_angle < Angle(0.0) {
             if delta_hue_angle < -PI_120 {
                 let ks = calc_ks(delta_hue_angle.abs() - PI_120);
                 return RGB{red: self.ff((1, 2), ks), green: self.ff((2, 0), ks), blue: self.ff((0, 1), ks)}
@@ -343,8 +369,8 @@ impl RGB {
     // An alternative implementation of components_rotated()
     // TODO: test which implemention of components_rotated() is most
     // effecient
-    pub fn components_rotated_alt(&self, delta_hue_angle: f64) -> RGB {
-        fn x_rotated(x: f64, theta: f64) -> XY {
+    pub fn components_rotated_alt(&self, delta_hue_angle: Angle) -> RGB {
+        fn x_rotated(x: f64, theta: Angle) -> XY {
             XY{x: x * theta.cos(), y: x * theta.sin()}
         }
         let red_rtd_xy = x_rotated(self.red, delta_hue_angle);
@@ -360,9 +386,130 @@ impl RGB {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Copy)]
+pub struct Angle (f64);
+
+impl From<f64> for Angle {
+    fn from(f: f64) -> Angle {
+        if f.is_nan() {
+            Angle(f)
+        } else {
+            Angle(normalise!(f))
+        }
+    }
+}
+
+impl From<XY> for Angle {
+    fn from(xy: XY) -> Angle {
+        if xy.x == 0.0 && xy.y == 0.0 {
+            Angle(std::f64::NAN)
+        } else {
+            Angle(xy.y.atan2(xy.x))
+        }
+    }
+}
+
+// Take into account the circular nature of angle values when
+// evaluating order anticlockwise is greater
+impl PartialOrd for Angle {
+    fn partial_cmp(&self, other: &Angle) -> Option<Ordering> {
+        if self.is_nan() || other.is_nan() {
+            None
+        } else {
+            let diff = *self - *other;
+            if diff.0 < 0.0 {
+                Some(Ordering::Less)
+            } else if diff.0 > 0.0 {
+                Some(Ordering::Greater)
+            } else {
+                Some(Ordering::Equal)
+            }
+        }
+    }
+}
+
+impl Sub for Angle {
+    type Output = Angle;
+
+    fn sub(self, other: Angle) -> Angle {
+        Angle(self.0 - other.0)
+    }
+}
+
+impl Add for Angle {
+    type Output = Angle;
+
+    fn add(self, other: Angle) -> Angle {
+        Angle(self.0 + other.0)
+    }
+}
+
+impl<Scalar: Into<f64> + Copy> Mul<Scalar> for Angle {
+    type Output = Angle;
+
+    fn mul(self, rhs: Scalar) -> Angle {
+        Angle(self.0 * rhs.into())
+    }
+}
+
+impl<Scalar: Into<f64> + Copy> Div<Scalar> for Angle {
+    type Output = Angle;
+
+    fn div(self, rhs: Scalar) -> Angle {
+        Angle(self.0 / rhs.into())
+    }
+}
+
+impl Neg for Angle {
+    type Output = Angle;
+
+    fn neg(self) -> Angle {
+        Angle(-self.0)
+    }
+}
+
+impl Angle {
+    pub fn is_nan(self) -> bool {
+        self.0.is_nan()
+    }
+
+    pub fn abs(self) -> Angle {
+        Angle(self.0.abs())
+    }
+
+    pub fn reciprocal(self) -> Angle {
+        Angle(self.0 + consts::PI)
+    }
+
+    pub fn sin(self) -> f64 {
+        self.0.sin()
+    }
+
+    pub fn cos(self) -> f64 {
+        self.0.cos()
+    }
+
+    pub fn tan(self) -> f64 {
+        self.0.tan()
+    }
+
+    pub fn radians(self) -> f64 {
+        self.0
+    }
+
+    pub fn degrees(self) -> f64 {
+        self.0.to_degrees()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const PI_30: Angle = Angle(consts::FRAC_PI_6);
+    const PI_45: Angle = Angle(consts::FRAC_PI_4);
+    const PI_60: Angle = Angle(consts::FRAC_PI_3);
+    const PI_180: Angle = Angle(consts::PI);
 
     fn within_limits(rgb1: RGB, rgb2: RGB) -> bool {
         let limit = 0.000000001;
@@ -382,7 +529,7 @@ mod tests {
 
     #[test]
     fn rgb_math_grgb_basics() {
-        let rgb8 = GRGB::<u8>::new(1, 2, 3);
+        let rgb8 = GRGB::<u8>::from((1, 2, 3));
         assert_eq!(rgb8[0], rgb8.red);
         assert_eq!(rgb8[1], rgb8.green);
         assert_eq!(rgb8[2], rgb8.blue);
@@ -445,11 +592,11 @@ mod tests {
             assert_eq!(RGB::from(XY::from(*x / 2.0)), *x / 2.0);
         }
         for ab in vec![(0.1, 1.0), (0.1, 0.9), (0.3, 0.7), (1.0, 0.1), (0.9, 0.1), (0.7, 0.3)].iter() {
-            let rgb = RGB::new(ab.0, ab.1, 0.0);
+            let rgb = RGB::from((ab.1,ab.0, 0.0));
             assert!(within_limits(RGB::from(XY::from(rgb)), rgb));
-            let rgb = RGB::new(0.0, ab.1,ab.0);
+            let rgb = RGB::from((0.0, ab.1,ab.0));
             assert!(within_limits(RGB::from(XY::from(rgb)), rgb));
-            let rgb = RGB::new(ab.0, 0.0, ab.1);
+            let rgb = RGB::from((ab.0, 0.0, ab.1));
             assert!(within_limits(RGB::from(XY::from(rgb)), rgb));
         }
     }
