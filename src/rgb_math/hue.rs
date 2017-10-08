@@ -1,0 +1,512 @@
+// Copyright 2017 Peter Williams <pwil3058@gmail.com>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+use std;
+use std::cmp::{Ordering, PartialOrd};
+use std::convert::From;
+use std::f64::consts;
+use std::ops::{Index, Div, Mul, Add, Sub, Neg};
+
+use gdk;
+
+use num::{Integer, Float, Num};
+
+use ::rgb_math::angle::*;
+use ::rgb_math::rgb::*;
+
+macro_rules! is_proportion {
+    ( $x:expr ) => {
+        {
+            ($x <= 1.0) && ($x >= 0.0)
+        }
+    }
+}
+
+const SIN_120: f64 = 0.86602_54037_844387;
+const COS_120: f64 = -0.5;
+
+macro_rules! rgb_x_coord {
+    ( $rgb:expr ) => {
+        {
+            $rgb.red + ($rgb.green + $rgb.blue) * COS_120
+        }
+    }
+}
+
+macro_rules! rgb_y_coord {
+    ( $rgb:expr ) => {
+        {
+            ($rgb.green - $rgb.blue) * SIN_120
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Copy)]
+pub struct XY {
+    pub x: f64,
+    pub y: f64
+}
+
+impl XY {
+    pub fn calculate_chroma(&self) -> f64 {
+        self.x.hypot(self.y) * HueAngle::from(*self).chroma_correction
+    }
+}
+
+impl From<(f64, f64)> for XY {
+    fn from(xy: (f64, f64)) -> XY {
+        XY{x: xy.0, y: xy.1}
+    }
+}
+
+impl From<RGB> for XY {
+    fn from(rgb: RGB) -> XY {
+        XY{x: rgb_x_coord!(rgb), y: rgb_y_coord!(rgb)}
+    }
+}
+
+impl From<XY> for Angle {
+    fn from(xy: XY) -> Angle {
+        if xy.x == 0.0 && xy.y == 0.0 {
+            Angle::from(std::f64::NAN)
+        } else {
+            Angle::from(xy.y.atan2(xy.x))
+        }
+    }
+}
+
+impl From<XY> for RGB {
+    fn from(xy: XY) -> RGB {
+        let a = xy.x / COS_120;
+        let b = xy.y / SIN_120;
+        if xy.y > 0.0 {
+            if a > b {
+                RGB{red: 0.0, green: (a + b) / 2.0, blue: (a - b) / 2.0}
+            } else {
+                RGB{red: xy.x - b * COS_120, green: b, blue: 0.0}
+            }
+        } else if xy.y < 0.0 {
+            if a > -b {
+                RGB{red: 0.0, green: (a + b) / 2.0, blue: (a - b) / 2.0}
+            } else {
+                RGB{red: xy.x + b * COS_120, green: 0.0, blue: -b}
+            }
+        } else if xy.x < 0.0 {
+            let ha = a / 2.0;
+            RGB{red: 0.0, green: ha, blue: ha}
+        } else {
+            RGB{red: xy.x, green: 0.0, blue: 0.0}
+        }
+    }
+}
+
+impl From<XY> for RGB16 {
+    fn from(xy: XY) -> RGB16 {
+        RGB16::from(RGB::from(xy))
+    }
+}
+
+impl From<XY> for RGB8 {
+    fn from(xy: XY) -> RGB8 {
+        RGB8::from(RGB::from(xy))
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+struct HueAngle {
+    angle: Angle,
+    max_chroma_rgb: RGB,
+    chroma_correction: f64
+}
+
+impl PartialEq for HueAngle {
+    fn eq(&self, other: &HueAngle) -> bool {
+        self.angle.eq(&other.angle)
+    }
+}
+
+impl PartialOrd for HueAngle {
+    fn partial_cmp(&self, other: &HueAngle) -> Option<Ordering> {
+        self.angle.partial_cmp(&other.angle)
+    }
+}
+
+impl Add<Angle> for HueAngle {
+    type Output = HueAngle;
+
+    fn add(self, angle: Angle) -> HueAngle {
+        HueAngle::from(self.angle + angle)
+    }
+}
+
+impl Sub<Angle> for HueAngle {
+    type Output = HueAngle;
+
+    fn sub(self, angle: Angle) -> HueAngle {
+        HueAngle::from(self.angle - angle)
+    }
+}
+
+impl Sub<HueAngle> for HueAngle {
+    type Output = Angle;
+
+    fn sub(self, other: HueAngle) -> Angle {
+        self.angle - other.angle
+    }
+}
+
+impl From<Angle> for HueAngle {
+    fn from(angle: Angle) -> HueAngle {
+        if angle.is_nan() {
+            HueAngle{angle: angle, max_chroma_rgb: WHITE, chroma_correction: 1.0}
+        } else {
+            fn calc_other(abs_angle: Angle) -> f64 {
+                if [DEG_0, DEG_120].contains(&abs_angle) {
+                    0.0
+                } else if [DEG_60, DEG_180].contains(&abs_angle) {
+                    1.0
+                } else {
+                    fn f(angle: Angle) ->f64 {
+                        angle.sin() / (DEG_120 - angle).sin()
+                    };
+                    if abs_angle <= DEG_60 {
+                        f(abs_angle)
+                    } else if abs_angle <= DEG_120 {
+                        f(DEG_120 - abs_angle)
+                    } else {
+                        f(abs_angle - DEG_120)
+                    }
+                }
+            }
+            let other = calc_other(angle.abs());
+            let max_chroma_rgb = if angle >= DEG_0 {
+                if angle <= DEG_60 {
+                    RGB::from((1.0, other, 0.0))
+                } else if angle <= DEG_120 {
+                    RGB::from((other, 1.0, 0.0))
+                } else {
+                    RGB::from((0.0, 1.0, other))
+                }
+            } else {
+                if angle >= -DEG_60 {
+                    RGB::from((1.0, 0.0, other))
+                } else if angle >= -DEG_120 {
+                    RGB::from((other, 0.0, 1.0))
+                } else {
+                    RGB::from((0.0, other, 1.0))
+                }
+            };
+            let chroma_correction = (1.0 + other * other -other).sqrt().recip();
+            HueAngle{angle, max_chroma_rgb, chroma_correction}
+        }
+    }
+}
+
+impl From<XY> for HueAngle {
+    fn from(xy: XY) -> HueAngle {
+        HueAngle::from(Angle::from(xy))
+    }
+}
+
+impl From<RGB> for HueAngle {
+    fn from(rgb: RGB) -> HueAngle {
+        HueAngle::from(Angle::from(XY::from(rgb)))
+    }
+}
+
+impl HueAngle {
+    // Return the maximum chroma value that can be achieved for an
+    // RGB with this hue and the given value
+    pub fn max_chroma_for_value(&self, value: f64) -> f64 {
+        assert!(is_proportion!(value));
+        if self.angle.is_nan() {
+            0.0
+        } else {
+            let mcv = self.max_chroma_rgb.value();
+            if mcv >= value { // on the dark side (easy)
+                value / mcv
+            } else {
+                let abs_angle = self.angle.abs();
+                if abs_angle < DEG_60 {
+                    3.0 * (1.0 - value) * self.chroma_correction / (2.0 * abs_angle.cos())
+                } else {
+                    3.0 * (1.0 - value) * self.chroma_correction / (2.0 * (abs_angle - DEG_120).cos())
+                }
+            }
+        }
+    }
+
+    pub fn rgb_with_chroma(&self, req_chroma: f64, dark_side: bool) -> Option<RGB> {
+        assert!(is_proportion!(req_chroma));
+        if req_chroma == 0.0 {
+            if dark_side { Some(BLACK) } else { Some(WHITE) }
+        } else if self.angle.is_nan() {
+            None
+        } else if dark_side {
+            Some(self.max_chroma_rgb * req_chroma)
+        } else {
+            let mut result: [f64; 3] = [1.0, 1.0, 1.0];
+            let mut shortfall = (1.0 - req_chroma) * (3.0 - self.max_chroma_rgb.sum());
+            let io = self.max_chroma_rgb.indices_value_order();
+            // it's simplest to calculate weakest component first
+            let other = self.max_chroma_rgb[io.1];
+            result[io.2] = shortfall / (2.0 - other);
+            result[io.1] = other + shortfall - result[io.2];
+            Some(RGB::from(result))
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn within_limit_quiet(x1: f64, x2:f64) -> bool {
+        let limit = 0.0000000001;
+        if x1 == 0.0 || x2 == 0.0 {
+            (x2 + x1).abs() < limit
+        } else {
+            ((x1 / x2) - 1.0).abs() < limit
+        }
+    }
+
+    fn within_limit(x1: f64, x2:f64) -> bool {
+        if within_limit_quiet(x1, x2) {
+            true
+        } else {
+            println!("{:?} != {:?}", x1, x2);
+            false
+        }
+    }
+
+    fn within_limits(rgb1: RGB, rgb2: RGB) -> bool {
+        for i in 0..3 {
+            if !within_limit_quiet(rgb1[i], rgb2[i]) {
+                println!("{:?} != {:?}", rgb1, rgb2);
+                return false
+            }
+        }
+        true
+    }
+
+    impl RGB {
+        fn non_zero_indices(self) -> Vec<usize> {
+            let mut v: Vec<usize> = Vec::new();
+            for i in 0..3 {
+                if self[i] != 0.0 {
+                    v.push(i);
+                }
+            };
+            v
+        }
+
+        fn calculate_chroma(self) -> f64 {
+            XY::from(self).calculate_chroma()
+        }
+    }
+
+    #[test]
+    fn rgb_math_hue_xy_components()  {
+        for x in [BLACK, WHITE].iter() {
+            assert_eq!(XY::from(*x), XY{x: 0.0, y: 0.0});
+        }
+
+        assert_eq!(XY::from(RED), XY{x: 1.0, y: 0.0});
+        assert_eq!(XY::from(GREEN), XY{x: COS_120, y: SIN_120});
+        assert_eq!(XY::from(BLUE), XY{x: COS_120, y: -SIN_120});
+
+        assert_eq!(XY::from(YELLOW), XY{x: 1.0 + COS_120, y: SIN_120});
+        assert_eq!(XY::from(CYAN), XY{x: 2.0 * COS_120, y: 0.0});
+        assert_eq!(XY::from(MAGENTA), XY{x: 1.0 + COS_120, y: -SIN_120});
+
+        assert_eq!(RGB::from(XY::from(WHITE)), BLACK);
+        for x in [BLACK, RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA].iter() {
+            assert_eq!(RGB::from(XY::from(*x)), *x);
+            assert_eq!(RGB::from(XY::from(*x / 2.0)), *x / 2.0);
+        }
+        for ab in vec![(0.1, 1.0), (0.1, 0.9), (0.3, 0.7), (1.0, 0.1), (0.9, 0.1), (0.7, 0.3)].iter() {
+            let rgb = RGB::from((ab.1,ab.0, 0.0));
+            assert!(within_limits(RGB::from(XY::from(rgb)), rgb));
+            let rgb = RGB::from((0.0, ab.1,ab.0));
+            assert!(within_limits(RGB::from(XY::from(rgb)), rgb));
+            let rgb = RGB::from((ab.0, 0.0, ab.1));
+            assert!(within_limits(RGB::from(XY::from(rgb)), rgb));
+        }
+    }
+
+    #[test]
+    fn rgb_math_hue_rotation() {
+        // NB using conversion where necessary to account for the fact
+        // that floating point is only an approximation of real numbers
+        assert_eq!(RGB16{red: std::u16::MAX, green: std::u16::MAX, blue:0}, RGB16::from(YELLOW));
+        assert_eq!(RGB16::from((YELLOW).components_rotated(-DEG_60)), RGB16::from((RED + WHITE) / 2));
+        assert_eq!(RGB16::from(RED.components_rotated(DEG_60)), RGB16::from(YELLOW / 2));
+        assert_eq!(RGB16::from(RED.components_rotated(DEG_120)), RGB16::from(GREEN));
+        //assert_eq!(RGB16::from(RED.components_rotated(DEG_180)), RGB16::from(CYAN / 2));
+        assert!(within_limits(RED.components_rotated(DEG_180), CYAN / 2));
+        assert_eq!(RGB16::from(RED.components_rotated(-DEG_60)), RGB16::from(MAGENTA / 2));
+        assert_eq!(RGB16::from(RED.components_rotated(-DEG_120)), RGB16::from(BLUE));
+        //assert_eq!(RGB16::from(RED.components_rotated(-DEG_180)), RGB16::from(CYAN / 2));
+        assert!(within_limits(RED.components_rotated(-DEG_180), CYAN / 2));
+
+        assert_eq!(RGB16::from(YELLOW.components_rotated(DEG_60)), RGB16::from((GREEN + WHITE) * 0.5));
+        assert_eq!(RGB16::from(YELLOW.components_rotated(DEG_120)), RGB16::from(CYAN));
+        //assert_eq!(RGB16::from(YELLOW.components_rotated(DEG_180)), RGB16::from((BLUE + WHITE) * 0.5));
+        assert!(within_limits(YELLOW.components_rotated(DEG_180), (BLUE + WHITE) * 0.5));
+        assert_eq!(RGB16::from(YELLOW.components_rotated(-DEG_60)), RGB16::from((RED + WHITE) / 2));
+
+        //assert_eq!(RGB16::from(GREEN.components_rotated(DEG_60)), RGB16::from(CYAN / 2));
+        assert!(within_limits(GREEN.components_rotated(DEG_60), CYAN / 2));
+        assert_eq!(RGB16::from(GREEN.components_rotated(DEG_120)), RGB16::from(BLUE));
+        //assert_eq!(RGB16::from(GREEN.components_rotated(DEG_180)), RGB16::from(MAGENTA / 2));
+        assert!(within_limits(GREEN.components_rotated(DEG_180), MAGENTA / 2));
+        assert_eq!(RGB16::from(GREEN.components_rotated(-DEG_60)), RGB16::from(YELLOW / 2));
+        assert_eq!(RGB16::from(GREEN.components_rotated(-DEG_120)), RGB16::from(RED));
+        //assert_eq!(RGB16::from(GREEN.components_rotated(-DEG_180)), RGB16::from(MAGENTA / 2));
+        assert!(within_limits(GREEN.components_rotated(-DEG_180), MAGENTA / 2));
+    }
+
+    #[test]
+    fn rgb_math_hue_xy_to_angle() {
+        assert!(Angle::from(XY{x: 0.0, y: 0.0}).is_nan());
+        assert_eq!(Angle::from(XY{x: 1.0, y: 0.0}), DEG_0);
+        assert_eq!(Angle::from(XY{x: -1.0, y: 0.0}), DEG_180);
+        assert_eq!(Angle::from(XY{x: 1.0, y: 1.0}), DEG_45);
+        assert_eq!(Angle::from(XY{x: -1.0, y: -1.0}), DEG_180 + DEG_45 );
+        assert_eq!(Angle::from(XY{x: 0.0, y: 1.0}), DEG_90);
+        assert_eq!(Angle::from(XY{x: 0.0, y: -1.0}), -DEG_90);
+    }
+
+    #[test]
+    fn rgb_math_hue_angle_basics() {
+        assert_eq!(HueAngle::from(DEG_0).max_chroma_rgb, RED);
+        assert_eq!(HueAngle::from(DEG_60).max_chroma_rgb, YELLOW);
+        assert_eq!(HueAngle::from(DEG_120).max_chroma_rgb, GREEN);
+        assert_eq!(HueAngle::from(DEG_180).max_chroma_rgb, CYAN);
+        assert_eq!(HueAngle::from(-DEG_0).max_chroma_rgb, RED);
+        assert_eq!(HueAngle::from(-DEG_60).max_chroma_rgb, MAGENTA);
+        assert_eq!(HueAngle::from(-DEG_120).max_chroma_rgb, BLUE);
+        assert_eq!(HueAngle::from(-DEG_180).max_chroma_rgb, CYAN);
+
+        assert_eq!(HueAngle::from(DEG_60) - DEG_60, HueAngle::from(DEG_0));
+        assert_eq!(HueAngle::from(DEG_60) + DEG_60, HueAngle::from(DEG_120));
+
+        assert!(within_limit((HueAngle::from(DEG_120) - HueAngle::from(DEG_90)).radians(), DEG_30.radians()));
+
+        for angle in [DEG_0, DEG_60, DEG_120, DEG_180, -DEG_0, -DEG_60, -DEG_120, -DEG_180].iter() {
+            assert_eq!(HueAngle::from(*angle).chroma_correction, 1.0);
+        };
+        for mul in 1..7 {
+            let hue_angle = HueAngle::from(DEG_30 * mul);
+            assert!(within_limit(hue_angle.max_chroma_rgb.calculate_chroma(), 1.0));
+        };
+        for angle in [DEG_30, DEG_90].iter() {
+            assert_eq!(HueAngle::from(*angle).max_chroma_rgb.non_zero_indices(), vec![0, 1])
+        };
+        for angle in [-DEG_30, -DEG_90].iter() {
+            assert_eq!(HueAngle::from(*angle).max_chroma_rgb.non_zero_indices(), vec![0, 2])
+        };
+        for angle in [DEG_150, -DEG_150].iter() {
+            assert_eq!(HueAngle::from(*angle).max_chroma_rgb.non_zero_indices(), vec![1, 2])
+        };
+        assert_eq!(HueAngle::from(DEG_30).max_chroma_rgb.indices_value_order(), (0, 1, 2));
+        assert_eq!(HueAngle::from(DEG_90).max_chroma_rgb.indices_value_order(), (1, 0, 2));
+        assert_eq!(HueAngle::from(DEG_150).max_chroma_rgb.indices_value_order(), (1, 2, 0));
+        assert_eq!(HueAngle::from(-DEG_30).max_chroma_rgb.indices_value_order(), (0, 2, 1));
+        assert_eq!(HueAngle::from(-DEG_90).max_chroma_rgb.indices_value_order(), (2, 0, 1));
+        assert_eq!(HueAngle::from(-DEG_150).max_chroma_rgb.indices_value_order(), (2, 1, 0));
+        for angle in [DEG_30, DEG_90, DEG_150, -DEG_30, -DEG_90, -DEG_150].iter() {
+            let mut hue_angle = HueAngle::from(*angle);
+            let mut second_index = hue_angle.max_chroma_rgb.indices_value_order().1;
+            assert!(within_limit(hue_angle.max_chroma_rgb[second_index], 0.5));
+        }
+        for rgb in [WHITE, RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA].iter() {
+            assert!(within_limits(HueAngle::from(*rgb).max_chroma_rgb,*rgb));
+            for m in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9].iter() {
+                assert!(within_limits(HueAngle::from(*rgb * *m).max_chroma_rgb, *rgb));
+                let tint = (*rgb + WHITE) * 0.5;
+                assert!(within_limits(HueAngle::from(tint * *m).max_chroma_rgb, *rgb));
+            }
+        }
+        for g in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9].iter() {
+            let mut rgb = RGB::from((1.0, *g, 0.0));
+            assert!(within_limits(HueAngle::from(rgb).max_chroma_rgb,rgb));
+            for m in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9].iter() {
+                assert!(within_limits(HueAngle::from(rgb * *m).max_chroma_rgb, rgb));
+                let tint = (rgb + WHITE) * 0.5;
+                assert!(within_limits(HueAngle::from(tint * *m).max_chroma_rgb, rgb));
+            }
+        }
+        assert!(within_limits(HueAngle::from(BLACK).max_chroma_rgb,WHITE));
+        for rgb in [BLACK, WHITE, WHITE * 0.5].iter() {
+            assert!(HueAngle::from(*rgb).angle.is_nan());
+        }
+    }
+
+    #[test]
+    fn rgb_math_hue_angle_max_chroma_for_value() {
+        for angle in [DEG_0, DEG_120, -DEG_0, -DEG_120].iter() {
+            assert_eq!(HueAngle::from(*angle).max_chroma_for_value(1.0), 0.0);
+            assert_eq!(HueAngle::from(*angle).max_chroma_for_value(0.0), 0.0);
+            assert!(within_limit(HueAngle::from(*angle).max_chroma_for_value(0.5), 0.75));
+            assert!(within_limit(HueAngle::from(*angle).max_chroma_for_value(1.0 / 3.0), 1.0));
+            assert!(within_limit(HueAngle::from(*angle).max_chroma_for_value(1.0 / 6.0), 0.5));
+            assert!(within_limit(HueAngle::from(*angle).max_chroma_for_value(2.0 / 3.0), 0.5));
+        };
+        for angle in [DEG_60, DEG_180, -DEG_60, -DEG_180].iter() {
+            assert_eq!(HueAngle::from(*angle).max_chroma_for_value(1.0), 0.0);
+            assert_eq!(HueAngle::from(*angle).max_chroma_for_value(0.0), 0.0);
+            assert!(within_limit(HueAngle::from(*angle).max_chroma_for_value(0.5), 0.75));
+            assert!(within_limit(HueAngle::from(*angle).max_chroma_for_value(2.0 / 3.0), 1.0));
+            assert!(within_limit(HueAngle::from(*angle).max_chroma_for_value(1.0 / 3.0), 0.5));
+            assert!(within_limit(HueAngle::from(*angle).max_chroma_for_value(5.0 / 6.0), 0.5));
+        };
+        for angle in [DEG_30, DEG_90, DEG_150, -DEG_30, -DEG_90, -DEG_150].iter() {
+            assert_eq!(HueAngle::from(*angle).max_chroma_for_value(1.0), 0.0);
+            assert_eq!(HueAngle::from(*angle).max_chroma_for_value(0.0), 0.0);
+            assert!(within_limit(HueAngle::from(*angle).max_chroma_for_value(0.5), 1.0));
+            assert!(within_limit(HueAngle::from(*angle).max_chroma_for_value(0.25), 0.5));
+            assert!(within_limit(HueAngle::from(*angle).max_chroma_for_value(0.75), 0.5));
+        };
+    }
+
+    #[test]
+    fn rgb_math_hue_angle_rgb_with_chroma() {
+        for angle in [DEG_0, DEG_30, DEG_60, DEG_90, DEG_120, DEG_150, DEG_180, -DEG_0, -DEG_30 -DEG_60, -DEG_90, -DEG_120, -DEG_150, -DEG_180].iter() {
+            let hue_angle = HueAngle::from(*angle);
+            assert_eq!(hue_angle.rgb_with_chroma(0.0, true).unwrap(), BLACK);
+            assert_eq!(hue_angle.rgb_with_chroma(0.0, false).unwrap(), WHITE);
+            for chroma in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
+                let rgb_shade = hue_angle.rgb_with_chroma(*chroma, true).unwrap();
+                let rgb_tint = hue_angle.rgb_with_chroma(*chroma, false).unwrap();
+                assert!(rgb_shade.value() <= rgb_tint.value());
+                let shade_chroma = rgb_shade.calculate_chroma();
+                let tint_chroma = rgb_tint.calculate_chroma();
+                assert!(within_limit(shade_chroma, *chroma));
+                assert!(within_limit(tint_chroma, *chroma));
+                let shade_angle = HueAngle::from(rgb_shade);
+                let tint_angle = HueAngle::from(rgb_tint);
+                assert!((hue_angle - shade_angle).abs().radians() <= 0.00000000001);
+                assert!((hue_angle - tint_angle).abs().radians() <= 0.00000000001);
+            }
+        }
+        let hue_angle = HueAngle::from(XY::from((0.0, 0.0)));
+        assert_eq!(hue_angle.rgb_with_chroma(0.0, true).unwrap(), BLACK);
+        assert_eq!(hue_angle.rgb_with_chroma(0.0, false).unwrap(), WHITE);
+        for chroma in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
+            assert_eq!(hue_angle.rgb_with_chroma(*chroma, true), None);
+            assert_eq!(hue_angle.rgb_with_chroma(*chroma, false), None);
+        }
+    }
+}
