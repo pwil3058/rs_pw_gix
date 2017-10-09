@@ -289,6 +289,31 @@ impl HueAngle {
         }
         None
     }
+
+    pub fn max_chroma_rgb_with_value(&self, req_value: f64) -> RGB {
+        assert!(is_proportion!(req_value));
+        let mcv = self.max_chroma_rgb.value();
+        if mcv == req_value {
+            self.max_chroma_rgb
+        } else if mcv > req_value {
+            if req_value == 0.0 {
+                BLACK
+            } else {
+                self.max_chroma_rgb * req_value / mcv
+            }
+        } else if req_value == 1.0 {
+            WHITE
+        } else {
+            let mut result = [1.0, 1.0, 1.0];
+            let io = self.max_chroma_rgb.indices_value_order();
+            // it's simpler two work out the weakest component first
+            let other = self.max_chroma_rgb[io.1];
+            let shortfall = (req_value - mcv) * 3.0;
+            result[io.2] = shortfall / (2.0 - other);
+            result[io.1] = other + shortfall - result[io.2];
+            RGB::from(result)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -554,6 +579,25 @@ mod tests {
                         assert!(false)
                     )
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn rgb_math_hue_max_chroma_rgb_for_value() {
+        for angle in [DEG_0, DEG_30, DEG_60, DEG_90, DEG_120, DEG_150, DEG_180, -DEG_0, -DEG_30 -DEG_60, -DEG_90, -DEG_120, -DEG_150, -DEG_180].iter() {
+            let hue_angle = HueAngle::from(*angle);
+            for value in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99].iter() {
+                let rgb = hue_angle.max_chroma_rgb_with_value(*value);
+                assert!(within_limit(rgb.value(), *value));
+                assert!((hue_angle - HueAngle::from(rgb)).abs().radians() <= 0.00000000001);
+                let max_chroma = hue_angle.max_chroma_for_value(*value);
+                assert!(within_limit(rgb.calculate_chroma(), max_chroma));
+            }
+            for value in [0.0, 1.0].iter() {
+                let rgb = hue_angle.max_chroma_rgb_with_value(*value);
+                assert!(within_limit(rgb.value(), *value));
+                assert!(HueAngle::from(rgb).is_grey());
             }
         }
     }
