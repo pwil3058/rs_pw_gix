@@ -496,7 +496,19 @@ mod tests {
                 assert!(within_limit(rgb.value(), *value));
                 assert!(HueAngle::from(rgb).is_grey());
             }
-         }
+        }
+        let hue_angle = HueAngle::from(XY::from((0.0, 0.0)));
+        for value in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
+            let max_chroma = hue_angle.max_chroma_for_value(*value);
+            assert_eq!(max_chroma, 0.0);
+            if let Some(rgb) = hue_angle.rgb_with_chroma_and_value(max_chroma, *value) {
+                assert!(within_limit(rgb.calculate_chroma(), max_chroma));
+                assert!(within_limit(rgb.value(), *value));
+                assert!(HueAngle::from(rgb).is_grey());
+            } else {
+                assert!(false)
+            };
+        }
     }
 
     #[test]
@@ -521,7 +533,7 @@ mod tests {
         assert_eq!(hue_angle.rgb_range_with_chroma(0.0).unwrap(), (BLACK, WHITE));
         for chroma in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
             assert_eq!(hue_angle.rgb_range_with_chroma(*chroma), None);
-            assert_eq!(hue_angle.rgb_range_with_chroma(*chroma), None);
+            assert_eq!(hue_angle.value_range_with_chroma(*chroma), None);
         }
     }
 
@@ -542,7 +554,7 @@ mod tests {
                     assert!((hue_angle - shade_angle).abs().radians() <= 0.00000000001);
                     assert!((hue_angle - tint_angle).abs().radians() <= 0.00000000001);
                 } else {
-                    assert!(false) //should not get her for real angles
+                    assert!(false) //should not get here for real angles
                 }
             }
         }
@@ -581,6 +593,15 @@ mod tests {
                 }
             }
         }
+        let hue_angle = HueAngle::from(XY::from((0.0, 0.0)));
+        for chroma in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
+            for value in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
+                assert_eq!(hue_angle.rgb_with_chroma_and_value(*chroma, *value), None);
+            }
+        }
+        for value in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
+            assert_eq!(hue_angle.rgb_with_chroma_and_value(0.0, *value), Some(WHITE * *value));
+        }
     }
 
     #[test]
@@ -599,6 +620,10 @@ mod tests {
                 assert!(within_limit(rgb.value(), *value));
                 assert!(HueAngle::from(rgb).is_grey());
             }
+        }
+        let hue_angle = HueAngle::from(XY::from((0.0, 0.0)));
+        for value in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
+            assert_eq!(hue_angle.max_chroma_rgb_with_value(*value), WHITE * *value);
         }
     }
 }
