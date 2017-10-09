@@ -228,9 +228,13 @@ impl From<RGB> for HueAngle {
 impl HueAngle {
     // Return the maximum chroma value that can be achieved for an
     // RGB with this hue and the given value
+    pub fn is_grey(&self) -> bool {
+        self.angle.is_nan()
+    }
+
     pub fn max_chroma_for_value(&self, value: f64) -> f64 {
         assert!(is_proportion!(value));
-        if self.angle.is_nan() {
+        if self.is_grey() {
             0.0
         } else {
             let mcv = self.max_chroma_rgb.value();
@@ -246,7 +250,7 @@ impl HueAngle {
         assert!(is_proportion!(req_chroma));
         if req_chroma == 0.0 {
             Some((BLACK, WHITE))
-        } else if self.angle.is_nan() {
+        } else if self.is_grey() {
             None
         } else if req_chroma == 1.0 {
             Some((self.max_chroma_rgb, self.max_chroma_rgb))
@@ -261,7 +265,7 @@ impl HueAngle {
         assert!(is_proportion!(req_chroma));
         if req_chroma == 0.0 {
             Some((0.0, 1.0))
-        } else if self.angle.is_nan() {
+        } else if self.is_grey() {
             None
         } else if req_chroma == 1.0 {
             let val = self.max_chroma_rgb.value();
@@ -437,7 +441,7 @@ mod tests {
         }
         assert!(within_limits(HueAngle::from(BLACK).max_chroma_rgb,WHITE));
         for rgb in [BLACK, WHITE, WHITE * 0.5].iter() {
-            assert!(HueAngle::from(*rgb).angle.is_nan());
+            assert!(HueAngle::from(*rgb).is_grey());
         }
     }
 
@@ -455,7 +459,7 @@ mod tests {
                     assert!(false)
                 };
                 if let Some((min_value, max_value)) = hue_angle.value_range_with_chroma(max_chroma) {
-                    assert!(within_limit(min_value, *value) || within_limit(max_value, *value));
+                    assert!(within_limit_quiet(min_value, *value) || within_limit_quiet(max_value, *value));
                 } else {
                     assert!(false)
                 }
@@ -465,7 +469,7 @@ mod tests {
                 let rgb = hue_angle.rgb_with_chroma_and_value(max_chroma, *value).unwrap();
                 assert!(within_limit(rgb.calculate_chroma(), max_chroma));
                 assert!(within_limit(rgb.value(), *value));
-                assert!(HueAngle::from(rgb).angle.is_nan());
+                assert!(HueAngle::from(rgb).is_grey());
             }
          }
     }
@@ -544,7 +548,7 @@ mod tests {
                     Some(rgb) => {
                         assert!(within_limit(rgb.calculate_chroma(), 0.0));
                         assert!(within_limit(rgb.value(), *value));
-                        assert!(HueAngle::from(rgb).angle.is_nan());
+                        assert!(HueAngle::from(rgb).is_grey());
                     },
                     None => (
                         assert!(false)
