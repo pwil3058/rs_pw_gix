@@ -15,6 +15,8 @@
 #[macro_use]
 pub mod rgb;
 #[macro_use]
+pub mod rgb_manipulator;
+#[macro_use]
 pub mod angle;
 #[macro_use]
 pub mod hue;

@@ -52,8 +52,12 @@ macro_rules! rgb_y_coord {
     }
 }
 
+pub trait Hypotenuse {
+    fn hypot(&self) -> f64;
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Copy)]
-pub struct XY {
+struct XY {
     pub x: f64,
     pub y: f64
 }
@@ -61,6 +65,12 @@ pub struct XY {
 impl XY {
     pub fn calculate_chroma(&self) -> f64 {
         self.x.hypot(self.y) * HueAngle::from(*self).chroma_correction
+    }
+}
+
+impl Hypotenuse for XY {
+    fn hypot(&self) -> f64 {
+        self.x.hypot(self.y)
     }
 }
 
@@ -73,6 +83,12 @@ impl From<(f64, f64)> for XY {
 impl From<RGB> for XY {
     fn from(rgb: RGB) -> XY {
         XY{x: rgb_x_coord!(rgb), y: rgb_y_coord!(rgb)}
+    }
+}
+
+impl Hypotenuse for RGB {
+    fn hypot(&self) -> f64 {
+        XY::from(*self).hypot()
     }
 }
 
@@ -124,7 +140,7 @@ impl From<XY> for RGB8 {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
-struct HueAngle {
+pub struct HueAngle {
     angle: Angle,
     max_chroma_rgb: RGB,
     chroma_correction: f64
@@ -230,6 +246,18 @@ impl HueAngle {
     // RGB with this hue and the given value
     pub fn is_grey(&self) -> bool {
         self.angle.is_nan()
+    }
+
+    pub fn get_angle(&self) -> Angle {
+        self.angle
+    }
+
+    pub fn get_mac_chroma_rgb(&self) -> RGB {
+        self.max_chroma_rgb
+    }
+
+    pub fn get_chroma_correction(&self) -> f64 {
+        self.chroma_correction
     }
 
     pub fn max_chroma_for_value(&self, value: f64) -> f64 {
