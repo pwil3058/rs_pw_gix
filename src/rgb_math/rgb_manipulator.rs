@@ -33,7 +33,7 @@ impl RGBManipulator {
         RGBManipulator{rgb, angle, last_angle, chroma}
     }
 
-    pub fn set_rgb(&self, rgb:RGB) {
+    pub fn set_rgb(&self, rgb: RGB) {
         *self.rgb.borrow_mut() = rgb;
         let new_angle = HueAngle::from(rgb);
         *self.chroma.borrow_mut() = rgb.hypot() * new_angle.get_chroma_correction();
@@ -54,13 +54,17 @@ impl RGBManipulator {
         if is_grey {
             false
         } else {
+            let cur_chroma = *self.chroma.borrow();
             let cur_value = self.rgb.borrow().value();
-            let new_chroma = (*self.chroma.borrow() - delta).max(0.0);
-            let new_rgb = self.angle.borrow().rgb_with_chroma_and_value(new_chroma, cur_value).unwrap_or_else(
-                || panic!("File: {:?} Line: {:?}", file!(), line!())
-            );
-            self.set_rgb(new_rgb);
-            true
+            let new_chroma = (cur_chroma - delta).max(0.0);
+            let rgbe = self.angle.borrow().rgb_with_chroma_and_value(new_chroma, cur_value);
+            if let Some(new_rgb) = rgbe {
+                self.set_rgb(new_rgb);
+                // NB: beware frailties of float versus real
+                *self.chroma.borrow() != cur_chroma
+            } else {
+                panic!("File: {:?} Line: {:?}", file!(), line!())
+            }
        }
     }
 
@@ -68,19 +72,24 @@ impl RGBManipulator {
         assert!(is_proportion!(delta));
         let cur_value = self.rgb.borrow().value();
         let viable_angle = if self.angle.borrow().is_grey() {
-            self.last_angle.borrow()
+            *self.last_angle.borrow()
         } else {
-            self.angle.borrow()
+            *self.angle.borrow()
         };
-        let max_chroma = viable_angle.max_chroma_for_value(cur_value);
-        let adj_delta = delta.min(max_chroma - *self.chroma.borrow());
+        let max_chroma = viable_angle.max_chroma_for_value(cur_value).min(1.0);
+        let cur_chroma = *self.chroma.borrow();
+        let adj_delta = delta.min(max_chroma - cur_chroma);
         if adj_delta > 0.0 {
-            let new_chroma = *self.chroma.borrow() + adj_delta;
-            let new_rgb = viable_angle.rgb_with_chroma_and_value(new_chroma, cur_value).unwrap_or_else(
-                || panic!("File: {:?} Line: {:?}", file!(), line!())
-            );
-            self.set_rgb(new_rgb);
-            true
+            let cur_value = self.rgb.borrow().value();
+            let new_chroma = (cur_chroma + adj_delta).min(max_chroma);
+            let rgbe = viable_angle.rgb_with_chroma_and_value(new_chroma, cur_value);
+            if let Some(new_rgb) = rgbe {
+                self.set_rgb(new_rgb);
+                // NB: beware frailties of float versus real
+                *self.chroma.borrow() != cur_chroma
+            } else {
+                panic!("File: {:?} Line: {:?}", file!(), line!());
+            }
         } else {
             false
         }
@@ -99,16 +108,18 @@ impl RGBManipulator {
                         || panic!("File: {:?} Line: {:?}", file!(), line!())
                     );
                     self.set_rgb(new_rgb);
-                    true
+                    // NB: beware frailties of float versus real
+                    new_rgb.value() != cur_value
                 } else {
                     false
                 }
             },
             None => { //RGB is grey
                 if cur_value > 0.0 {
-                    let new_value = (cur_value - delta).max(0.0);
-                    self.set_rgb(WHITE * new_value);
-                    true
+                    let new_rgb = WHITE * (cur_value - delta).max(0.0);
+                    self.set_rgb(new_rgb);
+                    // NB: beware frailties of float versus real
+                    new_rgb.value() != cur_value
                 } else {
                     false
                 }
@@ -130,16 +141,18 @@ impl RGBManipulator {
                         || panic!("File: {:?} Line: {:?}", file!(), line!())
                     );
                     self.set_rgb(new_rgb);
-                    true
+                    // NB: beware frailties of float versus real
+                    new_rgb.value() != cur_value
                 } else {
                     false
                 }
             },
             None => { //RGB is grey
                 if cur_value < 1.0 {
-                    let new_value = (cur_value + delta).min(1.0);
-                    self.set_rgb(WHITE * new_value);
-                    true
+                    let new_rgb = WHITE * (cur_value + delta).min(1.0);
+                    self.set_rgb(new_rgb);
+                    // NB: beware frailties of float versus real
+                    new_rgb.value() != cur_value
                 } else {
                     false
                 }
@@ -152,6 +165,7 @@ impl RGBManipulator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ::rgb_math::angle::*;
 
     fn within_limit_quiet(x1: f64, x2:f64) -> bool {
         let limit = 0.0000000001;
@@ -198,26 +212,67 @@ mod tests {
             }
         };
         assert!(!rgb_manipulator.incr_value(0.1));
-        rgb_manipulator.set_rgb(RED);
-        assert!(!rgb_manipulator.incr_value(0.1));
-        assert!(!rgb_manipulator.decr_value(0.1));
-        rgb_manipulator.set_rgb((RED + WHITE) / 2.0);
-        let angle = rgb_manipulator.angle.borrow().get_angle();
-        value = 2.0 / 3.0;
-        while rgb_manipulator.decr_value(0.1) {
-            assert!(rgb_manipulator.rgb.borrow().value() < value);
-            assert!(!rgb_manipulator.angle.borrow().is_grey());
-            assert_eq!(rgb_manipulator.angle.borrow().get_angle(), angle);
+        for rgb in [RED, GREEN, BLUE, CYAN, MAGENTA, YELLOW, (RED + YELLOW) / 2].iter() {
+            rgb_manipulator.set_rgb(*rgb);
+            assert!(!rgb_manipulator.incr_value(0.1));
+            assert!(!rgb_manipulator.decr_value(0.1));
+            let tint = (*rgb + WHITE) / 2.0;
+            rgb_manipulator.set_rgb(tint);
+            let angle = rgb_manipulator.angle.borrow().get_angle();
+            let chroma = *rgb_manipulator.chroma.borrow();
+            value = tint.value();
+            while rgb_manipulator.decr_value(0.1) {
+                assert!(rgb_manipulator.rgb.borrow().value() < value);
+                assert!(!rgb_manipulator.angle.borrow().is_grey());
+                assert!((rgb_manipulator.angle.borrow().get_angle() - angle).abs() < Angle::from(0.00000001));
+                assert!(within_limit(*rgb_manipulator.chroma.borrow(), chroma));
+                value = rgb_manipulator.rgb.borrow().value();
+            };
+            assert!(!rgb_manipulator.decr_value(0.1));
             value = rgb_manipulator.rgb.borrow().value();
-        };
-        assert!(!rgb_manipulator.decr_value(0.1));
-        value = rgb_manipulator.rgb.borrow().value();
-        while rgb_manipulator.incr_value(0.1) {
-            assert!(rgb_manipulator.rgb.borrow().value() > value);
-            assert!(!rgb_manipulator.angle.borrow().is_grey());
-            assert_eq!(rgb_manipulator.angle.borrow().get_angle(), angle);
-            value = rgb_manipulator.rgb.borrow().value();
-        };
+            while rgb_manipulator.incr_value(0.1) {
+                assert!(rgb_manipulator.rgb.borrow().value() > value);
+                assert!(!rgb_manipulator.angle.borrow().is_grey());
+                assert!((rgb_manipulator.angle.borrow().get_angle() - angle).abs() < Angle::from(0.00000001));
+                assert!(within_limit(*rgb_manipulator.chroma.borrow(), chroma));
+                value = rgb_manipulator.rgb.borrow().value();
+            };
+            assert!(!rgb_manipulator.incr_value(0.1));
+        }
+    }
+
+
+    #[test]
+    fn rgb_math_rgb_manipulator_chroma() {
+        let rgb_manipulator = RGBManipulator::new();
         assert!(!rgb_manipulator.incr_value(0.1));
+        for rgb in [RED, GREEN, BLUE, CYAN, MAGENTA, YELLOW, (RED + YELLOW) / 2].iter() {
+            let tint = (*rgb + WHITE) / 2.0;
+            rgb_manipulator.set_rgb(tint);
+            let angle = tint.angle();
+            assert!((rgb_manipulator.angle.borrow().get_angle() - angle).abs() < Angle::from(0.00000001));
+            let value = tint.value();
+            let mut chroma = *rgb_manipulator.chroma.borrow();
+            while rgb_manipulator.decr_chroma(0.1) {
+                assert!(*rgb_manipulator.chroma.borrow() < chroma);
+                assert!(within_limit(rgb_manipulator.rgb.borrow().value(), value));
+                if rgb_manipulator.angle.borrow().is_grey() { // last one will be grey
+                    assert_eq!(*rgb_manipulator.chroma.borrow(), 0.0);
+                } else {
+                    assert!((rgb_manipulator.angle.borrow().get_angle() - angle).abs() < Angle::from(0.00000001));
+                }
+                chroma = *rgb_manipulator.chroma.borrow();
+            };
+            assert!(rgb_manipulator.angle.borrow().is_grey());
+            assert!(!rgb_manipulator.decr_chroma(0.1));
+            assert!((rgb_manipulator.last_angle.borrow().get_angle() - angle).abs() < Angle::from(0.00000001));
+            while rgb_manipulator.incr_chroma(0.01) {
+                assert!(*rgb_manipulator.chroma.borrow() > chroma);
+                assert!(within_limit(rgb_manipulator.rgb.borrow().value(), value));
+                assert!(!rgb_manipulator.angle.borrow().is_grey());
+                assert!((rgb_manipulator.angle.borrow().get_angle() - angle).abs() < Angle::from(0.00000001));
+                chroma = *rgb_manipulator.chroma.borrow();
+            };
+        }
     }
 }
