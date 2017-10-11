@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::cell::{RefCell, RefMut};
+use std::cell::{RefCell};
 
+use ::rgb_math::angle::*;
 use ::rgb_math::hue::*;
 use ::rgb_math::rgb::*;
 
-struct RGBManipulator {
+pub struct RGBManipulator {
     rgb: RefCell<RGB>,
     angle: RefCell<HueAngle>,
     last_angle: RefCell<HueAngle>,
@@ -160,12 +161,38 @@ impl RGBManipulator {
             }
         }
     }
+
+    pub fn rotate(&self, by_angle: Angle) -> bool {
+        if self.angle.borrow().is_grey() {
+            return false
+        };
+        let cur_value = self.rgb.borrow().value();
+        let cur_chroma = *self.chroma.borrow();
+        let new_angle = *self.angle.borrow() + by_angle;
+        let (min_value, max_value) = new_angle.value_range_with_chroma(cur_chroma).unwrap_or_else(
+            || panic!("File: {:?} Line: {:?}", file!(), line!())
+        );
+        let new_rgb = if cur_value < min_value {
+            new_angle.rgb_with_chroma_and_value(cur_chroma, min_value).unwrap_or_else(
+                || panic!("File: {:?} Line: {:?}", file!(), line!())
+            )
+        } else if cur_value > max_value {
+            new_angle.rgb_with_chroma_and_value(cur_chroma, max_value).unwrap_or_else(
+                || panic!("File: {:?} Line: {:?}", file!(), line!())
+            )
+        } else {
+            new_angle.rgb_with_chroma_and_value(cur_chroma, cur_value).unwrap_or_else(
+                || panic!("File: {:?} Line: {:?}", file!(), line!())
+            )
+        };
+        self.set_rgb(new_rgb);
+        true
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ::rgb_math::angle::*;
 
     fn within_limit_quiet(x1: f64, x2:f64) -> bool {
         let limit = 0.0000000001;
@@ -273,6 +300,39 @@ mod tests {
                 assert!((rgb_manipulator.angle.borrow().get_angle() - angle).abs() < Angle::from(0.00000001));
                 chroma = *rgb_manipulator.chroma.borrow();
             };
+        }
+    }
+
+    #[test]
+    fn rgb_math_rgb_manipulator_rotate() {
+        let rgb_manipulator = RGBManipulator::new();
+        assert!(!rgb_manipulator.rotate(Angle::from(10.0)));
+        assert!(!rgb_manipulator.rotate(-Angle::from(10.0)));
+        for rgb in [RED, GREEN, BLUE, CYAN, MAGENTA, YELLOW, (RED + YELLOW) / 2].iter() {
+            let tint = (*rgb + WHITE) / 2.0;
+            rgb_manipulator.set_rgb(tint);
+            for delta in [-60.0, -30.0, -10.0, -5.0, 5.0, 10.0, 30.0, 60.0].iter() {
+                let cur_chroma = *rgb_manipulator.chroma.borrow();
+                let cur_angle = *rgb_manipulator.angle.borrow();
+                let delta_angle = Angle::from(*delta);
+                rgb_manipulator.rotate(delta_angle);
+                assert!(within_limit(cur_chroma, *rgb_manipulator.chroma.borrow()));
+                let diff = *rgb_manipulator.angle.borrow() - cur_angle;
+                assert!((diff - delta_angle).abs().radians() < 0.00000001);
+            }
+        }
+        for rgb in [RED, GREEN, BLUE, CYAN, MAGENTA, YELLOW, (RED + YELLOW) / 2].iter() {
+            let shade = *rgb * 0.5;
+            rgb_manipulator.set_rgb(shade);
+            for delta in [-60.0, -30.0, -10.0, -5.0, 5.0, 10.0, 30.0, 60.0].iter() {
+                let cur_chroma = *rgb_manipulator.chroma.borrow();
+                let cur_angle = *rgb_manipulator.angle.borrow();
+                let delta_angle = Angle::from(*delta);
+                rgb_manipulator.rotate(delta_angle);
+                assert!(within_limit(cur_chroma, *rgb_manipulator.chroma.borrow()));
+                let diff = *rgb_manipulator.angle.borrow() - cur_angle;
+                assert!((diff - delta_angle).abs().radians() < 0.00000001);
+            }
         }
     }
 }
