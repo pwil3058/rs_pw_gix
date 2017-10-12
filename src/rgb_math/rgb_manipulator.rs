@@ -30,14 +30,14 @@ impl RGBManipulator {
         let rgb = RefCell::new(WHITE);
         let angle = RefCell::new(HueAngle::from(*rgb.borrow()));
         let last_angle = RefCell::new(HueAngle::from(RED));
-        let chroma = RefCell::new(rgb.borrow().hypot() * angle.borrow().get_chroma_correction());
+        let chroma = RefCell::new(rgb.borrow().hypot() * angle.borrow().chroma_correction());
         RGBManipulator{rgb, angle, last_angle, chroma}
     }
 
     pub fn set_rgb(&self, rgb: RGB) {
         *self.rgb.borrow_mut() = rgb;
         let new_angle = HueAngle::from(rgb);
-        *self.chroma.borrow_mut() = rgb.hypot() * new_angle.get_chroma_correction();
+        *self.chroma.borrow_mut() = rgb.hypot() * new_angle.chroma_correction();
         let is_grey = new_angle.is_grey();
         if !is_grey {
             *self.last_angle.borrow_mut() = new_angle;
@@ -245,13 +245,13 @@ mod tests {
             assert!(!rgb_manipulator.decr_value(0.1));
             let tint = (*rgb + WHITE) / 2.0;
             rgb_manipulator.set_rgb(tint);
-            let angle = rgb_manipulator.angle.borrow().get_angle();
+            let angle = rgb_manipulator.angle.borrow().angle();
             let chroma = *rgb_manipulator.chroma.borrow();
             value = tint.value();
             while rgb_manipulator.decr_value(0.1) {
                 assert!(rgb_manipulator.rgb.borrow().value() < value);
                 assert!(!rgb_manipulator.angle.borrow().is_grey());
-                assert!((rgb_manipulator.angle.borrow().get_angle() - angle).abs() < Angle::from(0.00000001));
+                assert!((rgb_manipulator.angle.borrow().angle() - angle).abs() < Angle::from(0.00000001));
                 assert!(within_limit(*rgb_manipulator.chroma.borrow(), chroma));
                 value = rgb_manipulator.rgb.borrow().value();
             };
@@ -260,7 +260,7 @@ mod tests {
             while rgb_manipulator.incr_value(0.1) {
                 assert!(rgb_manipulator.rgb.borrow().value() > value);
                 assert!(!rgb_manipulator.angle.borrow().is_grey());
-                assert!((rgb_manipulator.angle.borrow().get_angle() - angle).abs() < Angle::from(0.00000001));
+                assert!((rgb_manipulator.angle.borrow().angle() - angle).abs() < Angle::from(0.00000001));
                 assert!(within_limit(*rgb_manipulator.chroma.borrow(), chroma));
                 value = rgb_manipulator.rgb.borrow().value();
             };
@@ -277,7 +277,7 @@ mod tests {
             let tint = (*rgb + WHITE) / 2.0;
             rgb_manipulator.set_rgb(tint);
             let angle = tint.angle();
-            assert!((rgb_manipulator.angle.borrow().get_angle() - angle).abs() < Angle::from(0.00000001));
+            assert!((rgb_manipulator.angle.borrow().angle() - angle).abs() < Angle::from(0.00000001));
             let value = tint.value();
             let mut chroma = *rgb_manipulator.chroma.borrow();
             while rgb_manipulator.decr_chroma(0.1) {
@@ -286,18 +286,18 @@ mod tests {
                 if rgb_manipulator.angle.borrow().is_grey() { // last one will be grey
                     assert_eq!(*rgb_manipulator.chroma.borrow(), 0.0);
                 } else {
-                    assert!((rgb_manipulator.angle.borrow().get_angle() - angle).abs() < Angle::from(0.00000001));
+                    assert!((rgb_manipulator.angle.borrow().angle() - angle).abs() < Angle::from(0.00000001));
                 }
                 chroma = *rgb_manipulator.chroma.borrow();
             };
             assert!(rgb_manipulator.angle.borrow().is_grey());
             assert!(!rgb_manipulator.decr_chroma(0.1));
-            assert!((rgb_manipulator.last_angle.borrow().get_angle() - angle).abs() < Angle::from(0.00000001));
+            assert!((rgb_manipulator.last_angle.borrow().angle() - angle).abs() < Angle::from(0.00000001));
             while rgb_manipulator.incr_chroma(0.01) {
                 assert!(*rgb_manipulator.chroma.borrow() > chroma);
                 assert!(within_limit(rgb_manipulator.rgb.borrow().value(), value));
                 assert!(!rgb_manipulator.angle.borrow().is_grey());
-                assert!((rgb_manipulator.angle.borrow().get_angle() - angle).abs() < Angle::from(0.00000001));
+                assert!((rgb_manipulator.angle.borrow().angle() - angle).abs() < Angle::from(0.00000001));
                 chroma = *rgb_manipulator.chroma.borrow();
             };
         }

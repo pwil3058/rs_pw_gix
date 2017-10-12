@@ -200,15 +200,15 @@ impl HueAngle {
         self.angle.is_nan()
     }
 
-    pub fn get_angle(&self) -> Angle {
+    pub fn angle(&self) -> Angle {
         self.angle
     }
 
-    pub fn get_max_chroma_rgb(&self) -> RGB {
+    pub fn max_chroma_rgb(&self) -> RGB {
         self.max_chroma_rgb
     }
 
-    pub fn get_chroma_correction(&self) -> f64 {
+    pub fn chroma_correction(&self) -> f64 {
         self.chroma_correction
     }
 
