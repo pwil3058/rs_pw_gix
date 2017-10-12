@@ -23,7 +23,7 @@ pub fn format_geometry(event: &gdk::EventConfigure) ->String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    //use super::*;
 
     #[test]
     fn it_works() {

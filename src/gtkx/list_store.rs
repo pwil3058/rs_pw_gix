@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 use gtk;
 use gtk::prelude::*;
-
-use gtkx::value;
 
 pub type Row = Vec<gtk::Value>;
 
@@ -421,7 +418,7 @@ mod tests {
 
         impl TestBuffer {
             pub fn new() -> TestBuffer {
-                let mut row_buffer_core = RowBufferCore::<Vec<String>>::default();
+                let row_buffer_core = RowBufferCore::<Vec<String>>::default();
                 let buf = TestBuffer{id:0, row_buffer_core: Rc::new(RefCell::new(row_buffer_core))};
                 buf.init();
                 buf
@@ -487,7 +484,9 @@ mod tests {
     #[test]
     fn list_store_simple_row_ops()  {
         if !gtk::is_initialized() {
-            gtk::init();
+            if let Err(err) = gtk::init() {
+                panic!("File: {:?} Line: {:?}: {:?}", file!(), line!(), err)
+            };
         }
 
         use gtkx::list_store::SimpleRowOps;

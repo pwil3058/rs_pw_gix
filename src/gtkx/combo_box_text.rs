@@ -39,7 +39,7 @@ pub trait SortedUnique {
 
 impl SortedUnique for gtk::ComboBoxText {
     fn get_item_index(&self, item: &str) -> (bool, i32) {
-        if let Some(mut model) = self.get_model(){
+        if let Some(model) = self.get_model(){
             if let Some(ref iter) = model.get_iter_first() {
                 for index in 0.. {
                     if let Some(ref text) = model.get_value(iter, 0).get::<String>() {
@@ -60,7 +60,7 @@ impl SortedUnique for gtk::ComboBoxText {
 
     fn get_text_items(&self) -> Vec<String> {
         let mut text_items = Vec::new();
-        if let Some(mut model) = self.get_model(){
+        if let Some(model) = self.get_model(){
             if let Some(ref iter) = model.get_iter_first() {
                 loop {
                     if let Some(ref text) = model.get_value(iter, 0).get::<String>() {
@@ -107,16 +107,12 @@ impl SortedUnique for gtk::ComboBoxText {
 mod tests {
     use super::*;
 
-    use gtk;
-    use gtk::{ComboBoxExt, ComboBoxTextExt};
-    use gtkx::combo_box_text::SortedUnique;
-
-    static mut invocation: u32 = 0;
-
     #[test]
     fn combo_box_text_sorted_unique() {
         if !gtk::is_initialized() {
-            gtk::init();
+            if let Err(err) = gtk::init() {
+                panic!("File: {:?} Line: {:?}: {:?}", file!(), line!(), err)
+            };
         }
         let cbt = gtk::ComboBoxText::new();
         assert!(!cbt.remove_text_item("one"));

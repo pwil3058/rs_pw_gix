@@ -13,14 +13,13 @@
 // limitations under the License.
 
 use std;
-use std::cmp::{Ordering, PartialOrd};
+use std::cmp::PartialOrd;
 use std::convert::From;
-use std::f64::consts;
-use std::ops::{Index, Div, Mul, Add, Sub, Neg};
+use std::ops::{Index, Div, Mul, Add, Sub};
 
 use gdk;
 
-use num::{Integer, Float, Num};
+use num::Num;
 
 use ::rgb_math::angle::*;
 
@@ -280,15 +279,6 @@ mod tests {
             (x2 + x1).abs() < limit
         } else {
             ((x1 / x2) - 1.0).abs() < limit
-        }
-    }
-
-    fn within_limit(x1: f64, x2:f64) -> bool {
-        if within_limit_quiet(x1, x2) {
-            true
-        } else {
-            println!("{:?} != {:?}", x1, x2);
-            false
         }
     }
 

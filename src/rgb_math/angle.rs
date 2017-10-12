@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std;
 use std::cmp::{Ordering, PartialOrd};
 use std::convert::From;
 use std::f64::consts;
 use std::ops::{Div, Mul, Add, Sub, Neg};
-
-use num::{Integer, Float, Num};
 
 #[macro_export]
 macro_rules! is_normalised {

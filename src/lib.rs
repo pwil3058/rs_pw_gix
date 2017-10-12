@@ -16,7 +16,7 @@ pub mod rgb_math;
 pub mod recollect {
     use std::collections::HashMap;
     use std::fs;
-    use std::io::{self, Write, Seek};
+    use std::io::{self, Seek};
     use std::path;
 
     use fs2::FileExt;
@@ -119,6 +119,8 @@ mod tests {
         recollections.remember("anything", "whatever");
         assert_eq!(recollections.recall("anything"), Some("whatever".to_string()));
         assert_eq!(recollections.recall_or_else("anything", "but"), "whatever");
-        fs::remove_file(recollection_file);
+        if let Err(err) = fs::remove_file(recollection_file) {
+            panic!("File: {:?} Line: {:?}: {:?}", file!(), line!(), err)
+        }
     }
 }

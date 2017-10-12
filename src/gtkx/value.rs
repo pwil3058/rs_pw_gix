@@ -48,7 +48,7 @@ macro_rules! are_eq_values {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    //use super::*;
 
     #[test]
     fn it_works() {
