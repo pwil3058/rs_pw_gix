@@ -9,6 +9,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
+pub mod colour;
 pub mod gdkx;
 pub mod gtkx;
 pub mod rgb_math;
