@@ -58,6 +58,7 @@ pub const DEG_90: Angle  = Angle(consts::FRAC_PI_2);
 pub const DEG_120: Angle = Angle(consts::FRAC_PI_3 * 2.0);
 pub const DEG_150: Angle = Angle(consts::FRAC_PI_6 * 5.0);
 pub const DEG_180: Angle = Angle(consts::PI);
+pub const DEG_360: Angle = Angle(consts::PI * 2.0);
 
 impl From<f64> for Angle {
     fn from(f: f64) -> Angle {
@@ -102,6 +103,14 @@ impl Add for Angle {
 
     fn add(self, other: Angle) -> Angle {
         Angle::from(self.0 + other.0)
+    }
+}
+
+impl Div for Angle {
+    type Output = f64;
+
+    fn div(self, other: Angle) -> f64 {
+        self.0 / other.0
     }
 }
 

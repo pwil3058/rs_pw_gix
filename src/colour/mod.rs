@@ -15,6 +15,8 @@
 use std::convert::From;
 use std::rc::Rc;
 
+pub mod attributes;
+
 use ::rgb_math::hue::*;
 use ::rgb_math::rgb::*;
 
@@ -42,8 +44,16 @@ impl ColourInternals {
         self.hue
     }
 
+    pub fn is_grey(&self) -> bool {
+        self.hue.is_grey()
+    }
+
     pub fn chroma(&self) -> f64 {
         self.rgb.hypot() * self.hue.chroma_correction()
+    }
+
+    pub fn greyness(&self) -> f64 {
+        1.0 - self.rgb.hypot() * self.hue.chroma_correction()
     }
 
     pub fn value(&self) -> f64 {
@@ -52,6 +62,14 @@ impl ColourInternals {
 
     pub fn warmth(&self) -> f64 {
         (self.rgb.x() + 1.0) / 2.0
+    }
+
+    pub fn monotone_rgb(&self) -> RGB {
+        WHITE * self.rgb.value()
+    }
+
+    pub fn best_foreground_rgb(&self) -> RGB {
+        self.rgb().best_foreground_rgb()
     }
 
     pub fn max_chroma_rgb(&self) -> RGB {

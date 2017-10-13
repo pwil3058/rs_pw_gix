@@ -32,7 +32,7 @@ macro_rules! is_proportion {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Copy, Default)]
 pub struct GRGB<T: Num + PartialOrd + Copy> {
     pub red: T,
     pub green: T,
@@ -226,6 +226,14 @@ impl RGB {
 
     pub fn value(&self) -> f64 {
         self.sum() / 3.0
+    }
+
+    pub fn best_foreground_rgb(&self) -> RGB {
+        if self.red * 0.299 + self.green * 0.587 + self.blue * 0.114 > 0.5 {
+            BLACK
+        } else {
+            WHITE
+        }
     }
 
     fn ff(&self, indices: (usize, usize), ks: (f64, f64)) -> f64 {

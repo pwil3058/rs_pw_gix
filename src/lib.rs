@@ -1,3 +1,4 @@
+extern crate cairo;
 extern crate gdk;
 extern crate glib;
 extern crate gtk;
@@ -9,6 +10,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
+pub mod cairox;
 pub mod colour;
 pub mod gdkx;
 pub mod gtkx;
