@@ -160,11 +160,13 @@ macro_rules! declare_display_type {
             }
 
             pub fn set_colour(&self, colour: Option<Colour>) {
-                self.display_interface.set_colour(colour)
+                self.display_interface.set_colour(colour);
+                self.drawing_area.queue_draw();
             }
 
             pub fn set_target_colour(&self, colour: Option<Colour>) {
-                self.display_interface.set_target_colour(colour)
+                self.display_interface.set_target_colour(colour);
+                self.drawing_area.queue_draw();
             }
         }
     }

@@ -154,6 +154,29 @@ impl From<gdk::RGBA> for RGB {
     }
 }
 
+impl From<RGB> for gdk::RGBA {
+    fn from(rgb: RGB) -> gdk::RGBA {
+        gdk::RGBA {
+            red: rgb.red,
+            green: rgb.green,
+            blue: rgb.blue,
+            alpha: 1.0
+        }
+    }
+}
+
+impl From<RGB> for gdk::Color {
+    fn from(rgb: RGB) -> gdk::Color {
+        let rgb16 = RGB16::from(rgb);
+        gdk::Color {
+            red: rgb16.red,
+            green: rgb16.green,
+            blue: rgb16.blue,
+            pixel: 0
+        }
+    }
+}
+
 // NB: attempts to do this generically failed due to conflict with "core" crate
 // TODO: try to do type conversions generically (again)
 impl From<RGB8> for RGB {
