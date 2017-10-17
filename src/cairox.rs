@@ -16,7 +16,7 @@ use std::f64::consts;
 
 use cairo;
 
-use colour::Colour;
+use colour::*;
 use rgb_math::rgb::RGB;
 
 pub type Point = (f64, f64);

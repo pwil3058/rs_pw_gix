@@ -20,7 +20,7 @@ use gtk;
 use gtk::prelude::*;
 use gtk::WidgetExt;
 
-use colour::Colour;
+use colour::*;
 use cairox::*;
 use rgb_math::angle::*;
 use rgb_math::rgb::*;

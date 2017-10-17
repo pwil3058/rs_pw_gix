@@ -16,8 +16,13 @@ use gdk;
 use gtk;
 
 use rgb_math::rgb::*;
+use colour::*;
 
 pub trait Colourable: gtk::WidgetExt {
+    fn set_widget_colour(&self, colour: &Colour) {
+        self.set_widget_colour_rgb(colour.rgb())
+    }
+
     fn set_widget_colour_rgb(&self, rgb: RGB) {
         let bg_rgba = gdk::RGBA::from(rgb);
         let fg_rgba = gdk::RGBA::from(rgb.best_foreground_rgb());

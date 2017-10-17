@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::cmp::{PartialEq, Eq, PartialOrd, Ordering};
 use std::convert::From;
 use std::rc::Rc;
 
@@ -20,10 +21,49 @@ pub mod attributes;
 use ::rgb_math::hue::*;
 use ::rgb_math::rgb::*;
 
+pub trait ColourInterface {
+    fn rgb(&self) -> RGB;
+    fn hue(&self) -> HueAngle;
+    fn is_grey(&self) -> bool;
+    fn chroma(&self) -> f64;
+    fn greyness(&self) -> f64;
+    fn value(&self) -> f64 ;
+    fn warmth(&self) -> f64 ;
+    fn monotone_rgb(&self) -> RGB;
+    fn best_foreground_rgb(&self) -> RGB;
+    fn max_chroma_rgb(&self) -> RGB;
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct ColourInternals {
     rgb: RGB,
     hue: HueAngle
+}
+
+impl PartialEq for ColourInternals {
+    fn eq(&self, other: &ColourInternals) -> bool {
+        self.rgb == other.rgb
+    }
+}
+
+impl Eq for ColourInternals {}
+
+impl PartialOrd for ColourInternals {
+    fn partial_cmp(&self, other: &ColourInternals) -> Option<Ordering> {
+        if self.rgb == other.rgb {
+            Some(Ordering::Equal)
+        } else if self.hue.is_grey() {
+            if other.hue.is_grey() {
+                self.rgb.value().partial_cmp(&other.rgb.value())
+            } else {
+                Some(Ordering::Less)
+            }
+        } else if other.hue.is_grey() {
+            Some(Ordering::Greater)
+        } else {
+            self.hue.angle().radians().partial_cmp(&other.hue.angle().radians())
+        }
+    }
 }
 
 pub type Colour = Rc<ColourInternals>;
@@ -35,44 +75,44 @@ impl From<RGB> for Colour {
     }
 }
 
-impl ColourInternals {
-    pub fn rgb(&self) -> RGB {
+impl ColourInterface for Colour {
+    fn rgb(&self) -> RGB {
         self.rgb
     }
 
-    pub fn hue(&self) -> HueAngle {
+    fn hue(&self) -> HueAngle {
         self.hue
     }
 
-    pub fn is_grey(&self) -> bool {
+    fn is_grey(&self) -> bool {
         self.hue.is_grey()
     }
 
-    pub fn chroma(&self) -> f64 {
+    fn chroma(&self) -> f64 {
         self.rgb.hypot() * self.hue.chroma_correction()
     }
 
-    pub fn greyness(&self) -> f64 {
+    fn greyness(&self) -> f64 {
         1.0 - self.rgb.hypot() * self.hue.chroma_correction()
     }
 
-    pub fn value(&self) -> f64 {
+    fn value(&self) -> f64 {
         self.rgb.value()
     }
 
-    pub fn warmth(&self) -> f64 {
+    fn warmth(&self) -> f64 {
         (self.rgb.x() + 1.0) / 2.0
     }
 
-    pub fn monotone_rgb(&self) -> RGB {
+    fn monotone_rgb(&self) -> RGB {
         WHITE * self.rgb.value()
     }
 
-    pub fn best_foreground_rgb(&self) -> RGB {
+    fn best_foreground_rgb(&self) -> RGB {
         self.rgb().best_foreground_rgb()
     }
 
-    pub fn max_chroma_rgb(&self) -> RGB {
+    fn max_chroma_rgb(&self) -> RGB {
         self.hue.max_chroma_rgb()
     }
 }
