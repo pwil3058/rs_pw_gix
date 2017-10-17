@@ -15,7 +15,7 @@
 use std;
 use std::cmp::PartialOrd;
 use std::convert::From;
-use std::ops::{Index, Div, Mul, Add, Sub};
+use std::ops::{Index, Div, Mul, Add, Sub, AddAssign};
 
 use gdk;
 
@@ -88,6 +88,16 @@ impl<T: Num + PartialOrd + Copy> Add for GRGB<T> {
             green: self.green + other.green,
             blue: self.blue + other.blue
         }
+    }
+}
+
+impl<T: Num + PartialOrd + Copy> AddAssign for GRGB<T> {
+    fn add_assign(&mut self, rhs: GRGB<T>) {
+        *self = GRGB::<T>{
+            red: self.red + rhs.red,
+            green: self.green + rhs.green,
+            blue: self.blue + rhs.blue
+        };
     }
 }
 
