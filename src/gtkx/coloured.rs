@@ -14,7 +14,6 @@
 
 use gdk;
 use gtk;
-use gtk::prelude::*;
 
 use rgb_math::rgb::*;
 
@@ -31,7 +30,7 @@ impl Colourable for gtk::Label {}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    //use super::*;
 
     #[test]
     fn it_works() {

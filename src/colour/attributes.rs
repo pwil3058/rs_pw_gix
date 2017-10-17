@@ -28,11 +28,17 @@ use rgb_math::rgb::*;
 type ColourStops = Vec<[f64; 4]>;
 
 pub trait ColourAttributeDisplayInterface {
-    fn set_colour(&self, colour: Option<Colour>);
+    type CADIType;
+    type PackableWidgetType;
+
+    fn create() -> Self::CADIType;
+    fn pwo(&self) -> Self::PackableWidgetType;
+
+    fn set_colour(&self, colour: Option<&Colour>);
     fn attr_value(&self) -> Option<f64>;
     fn attr_value_fg_rgb(&self) -> RGB;
 
-    fn set_target_colour(&self, target_colour: Option<Colour>);
+    fn set_target_colour(&self, target_colour: Option<&Colour>);
     fn attr_target_value(&self) -> Option<f64>;
     fn attr_target_value_fg_rgb(&self) -> RGB;
 
@@ -134,66 +140,48 @@ pub trait ColourAttributeDisplayInterface {
     }
 }
 
-macro_rules! declare_display_type {
-    ( $name:ident, $iname:ident ) => {
-        #[derive(Debug)]
-        pub struct $name {
-            pub drawing_area: gtk::DrawingArea,
-            display_interface: Rc<$iname>
-        }
-
-        impl $name {
-            pub fn new() -> $name {
-                let cad = $name {
-                    drawing_area: gtk::DrawingArea::new(),
-                    display_interface: Rc::new($iname::new())
-                };
-                let display_interface = cad.display_interface.clone();
-                cad.drawing_area.connect_draw(
-                    move |da, ctxt|
-                    {
-                        display_interface.draw_all(da, ctxt);
-                        Inhibit(false)
-                    }
-                );
-                cad
-            }
-
-            pub fn set_colour(&self, colour: Option<Colour>) {
-                self.display_interface.set_colour(colour);
-                self.drawing_area.queue_draw();
-            }
-
-            pub fn set_target_colour(&self, colour: Option<Colour>) {
-                self.display_interface.set_target_colour(colour);
-                self.drawing_area.queue_draw();
-            }
-        }
-    }
-}
-
 // VALUE
 #[derive(Debug)]
-pub struct ValueCADI {
+pub struct ValueCADData {
+    drawing_area: gtk::DrawingArea,
     attr_value: Cell<Option<f64>>,
     attr_target_value: Cell<Option<f64>>,
     attr_value_fg_rgb: Cell<RGB>,
     attr_target_value_fg_rgb: Cell<RGB>,
 }
 
-impl ValueCADI {
-    pub fn new() -> ValueCADI {
-        ValueCADI {
-            attr_value: Cell::new(None),
-            attr_target_value: Cell::new(None),
-            attr_value_fg_rgb: Cell::new(BLACK),
-            attr_target_value_fg_rgb: Cell::new(BLACK),
-        }
-    }
-}
+pub type ValueCAD = Rc<ValueCADData>;
 
-impl ColourAttributeDisplayInterface for ValueCADI {
-    fn set_colour(&self, colour: Option<Colour>) {
+impl ColourAttributeDisplayInterface for ValueCAD {
+    type CADIType = ValueCAD;
+    type PackableWidgetType = gtk::DrawingArea;
+
+    fn create() -> ValueCAD {
+        let value_cad = Rc::new(
+            ValueCADData {
+                drawing_area: gtk::DrawingArea::new(),
+                attr_value: Cell::new(None),
+                attr_target_value: Cell::new(None),
+                attr_value_fg_rgb: Cell::new(BLACK),
+                attr_target_value_fg_rgb: Cell::new(BLACK),
+            }
+        );
+        let value_cad_c = value_cad.clone();
+        value_cad.drawing_area.connect_draw(
+            move |da, ctxt|
+            {
+                value_cad_c.draw_all(da, ctxt);
+                Inhibit(false)
+            }
+        );
+        value_cad
+    }
+
+    fn pwo(&self) -> gtk::DrawingArea {
+        self.drawing_area.clone()
+    }
+
+    fn set_colour(&self, colour: Option<&Colour>) {
         if let Some(colour) = colour {
             self.attr_value.set(Some(colour.value()));
             self.attr_value_fg_rgb
@@ -202,6 +190,7 @@ impl ColourAttributeDisplayInterface for ValueCADI {
             self.attr_value.set(None);
             self.attr_value_fg_rgb.set(BLACK);
         }
+        self.drawing_area.queue_draw()
     }
 
     fn attr_value(&self) -> Option<f64> {
@@ -212,7 +201,7 @@ impl ColourAttributeDisplayInterface for ValueCADI {
         self.attr_value_fg_rgb.get()
     }
 
-    fn set_target_colour(&self, colour: Option<Colour>) {
+    fn set_target_colour(&self, colour: Option<&Colour>) {
         if let Some(colour) = colour {
             self.attr_target_value.set(Some(colour.value()));
             self.attr_target_value_fg_rgb
@@ -221,6 +210,7 @@ impl ColourAttributeDisplayInterface for ValueCADI {
             self.attr_target_value.set(None);
             self.attr_target_value_fg_rgb.set(BLACK);
         }
+        self.drawing_area.queue_draw()
     }
 
     fn attr_target_value(&self) -> Option<f64> {
@@ -236,11 +226,10 @@ impl ColourAttributeDisplayInterface for ValueCADI {
     }
 }
 
-declare_display_type!(ValueCAD, ValueCADI);
-
 // HUE
 #[derive(Debug)]
-pub struct HueCADI {
+pub struct HueCADData {
+    drawing_area: gtk::DrawingArea,
     value_angle: Cell<Option<Angle>>,
     target_angle: Cell<Option<Angle>>,
     attr_value: Cell<Option<f64>>,
@@ -249,20 +238,9 @@ pub struct HueCADI {
     colour_stops: RefCell<ColourStops>,
 }
 
-impl HueCADI {
-    pub fn new() -> HueCADI {
-        HueCADI {
-            value_angle: Cell::new(None),
-            target_angle: Cell::new(None),
-            attr_value: Cell::new(None),
-            attr_value_fg_rgb: Cell::new(BLACK),
-            attr_target_value_fg_rgb: Cell::new(BLACK),
-            colour_stops: RefCell::new(vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]),
-        }
-    }
-
-    fn set_colour_stops(&self, ocolour: &Option<Colour>) {
-        *self.colour_stops.borrow_mut() = if let Some(ref colour) = *ocolour {
+impl HueCADData {
+    fn set_colour_stops(&self, ocolour: Option<&Colour>) {
+        *self.colour_stops.borrow_mut() = if let Some(ref colour) = ocolour {
             if colour.is_grey() {
                 let value = colour.value();
                 vec![[0.0, value, value, value], [1.0, value, value, value]]
@@ -287,14 +265,14 @@ impl HueCADI {
         self.value_angle.set(None);
         self.attr_value.set(None);
         if self.target_angle.get().is_none() {
-            self.set_colour_stops(&None);
+            self.set_colour_stops(None);
         }
     }
 
     fn set_target_defaults(&self) {
         self.target_angle.set(None);
         if self.value_angle.get().is_none() {
-            self.set_colour_stops(&None);
+            self.set_colour_stops(None);
         }
     }
 }
@@ -303,8 +281,40 @@ fn calc_hue_value(hue_angle: Angle, target_angle: Angle) -> f64 {
     0.5  + (target_angle - hue_angle) / DEG_360
 }
 
-impl ColourAttributeDisplayInterface for HueCADI {
-    fn set_colour(&self, colour: Option<Colour>) {
+pub type HueCAD = Rc<HueCADData>;
+
+impl ColourAttributeDisplayInterface for HueCAD {
+    type CADIType = HueCAD;
+    type PackableWidgetType = gtk::DrawingArea;
+
+    fn create() -> HueCAD {
+        let hue_cad = Rc::new(
+            HueCADData {
+                drawing_area: gtk::DrawingArea::new(),
+                value_angle: Cell::new(None),
+                target_angle: Cell::new(None),
+                attr_value: Cell::new(None),
+                attr_value_fg_rgb: Cell::new(BLACK),
+                attr_target_value_fg_rgb: Cell::new(BLACK),
+                colour_stops: RefCell::new(vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]),
+            }
+        );
+        let hue_cad_c = hue_cad.clone();
+        hue_cad.drawing_area.connect_draw(
+            move |da, ctxt|
+            {
+                hue_cad_c.draw_all(da, ctxt);
+                Inhibit(false)
+            }
+        );
+        hue_cad
+    }
+
+    fn pwo(&self) -> gtk::DrawingArea {
+        self.drawing_area.clone()
+    }
+
+    fn set_colour(&self, colour: Option<&Colour>) {
         if let Some(colour) = colour {
             if colour.is_grey() {
                 self.set_hue_defaults();
@@ -317,13 +327,14 @@ impl ColourAttributeDisplayInterface for HueCADI {
                     let val = calc_hue_value(target_angle, val_angle);
                     self.attr_value.set(Some(val));
                 } else {
-                    self.set_colour_stops(&Some(colour));
+                    self.set_colour_stops(Some(&colour));
                     self.attr_value.set(Some(0.5))
                 }
             }
         } else {
             self.set_hue_defaults();
         }
+        self.drawing_area.queue_draw()
     }
 
     fn attr_value(&self) -> Option<f64> {
@@ -334,7 +345,7 @@ impl ColourAttributeDisplayInterface for HueCADI {
         self.attr_value_fg_rgb.get()
     }
 
-    fn set_target_colour(&self, colour: Option<Colour>) {
+    fn set_target_colour(&self, colour: Option<&Colour>) {
         if let Some(colour) = colour {
             if colour.is_grey() {
                 self.set_target_defaults();
@@ -347,11 +358,12 @@ impl ColourAttributeDisplayInterface for HueCADI {
                     let val = calc_hue_value(target_angle, val_angle);
                     self.attr_value.set(Some(val));
                 }
-                self.set_colour_stops(&Some(colour));
+                self.set_colour_stops(Some(&colour));
             }
         } else {
             self.set_target_defaults();
         }
+        self.drawing_area.queue_draw()
     }
 
     fn attr_target_value(&self) -> Option<f64> {
@@ -375,11 +387,10 @@ impl ColourAttributeDisplayInterface for HueCADI {
     }
 }
 
-declare_display_type!(HueCAD, HueCADI);
-
 // CHROMA
 #[derive(Debug)]
-pub struct ChromaCADI {
+pub struct ChromaCADData {
+    drawing_area: gtk::DrawingArea,
     attr_value: Cell<Option<f64>>,
     attr_value_fg_rgb: Cell<RGB>,
     attr_target_value: Cell<Option<f64>>,
@@ -387,19 +398,9 @@ pub struct ChromaCADI {
     colour_stops: RefCell<ColourStops>,
 }
 
-impl ChromaCADI {
-    pub fn new() -> ChromaCADI {
-        ChromaCADI {
-            attr_value: Cell::new(None),
-            attr_value_fg_rgb: Cell::new(BLACK),
-            attr_target_value: Cell::new(None),
-            attr_target_value_fg_rgb: Cell::new(BLACK),
-            colour_stops: RefCell::new(vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]),
-        }
-    }
-
-    fn set_colour_stops(&self, ocolour: &Option<Colour>) {
-        *self.colour_stops.borrow_mut() = if let Some(ref colour) = *ocolour {
+impl ChromaCADData {
+    fn set_colour_stops(&self, ocolour: Option<&Colour>) {
+        *self.colour_stops.borrow_mut() = if let Some(ref colour) = ocolour {
             if colour.is_grey() {
                 let value = colour.value();
                 vec![[0.0, value, value, value], [1.0, value, value, value]]
@@ -419,34 +420,66 @@ impl ChromaCADI {
     fn set_chroma_defaults(&self) {
         self.attr_value.set(None);
         if self.attr_target_value.get().is_none() {
-            self.set_colour_stops(&None)
+            self.set_colour_stops(None)
         }
     }
 
     fn set_target_defaults(&self) {
         self.attr_target_value.set(None);
         if self.attr_value.get().is_none() {
-            self.set_colour_stops(&None)
+            self.set_colour_stops(None)
         }
     }
 }
 
-impl ColourAttributeDisplayInterface for ChromaCADI {
-    fn set_colour(&self, colour: Option<Colour>) {
+pub type ChromaCAD = Rc<ChromaCADData>;
+
+impl ColourAttributeDisplayInterface for ChromaCAD {
+    type CADIType = ChromaCAD;
+    type PackableWidgetType = gtk::DrawingArea;
+
+    fn create() -> ChromaCAD {
+        let croma_cad = Rc::new(
+            ChromaCADData {
+                drawing_area: gtk::DrawingArea::new(),
+                attr_value: Cell::new(None),
+                attr_value_fg_rgb: Cell::new(BLACK),
+                attr_target_value: Cell::new(None),
+                attr_target_value_fg_rgb: Cell::new(BLACK),
+                colour_stops: RefCell::new(vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]),
+            }
+        );
+        let croma_cad_c = croma_cad.clone();
+        croma_cad.drawing_area.connect_draw(
+            move |da, ctxt|
+            {
+                croma_cad_c.draw_all(da, ctxt);
+                Inhibit(false)
+            }
+        );
+        croma_cad
+    }
+
+    fn pwo(&self) -> gtk::DrawingArea {
+        self.drawing_area.clone()
+    }
+
+    fn set_colour(&self, colour: Option<&Colour>) {
         if let Some(colour) = colour {
             self.attr_value.set(Some(colour.chroma()));
             self.attr_value_fg_rgb
                 .set(colour.best_foreground_rgb());
             if let Some(target_value) = self.attr_target_value.get() {
                 if target_value == 0.0 {
-                    self.set_colour_stops(&Some(colour));
+                    self.set_colour_stops(Some(&colour));
                 }
             } else {
-                self.set_colour_stops(&Some(colour));
+                self.set_colour_stops(Some(&colour));
             }
         } else {
             self.set_chroma_defaults();
         }
+        self.drawing_area.queue_draw()
     }
 
     fn attr_value(&self) -> Option<f64> {
@@ -457,7 +490,7 @@ impl ColourAttributeDisplayInterface for ChromaCADI {
         self.attr_value_fg_rgb.get()
     }
 
-    fn set_target_colour(&self, colour: Option<Colour>) {
+    fn set_target_colour(&self, colour: Option<&Colour>) {
         if let Some(colour) = colour {
             self.attr_target_value.set(Some(colour.chroma()));
             self.attr_target_value_fg_rgb
@@ -465,17 +498,18 @@ impl ColourAttributeDisplayInterface for ChromaCADI {
             if colour.is_grey() {
                 if let Some(attr_value) = self.attr_value.get() {
                     if attr_value == 0.0 {
-                        self.set_colour_stops(&Some(colour));
+                        self.set_colour_stops(Some(&colour));
                     }
                 } else {
-                    self.set_colour_stops(&Some(colour));
+                    self.set_colour_stops(Some(&colour));
                 }
             } else {
-                self.set_colour_stops(&Some(colour));
+                self.set_colour_stops(Some(&colour));
             }
         } else {
             self.set_target_defaults();
         }
+        self.drawing_area.queue_draw()
     }
 
     fn attr_target_value(&self) -> Option<f64> {
@@ -495,33 +529,93 @@ impl ColourAttributeDisplayInterface for ChromaCADI {
     }
 }
 
-declare_display_type!(ChromaCAD, ChromaCADI);
+pub trait ColourAttributeDisplayStackInterface {
+    type CADSIType;
+    type PackableWidgetType;
+
+    fn create() -> Self::CADSIType;
+    fn pwo(&self) -> Self::PackableWidgetType;
+
+    fn set_colour(&self, colour: Option<&Colour>);
+    fn set_target_colour(&self, target_colour: Option<&Colour>);
+}
+
+pub struct HueChromaValueCADSData {
+    vbox: gtk::Box,
+    hue_cad: HueCAD,
+    chroma_cad: ChromaCAD,
+    value_cad: ValueCAD,
+}
+
+pub type HueChromaValueCADS = Rc<HueChromaValueCADSData>;
+
+impl ColourAttributeDisplayStackInterface for HueChromaValueCADS {
+    type CADSIType = HueChromaValueCADS;
+    type PackableWidgetType = gtk::Box;
+
+    fn create() -> HueChromaValueCADS {
+        let vbox = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let hue_cad = HueCAD::create();
+        let chroma_cad = ChromaCAD::create();
+        let value_cad = ValueCAD::create();
+        vbox.pack_start(&hue_cad.pwo(), true, true, 0);
+        vbox.pack_start(&chroma_cad.pwo(), true, true, 0);
+        vbox.pack_start(&value_cad.pwo(), true, true, 0);
+        Rc::new(
+            HueChromaValueCADSData {
+                vbox,
+                hue_cad,
+                chroma_cad,
+                value_cad,
+            }
+        )
+    }
+
+    fn pwo(&self) -> gtk::Box {
+        self.vbox.clone()
+    }
+
+    fn set_colour(&self, colour: Option<&Colour>) {
+        self.hue_cad.set_colour(colour);
+        self.chroma_cad.set_colour(colour);
+        self.value_cad.set_colour(colour);
+    }
+
+    fn set_target_colour(&self, target_colour: Option<&Colour>) {
+        self.hue_cad.set_target_colour(target_colour);
+        self.chroma_cad.set_target_colour(target_colour);
+        self.value_cad.set_target_colour(target_colour);
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn colour_attributes_new() {
+    fn colour_attributes() {
         if !gtk::is_initialized() {
             if let Err(err) = gtk::init() {
                 panic!("File: {:?} Line: {:?}: {:?}", file!(), line!(), err)
             };
         }
 
-        let vcad = ValueCAD::new();
+        let vcad = ValueCAD::create();
 
-        vcad.set_colour(Some(Colour::from(RED)));
-        vcad.set_target_colour(Some(Colour::from(BLUE)));
+        vcad.set_colour(Some(&Colour::from(RED)));
+        vcad.set_target_colour(Some(&Colour::from(BLUE)));
 
-        let hcad = HueCAD::new();
+        let hcad = HueCAD::create();
 
-        hcad.set_colour(Some(Colour::from(RED)));
-        hcad.set_target_colour(Some(Colour::from(BLUE)));
+        hcad.set_colour(Some(&Colour::from(RED)));
+        hcad.set_target_colour(Some(&Colour::from(BLUE)));
 
-        let ccad = ChromaCAD::new();
+        let ccad = ChromaCAD::create();
 
-        ccad.set_colour(Some(Colour::from(RED)));
-        ccad.set_target_colour(Some(Colour::from(BLUE)));
+        ccad.set_colour(Some(&Colour::from(RED)));
+        ccad.set_target_colour(Some(&Colour::from(BLUE)));
+
+        let hcv_cads  = HueChromaValueCADS::create();
+        hcv_cads.set_colour(Some(&Colour::from(RED)));
     }
 }
