@@ -14,7 +14,14 @@ pub mod cairox;
 pub mod colour;
 pub mod gdkx;
 pub mod gtkx;
+pub mod paint;
 pub mod rgb_math;
+
+pub trait PackableWidgetInterface {
+    type PackableWidgetType;
+
+    fn pwo(&self) -> PackableWidgetType;
+}
 
 pub mod recollect {
     use std::collections::HashMap;
