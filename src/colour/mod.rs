@@ -16,10 +16,10 @@ use std::cmp::{PartialEq, Eq, PartialOrd, Ordering};
 use std::convert::From;
 use std::rc::Rc;
 
-pub mod attributes;
-
 use ::rgb_math::hue::*;
 use ::rgb_math::rgb::*;
+
+pub mod attributes;
 
 pub trait ColourInterface {
     fn rgb(&self) -> RGB;
@@ -32,9 +32,10 @@ pub trait ColourInterface {
     fn monotone_rgb(&self) -> RGB;
     fn best_foreground_rgb(&self) -> RGB;
     fn max_chroma_rgb(&self) -> RGB;
+    fn get_attribute(&self, name: &str) -> f64;
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Hash)]
 pub struct ColourInternals {
     rgb: RGB,
     hue: HueAngle
@@ -114,6 +115,16 @@ impl ColourInterface for Colour {
 
     fn max_chroma_rgb(&self) -> RGB {
         self.hue.max_chroma_rgb()
+    }
+
+    fn get_attribute(&self, name: &str) -> f64 {
+        match name {
+            "chroma" => self.chroma(),
+            "greyness" => self.greyness(),
+            "value" => self.value(),
+            "warmth" => self.warmth(),
+            _ => panic!("unknown attribute: {:?}", name)
+        }
     }
 }
 

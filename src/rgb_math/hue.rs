@@ -15,6 +15,7 @@
 use std;
 use std::cmp::{Ordering, PartialOrd};
 use std::convert::From;
+use std::hash::*;
 use std::ops::{Add, Sub};
 
 use ::rgb_math::angle::*;
@@ -83,6 +84,12 @@ pub struct HueAngle {
     angle: Angle,
     max_chroma_rgb: RGB,
     chroma_correction: f64
+}
+
+impl Hash for HueAngle {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_u64(self.angle.radians().to_bits());
+    }
 }
 
 impl PartialEq for HueAngle {
@@ -540,7 +547,6 @@ mod tests {
                                 assert!(within_limit(rgb.value(), *value));
                                 count_a += 1;
                             } else {
-                                //println!("NOT A NAN");
                                 assert!(within_limit(rgb.value(), *value));
                                 assert!((hue_angle - HueAngle::from(rgb)).abs().radians() <= 0.00001);
                                 count_b += 1;

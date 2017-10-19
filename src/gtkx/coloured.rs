@@ -32,6 +32,7 @@ pub trait Colourable: gtk::WidgetExt {
 }
 
 impl Colourable for gtk::Label {}
+impl Colourable for gtk::SpinButton {}
 
 #[cfg(test)]
 mod tests {

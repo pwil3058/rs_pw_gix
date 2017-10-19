@@ -15,13 +15,21 @@
 use std;
 use std::cmp::PartialOrd;
 use std::convert::From;
+use std::hash::*;
 use std::ops::{Index, Div, Mul, Add, Sub, AddAssign};
+use std::str::FromStr;
+
+use regex::Regex;
 
 use gdk;
 
 use num::Num;
 
 use ::rgb_math::angle::*;
+
+pub enum RGBError {
+    MalformedText(String)
+}
 
 #[macro_export]
 macro_rules! is_proportion {
@@ -52,10 +60,6 @@ impl<T: Num + PartialOrd + Copy> From<[T; 3]> for GRGB<T> {
 }
 
 impl<T: Num + PartialOrd + Copy> GRGB<T> {
-    //pub fn new(red: T, green: T, blue: T) -> GRGB<T> {
-        //GRGB::<T>{red: red, blue: blue, green: green}
-    //}
-
     pub fn indices_value_order(&self) -> (usize, usize, usize) {
         if self.red > self.green {
             if self.red > self.blue {
@@ -154,6 +158,14 @@ pub type RGB = GRGB<f64>;
 pub type RGB8 = GRGB<u8>;
 pub type RGB16 = GRGB<u16>;
 
+impl Hash for RGB {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_u64(self.red.to_bits());
+        state.write_u64(self.green.to_bits());
+        state.write_u64(self.blue.to_bits());
+    }
+}
+
 impl From<gdk::RGBA> for RGB {
     fn from(rgba: gdk::RGBA) -> RGB {
         RGB {
@@ -211,6 +223,7 @@ impl From<RGB16> for RGB {
     }
 }
 
+
 impl From<RGB> for RGB8 {
     fn from(rgb: RGB) -> RGB8 {
         let scaled_rgb = rgb * std::u8::MAX;
@@ -229,6 +242,31 @@ impl From<RGB> for RGB16 {
             red: scaled_rgb.red.round() as u16,
             green: scaled_rgb.green.round() as u16,
             blue: scaled_rgb.blue.round() as u16,
+        }
+    }
+}
+
+lazy_static! {
+    pub static ref RGB16_RE: Regex = Regex::new(
+        r#"RGB16\(red=0x(?P<red>.*), green=0x(?P<green>.*), blue=0x(?P<blue>.*)\)"#
+    ).unwrap();
+}
+
+impl FromStr for RGB16 {
+    type Err = RGBError;
+
+    fn from_str(string: &str) -> Result<RGB16, RGBError> {
+        if let Some(captures) = RGB16_RE.captures(string) {
+            let red_m = captures.name("red").ok_or(RGBError::MalformedText(string.to_string()))?;
+            let green_m = captures.name("green").ok_or(RGBError::MalformedText(string.to_string()))?;
+            let blue_m = captures.name("blue").ok_or(RGBError::MalformedText(string.to_string()))?;
+            let err_map = |_| RGBError::MalformedText(string.to_string());
+            let red = u16::from_str_radix(red_m.as_str(), 16).map_err(&err_map)?;
+            let green = u16::from_str_radix(green_m.as_str(), 16).map_err(&err_map)?;
+            let blue = u16::from_str_radix(blue_m.as_str(), 16).map_err(&err_map)?;
+            Ok(RGB16{red, green, blue})
+        } else {
+            Err(RGBError::MalformedText(string.to_string()))
         }
     }
 }

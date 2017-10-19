@@ -22,17 +22,15 @@ use gtk::WidgetExt;
 
 use colour::*;
 use cairox::*;
+use pwo::*;
 use rgb_math::angle::*;
-use rgb_math::rgb::*;
 
 type ColourStops = Vec<[f64; 4]>;
 
-pub trait ColourAttributeDisplayInterface {
+pub trait ColourAttributeDisplayInterface: PackableWidgetInterface {
     type CADIType;
-    type PackableWidgetType;
 
     fn create() -> Self::CADIType;
-    fn pwo(&self) -> Self::PackableWidgetType;
 
     fn set_colour(&self, colour: Option<&Colour>);
     fn attr_value(&self) -> Option<f64>;
@@ -63,7 +61,7 @@ pub trait ColourAttributeDisplayInterface {
             let width = drawing_area.get_allocated_width() as f64;
             let height = drawing_area.get_allocated_height() as f64;
             let indicator_x = width * attr_value;
-            cairo_context.set_source_colour_rgb(self.attr_value_fg_rgb());
+            cairo_context.set_source_colour_rgb(&self.attr_value_fg_rgb());
             cairo_context.draw_indicator((indicator_x, 1.0), Side::Top, 8.0);
             cairo_context.draw_indicator((indicator_x, height - 1.0), Side::Bottom, 8.0);
         }
@@ -79,7 +77,7 @@ pub trait ColourAttributeDisplayInterface {
             let height = drawing_area.get_allocated_height() as f64;
             let target_x = width * attr_target_value;
             cairo_context.set_line_width(2.0);
-            cairo_context.set_source_colour_rgb(self.attr_target_value_fg_rgb());
+            cairo_context.set_source_colour_rgb(&self.attr_target_value_fg_rgb());
             cairo_context.draw_line((target_x, 0.0), (target_x, height));
         }
     }
@@ -98,7 +96,7 @@ pub trait ColourAttributeDisplayInterface {
             let x = (width - te.width) / 2.0;
             let y = (height + te.height) / 2.0;
             cairo_context.move_to(x, y);
-            cairo_context.set_source_colour_rgb(self.label_colour());
+            cairo_context.set_source_colour_rgb(&self.label_colour());
             cairo_context.show_text(&label);
         }
     }
@@ -152,9 +150,10 @@ pub struct ValueCADData {
 
 pub type ValueCAD = Rc<ValueCADData>;
 
+implement_pwo!(ValueCAD, drawing_area, gtk::DrawingArea);
+
 impl ColourAttributeDisplayInterface for ValueCAD {
     type CADIType = ValueCAD;
-    type PackableWidgetType = gtk::DrawingArea;
 
     fn create() -> ValueCAD {
         let value_cad = Rc::new(
@@ -175,10 +174,6 @@ impl ColourAttributeDisplayInterface for ValueCAD {
             }
         );
         value_cad
-    }
-
-    fn pwo(&self) -> gtk::DrawingArea {
-        self.drawing_area.clone()
     }
 
     fn set_colour(&self, colour: Option<&Colour>) {
@@ -283,9 +278,10 @@ fn calc_hue_value(hue_angle: Angle, target_angle: Angle) -> f64 {
 
 pub type HueCAD = Rc<HueCADData>;
 
+implement_pwo!(HueCAD, drawing_area, gtk::DrawingArea);
+
 impl ColourAttributeDisplayInterface for HueCAD {
     type CADIType = HueCAD;
-    type PackableWidgetType = gtk::DrawingArea;
 
     fn create() -> HueCAD {
         let hue_cad = Rc::new(
@@ -308,10 +304,6 @@ impl ColourAttributeDisplayInterface for HueCAD {
             }
         );
         hue_cad
-    }
-
-    fn pwo(&self) -> gtk::DrawingArea {
-        self.drawing_area.clone()
     }
 
     fn set_colour(&self, colour: Option<&Colour>) {
@@ -434,9 +426,10 @@ impl ChromaCADData {
 
 pub type ChromaCAD = Rc<ChromaCADData>;
 
+implement_pwo!(ChromaCAD, drawing_area, gtk::DrawingArea);
+
 impl ColourAttributeDisplayInterface for ChromaCAD {
     type CADIType = ChromaCAD;
-    type PackableWidgetType = gtk::DrawingArea;
 
     fn create() -> ChromaCAD {
         let croma_cad = Rc::new(
@@ -458,10 +451,6 @@ impl ColourAttributeDisplayInterface for ChromaCAD {
             }
         );
         croma_cad
-    }
-
-    fn pwo(&self) -> gtk::DrawingArea {
-        self.drawing_area.clone()
     }
 
     fn set_colour(&self, colour: Option<&Colour>) {
@@ -529,12 +518,8 @@ impl ColourAttributeDisplayInterface for ChromaCAD {
     }
 }
 
-pub trait ColourAttributeDisplayStackInterface {
-    type CADSIType;
-    type PackableWidgetType;
-
-    fn create() -> Self::CADSIType;
-    fn pwo(&self) -> Self::PackableWidgetType;
+pub trait ColourAttributeDisplayStackInterface: PackableWidgetInterface {
+    fn create() -> Self;
 
     fn set_colour(&self, colour: Option<&Colour>);
     fn set_target_colour(&self, target_colour: Option<&Colour>);
@@ -549,10 +534,9 @@ pub struct HueChromaValueCADSData {
 
 pub type HueChromaValueCADS = Rc<HueChromaValueCADSData>;
 
-impl ColourAttributeDisplayStackInterface for HueChromaValueCADS {
-    type CADSIType = HueChromaValueCADS;
-    type PackableWidgetType = gtk::Box;
+implement_pwo!(HueChromaValueCADS, vbox, gtk::Box);
 
+impl ColourAttributeDisplayStackInterface for HueChromaValueCADS {
     fn create() -> HueChromaValueCADS {
         let vbox = gtk::Box::new(gtk::Orientation::Vertical, 0);
         let hue_cad = HueCAD::create();
@@ -569,10 +553,6 @@ impl ColourAttributeDisplayStackInterface for HueChromaValueCADS {
                 value_cad,
             }
         )
-    }
-
-    fn pwo(&self) -> gtk::Box {
-        self.vbox.clone()
     }
 
     fn set_colour(&self, colour: Option<&Colour>) {
