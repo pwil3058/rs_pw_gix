@@ -10,18 +10,37 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
+#[macro_use]
+pub mod pwo {
+    #[macro_export]
+    macro_rules! implement_pwo {
+        ( $f:ty, $field:ident, $t:ty ) => (
+            impl PackableWidgetInterface for $f {
+                type PackableWidgetType = $t;
+
+                fn pwo(&self) -> $t {
+                    self.$field.clone()
+                }
+            }
+        )
+    }
+
+    extern crate glib;
+    extern crate gtk;
+
+    pub trait PackableWidgetInterface {
+        type PackableWidgetType: glib::IsA<gtk::Widget>;
+
+        fn pwo(&self) -> Self::PackableWidgetType;
+    }
+}
+
 pub mod cairox;
 pub mod colour;
 pub mod gdkx;
 pub mod gtkx;
 pub mod paint;
 pub mod rgb_math;
-
-pub trait PackableWidgetInterface {
-    type PackableWidgetType;
-
-    fn pwo(&self) -> PackableWidgetType;
-}
 
 pub mod recollect {
     use std::collections::HashMap;

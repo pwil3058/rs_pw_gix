@@ -34,8 +34,8 @@ pub trait Draw {
     fn draw_line(&self, start: Point, end: Point);
     fn draw_polygon(&self, polygon: Points, fill: bool);
     fn draw_indicator(&self, position: Point, side: Side, size: f64);
-    fn set_source_colour(&self, rgb: Colour);
-    fn set_source_colour_rgb(&self, rgb: RGB);
+    fn set_source_colour(&self, rgb: &Colour);
+    fn set_source_colour_rgb(&self, rgb: &RGB);
 }
 
 impl Draw for cairo::Context {
@@ -95,11 +95,11 @@ impl Draw for cairo::Context {
         self.fill();
     }
 
-    fn set_source_colour(&self, colour: Colour) {
-        self.set_source_colour_rgb(colour.rgb())
+    fn set_source_colour(&self, colour: &Colour) {
+        self.set_source_colour_rgb(&colour.rgb())
     }
 
-    fn set_source_colour_rgb(&self, rgb: RGB) {
+    fn set_source_colour_rgb(&self, rgb: &RGB) {
         self.set_source_rgb(rgb[0], rgb[1], rgb[2])
     }
 }

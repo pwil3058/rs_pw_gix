@@ -15,6 +15,7 @@
 use std;
 use std::cmp::PartialOrd;
 use std::convert::From;
+use std::hash::*;
 use std::ops::{Index, Div, Mul, Add, Sub, AddAssign};
 
 use gdk;
@@ -153,6 +154,14 @@ impl<T: Num + PartialOrd + Copy> Index<usize> for GRGB<T> {
 pub type RGB = GRGB<f64>;
 pub type RGB8 = GRGB<u8>;
 pub type RGB16 = GRGB<u16>;
+
+impl Hash for RGB {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_u64(self.red.to_bits());
+        state.write_u64(self.green.to_bits());
+        state.write_u64(self.blue.to_bits());
+    }
+}
 
 impl From<gdk::RGBA> for RGB {
     fn from(rgba: gdk::RGBA) -> RGB {

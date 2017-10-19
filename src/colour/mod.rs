@@ -16,10 +16,10 @@ use std::cmp::{PartialEq, Eq, PartialOrd, Ordering};
 use std::convert::From;
 use std::rc::Rc;
 
-pub mod attributes;
-
 use ::rgb_math::hue::*;
 use ::rgb_math::rgb::*;
+
+pub mod attributes;
 
 pub trait ColourInterface {
     fn rgb(&self) -> RGB;
@@ -34,7 +34,7 @@ pub trait ColourInterface {
     fn max_chroma_rgb(&self) -> RGB;
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Hash)]
 pub struct ColourInternals {
     rgb: RGB,
     hue: HueAngle
