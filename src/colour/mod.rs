@@ -21,6 +21,14 @@ use ::rgb_math::rgb::*;
 
 pub mod attributes;
 
+#[derive(Debug, Clone, Copy)]
+pub enum ScalarAttribute {
+    Chroma,
+    Greyness,
+    Value,
+    Warmth,
+}
+
 pub trait ColourInterface {
     fn rgb(&self) -> RGB;
     fn hue(&self) -> HueAngle;
@@ -32,7 +40,7 @@ pub trait ColourInterface {
     fn monotone_rgb(&self) -> RGB;
     fn best_foreground_rgb(&self) -> RGB;
     fn max_chroma_rgb(&self) -> RGB;
-    fn get_attribute(&self, name: &str) -> f64;
+    fn scalar_attribute(&self, attr: ScalarAttribute) -> f64;
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Hash)]
@@ -117,13 +125,12 @@ impl ColourInterface for Colour {
         self.hue.max_chroma_rgb()
     }
 
-    fn get_attribute(&self, name: &str) -> f64 {
-        match name {
-            "chroma" => self.chroma(),
-            "greyness" => self.greyness(),
-            "value" => self.value(),
-            "warmth" => self.warmth(),
-            _ => panic!("unknown attribute: {:?}", name)
+    fn scalar_attribute(&self, attr: ScalarAttribute) -> f64 {
+        match attr {
+            ScalarAttribute::Chroma => self.chroma(),
+            ScalarAttribute::Greyness => self.greyness(),
+            ScalarAttribute::Value => self.value(),
+            ScalarAttribute::Warmth => self.warmth(),
         }
     }
 }

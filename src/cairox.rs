@@ -30,9 +30,10 @@ pub enum Side {
 }
 
 pub trait Draw {
-    fn draw_circle(&self, centre: Point, radius: f64, filled: bool);
+    fn draw_circle(&self, centre: Point, radius: f64, fill: bool);
     fn draw_line(&self, start: Point, end: Point);
     fn draw_polygon(&self, polygon: Points, fill: bool);
+    fn draw_square(&self, centre: Point, side: f64, filled: bool);
     fn draw_indicator(&self, position: Point, side: Side, size: f64);
     fn set_source_colour(&self, rgb: &Colour);
     fn set_source_colour_rgb(&self, rgb: &RGB);
@@ -59,6 +60,21 @@ impl Draw for cairo::Context {
         for index in 1..polygon.len() {
             self.line_to(polygon[index].0, polygon[index].1);
         }
+        self.close_path();
+        if fill {
+            self.fill();
+        } else {
+            self.stroke();
+        }
+    }
+
+    fn draw_square(&self, centre: Point, side: f64, fill: bool) {
+        let start_x = centre.0 - side / 2.0;
+        let start_y = centre.1 - side / 2.0;
+        self.move_to(start_x, start_y);
+        self.move_to(start_x + side, start_y);
+        self.move_to(start_x + side, start_y + side);
+        self.move_to(start_x, start_y + side);
         self.close_path();
         if fill {
             self.fill();
