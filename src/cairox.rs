@@ -13,13 +13,74 @@
 // limitations under the License.
 
 use std::f64::consts;
+use std::ops::*;
 
 use cairo;
 
 use colour::*;
 use rgb_math::rgb::RGB;
 
-pub type Point = (f64, f64);
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct Point (pub f64, pub f64);
+
+impl Add for Point {
+    type Output = Point;
+
+    fn add(self, rhs: Point) -> Point {
+        Point(self.0 + rhs.0, self.1 + rhs.1)
+    }
+}
+
+impl AddAssign for Point {
+    fn add_assign(&mut self, rhs: Point) {
+        *self = *self + rhs
+    }
+}
+
+impl Sub for Point {
+    type Output = Point;
+
+    fn sub(self, rhs: Point) -> Point {
+        Point(self.0 - rhs.0, self.1 - rhs.1)
+    }
+}
+
+impl SubAssign for Point {
+    fn sub_assign(&mut self, rhs: Point) {
+        *self = *self - rhs
+    }
+}
+
+impl<Scalar: Into<f64> + Copy> Mul<Scalar> for Point {
+    type Output = Point;
+
+    fn mul(self, rhs: Scalar) -> Point {
+        let frhs: f64 = rhs.into();
+        Point(self.0 * frhs, self.1 * frhs)
+    }
+}
+
+impl<Scalar: Into<f64> + Copy> MulAssign<Scalar> for Point {
+    fn mul_assign(&mut self, rhs: Scalar) {
+        *self = *self * rhs
+    }
+}
+
+impl<Scalar: Into<f64> + Copy> Div<Scalar> for Point {
+    type Output = Point;
+
+    fn div(self, rhs: Scalar) -> Point {
+        let frhs: f64 = rhs.into();
+        Point(self.0 / frhs, self.1 / frhs)
+    }
+}
+
+impl<Scalar: Into<f64> + Copy> DivAssign<Scalar> for Point {
+    fn div_assign(&mut self, rhs: Scalar) {
+        *self = *self / rhs
+    }
+}
+
 pub type Points = Vec<Point>;
 
 pub enum Side {
@@ -72,9 +133,9 @@ impl Draw for cairo::Context {
         let start_x = centre.0 - side / 2.0;
         let start_y = centre.1 - side / 2.0;
         self.move_to(start_x, start_y);
-        self.move_to(start_x + side, start_y);
-        self.move_to(start_x + side, start_y + side);
-        self.move_to(start_x, start_y + side);
+        self.line_to(start_x + side, start_y);
+        self.line_to(start_x + side, start_y + side);
+        self.line_to(start_x, start_y + side);
         self.close_path();
         if fill {
             self.fill();
