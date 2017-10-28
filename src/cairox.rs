@@ -23,6 +23,20 @@ use rgb_math::rgb::RGB;
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Point (pub f64, pub f64);
 
+impl Point {
+    pub fn hypot(&self) -> f64 {
+        self.0.hypot(self.1)
+    }
+
+    pub fn x(&self) -> f64 {
+        self.0
+    }
+
+    pub fn y(&self) -> f64 {
+        self.1
+    }
+}
+
 impl Add for Point {
     type Output = Point;
 
