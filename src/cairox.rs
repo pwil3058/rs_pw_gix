@@ -110,6 +110,8 @@ pub trait Draw {
     fn draw_polygon(&self, polygon: Points, fill: bool);
     fn draw_square(&self, centre: Point, side: f64, filled: bool);
     fn draw_indicator(&self, position: Point, side: Side, size: f64);
+    fn move_to_point(&self, point: Point);
+    fn line_to_point(&self, point: Point);
     fn set_source_colour(&self, rgb: &Colour);
     fn set_source_colour_rgb(&self, rgb: &RGB);
 }
@@ -184,6 +186,14 @@ impl Draw for cairo::Context {
         }
         self.close_path();
         self.fill();
+    }
+
+    fn move_to_point(&self, point: Point) {
+        self.move_to(point.0, point.1);
+    }
+
+    fn line_to_point(&self, point: Point) {
+        self.line_to(point.0, point.1);
     }
 
     fn set_source_colour(&self, colour: &Colour) {
