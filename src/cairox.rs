@@ -51,6 +51,12 @@ impl Point {
     }
 }
 
+impl From<(f64,f64)> for Point {
+    fn from(tuple: (f64,f64)) -> Point {
+        Point(tuple.0, tuple.1)
+    }
+}
+
 impl From<(Angle,f64)> for Point {
     fn from(polar: (Angle,f64)) -> Point {
         // NB: cairo coordinates are upside down to normal people
