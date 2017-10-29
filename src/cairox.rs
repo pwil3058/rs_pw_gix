@@ -12,16 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::convert::From;
 use std::f64::consts;
 use std::ops::*;
 
 use cairo;
 
 use colour::*;
+use rgb_math::angle::Angle;
 use rgb_math::rgb::RGB;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Point (pub f64, pub f64);
+
+const SQRT_2: f64 = 1.4142_13562_37309_50488;
+const SIN_45_DEG: f64 = 1.0 / SQRT_2;
+const COS_45_DEG: f64 = SIN_45_DEG;
 
 impl Point {
     pub fn hypot(&self) -> f64 {
@@ -34,6 +40,26 @@ impl Point {
 
     pub fn y(&self) -> f64 {
         self.1
+    }
+
+    pub fn xy(&self) -> (f64, f64) {
+        (self.0, self.1)
+    }
+
+    pub fn rotate_45_deg(&self) -> Point {
+        Point(self.0 - self.1, self.0 + self.1) * SIN_45_DEG
+    }
+}
+
+impl From<(Angle,f64)> for Point {
+    fn from(polar: (Angle,f64)) -> Point {
+        // NB: cairo coordinates are upside down to normal people
+        let (angle, radius) = polar;
+        if angle.is_nan() {
+            Point(0.0, -radius)
+        } else {
+            Point(radius * angle.cos(), -radius * angle.sin())
+        }
     }
 }
 
@@ -106,6 +132,7 @@ pub enum Side {
 
 pub trait Draw {
     fn draw_circle(&self, centre: Point, radius: f64, fill: bool);
+    fn draw_diamond(&self, centre: Point, side: f64, filled: bool);
     fn draw_line(&self, start: Point, end: Point);
     fn draw_polygon(&self, polygon: Points, fill: bool);
     fn draw_square(&self, centre: Point, side: f64, filled: bool);
@@ -119,6 +146,20 @@ pub trait Draw {
 impl Draw for cairo::Context {
     fn draw_circle(&self, centre: Point, radius: f64, fill: bool) {
         self.arc(centre.0, centre.1, radius, 0.0, 2.0 * consts::PI);
+        if fill {
+            self.fill();
+        } else {
+            self.stroke();
+        }
+    }
+
+    fn draw_diamond(&self, centre: Point, side: f64, fill: bool) {
+        let dist = side * COS_45_DEG;
+        self.move_to(centre.0, centre.1 + dist);
+        self.line_to(centre.0 + dist, centre.1);
+        self.line_to(centre.0, centre.1 - dist);
+        self.line_to(centre.0 - dist, centre.1);
+        self.close_path();
         if fill {
             self.fill();
         } else {
