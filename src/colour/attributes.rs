@@ -112,7 +112,7 @@ pub trait ColourAttributeDisplayInterface: PackableWidgetInterface {
     ) {
         let width = drawing_area.get_allocated_width() as f64;
         let height = drawing_area.get_allocated_height() as f64;
-        let linear_gradient = cairo::LinearGradient::new(0.0, 0.0, width, height);
+        let linear_gradient = cairo::LinearGradient::new(0.0, 0.5 * height, width, 0.5 * height);
         for colour_stop in self.colour_stops() {
             linear_gradient.add_color_stop_rgb(
                 colour_stop[0],
@@ -165,6 +165,7 @@ impl ColourAttributeDisplayInterface for ValueCAD {
                 attr_target_value_fg_rgb: Cell::new(BLACK),
             }
         );
+        value_cad.drawing_area.set_size_request(90, 30);
         let value_cad_c = value_cad.clone();
         value_cad.drawing_area.connect_draw(
             move |da, ctxt|
@@ -295,6 +296,7 @@ impl ColourAttributeDisplayInterface for HueCAD {
                 colour_stops: RefCell::new(vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]),
             }
         );
+        hue_cad.drawing_area.set_size_request(90, 30);
         let hue_cad_c = hue_cad.clone();
         hue_cad.drawing_area.connect_draw(
             move |da, ctxt|
@@ -432,7 +434,7 @@ impl ColourAttributeDisplayInterface for ChromaCAD {
     type CADIType = ChromaCAD;
 
     fn create() -> ChromaCAD {
-        let croma_cad = Rc::new(
+        let chroma_cad = Rc::new(
             ChromaCADData {
                 drawing_area: gtk::DrawingArea::new(),
                 attr_value: Cell::new(None),
@@ -442,15 +444,16 @@ impl ColourAttributeDisplayInterface for ChromaCAD {
                 colour_stops: RefCell::new(vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]),
             }
         );
-        let croma_cad_c = croma_cad.clone();
-        croma_cad.drawing_area.connect_draw(
+        chroma_cad.drawing_area.set_size_request(90, 30);
+        let chroma_cad_c = chroma_cad.clone();
+        chroma_cad.drawing_area.connect_draw(
             move |da, ctxt|
             {
-                croma_cad_c.draw_all(da, ctxt);
+                chroma_cad_c.draw_all(da, ctxt);
                 Inhibit(false)
             }
         );
-        croma_cad
+        chroma_cad
     }
 
     fn set_colour(&self, colour: Option<&Colour>) {
@@ -538,7 +541,7 @@ implement_pwo!(HueChromaValueCADS, vbox, gtk::Box);
 
 impl ColourAttributeDisplayStackInterface for HueChromaValueCADS {
     fn create() -> HueChromaValueCADS {
-        let vbox = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let vbox = gtk::Box::new(gtk::Orientation::Vertical, 1);
         let hue_cad = HueCAD::create();
         let chroma_cad = ChromaCAD::create();
         let value_cad = ValueCAD::create();
