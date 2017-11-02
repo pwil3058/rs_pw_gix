@@ -204,7 +204,7 @@ mod tests {
     #[test]
     fn recollect_test() {
         let recollection_file = path::Path::new(".recollection_test");
-        let recollections = recollect::Recollections::new(&recollection_file);
+        let recollections = recollect::Recollections::new(Some(&recollection_file));
         assert_eq!(recollections.recall("anything"), None);
         assert_eq!(recollections.recall_or_else("anything", "but"), "but");
         recollections.remember("anything", "whatever");
