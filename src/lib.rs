@@ -171,7 +171,6 @@ pub mod recollections {
     use recollect::*;
     use mut_static::*;
 
-    //static mut RECOLLECTIONS: Recollections = Recollections{file_path: None};
     lazy_static! {
         static ref RECOLLECTIONS: MutStatic<Recollections> = {
             MutStatic::from(Recollections::new(None))

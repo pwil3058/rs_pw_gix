@@ -14,6 +14,7 @@
 
 pub mod coloured;
 pub mod combo_box_text;
+pub mod dialog;
 pub mod entry;
 #[macro_use]
 pub mod value;
