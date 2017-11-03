@@ -20,6 +20,8 @@ pub mod entry;
 pub mod value;
 #[macro_use]
 pub mod list_store;
+pub mod notebook;
+pub mod window;
 
 #[cfg(test)]
 mod tests {
