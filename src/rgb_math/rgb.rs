@@ -27,6 +27,7 @@ use num::Num;
 
 use ::rgb_math::angle::*;
 
+#[derive(Debug)]
 pub enum RGBError {
     MalformedText(String)
 }
@@ -248,7 +249,10 @@ impl From<RGB> for RGB16 {
 
 lazy_static! {
     pub static ref RGB16_RE: Regex = Regex::new(
-        r#"RGB16\(red=0x(?P<red>.*), green=0x(?P<green>.*), blue=0x(?P<blue>.*)\)"#
+        r#"RGB(16)?\((red=)?0x(?P<red>[^,]+), (green=)?0x(?P<green>[^,]+), (blue=)?0x(?P<blue>[^,]+)\)"#
+    ).unwrap();
+    pub static ref RGB16_BASE_10_RE: Regex = Regex::new(
+        r#"RGB(16)?\((red=)?(?P<red>\d+), (green=)?(?P<green>\d+), (blue=)?(?P<blue>\d+)\)"#
     ).unwrap();
 }
 
@@ -264,6 +268,15 @@ impl FromStr for RGB16 {
             let red = u16::from_str_radix(red_m.as_str(), 16).map_err(&err_map)?;
             let green = u16::from_str_radix(green_m.as_str(), 16).map_err(&err_map)?;
             let blue = u16::from_str_radix(blue_m.as_str(), 16).map_err(&err_map)?;
+            Ok(RGB16{red, green, blue})
+        } else if let Some(captures) = RGB16_BASE_10_RE.captures(string) {
+            let red_m = captures.name("red").ok_or(RGBError::MalformedText(string.to_string()))?;
+            let green_m = captures.name("green").ok_or(RGBError::MalformedText(string.to_string()))?;
+            let blue_m = captures.name("blue").ok_or(RGBError::MalformedText(string.to_string()))?;
+            let err_map = |_| RGBError::MalformedText(string.to_string());
+            let red = u16::from_str_radix(red_m.as_str(), 10).map_err(&err_map)?;
+            let green = u16::from_str_radix(green_m.as_str(), 10).map_err(&err_map)?;
+            let blue = u16::from_str_radix(blue_m.as_str(), 10).map_err(&err_map)?;
             Ok(RGB16{red, green, blue})
         } else {
             Err(RGBError::MalformedText(string.to_string()))
@@ -446,5 +459,19 @@ mod tests {
         assert_eq!(RGB16::from(GREEN.components_rotated(-DEG_120)), RGB16::from(RED));
         //assert_eq!(RGB16::from(GREEN.components_rotated(-DEG_180)), RGB16::from(MAGENTA / 2));
         assert!(within_limits(GREEN.components_rotated(-DEG_180), MAGENTA / 2));
+    }
+
+    #[test]
+    fn rgb_math_rgb_from_string() {
+        if let Ok(rgb_fm_str) = RGB16::from_str("RGB16(red=0xF800, green=0xFA00, blue=0xF600)") {
+            assert_eq!(rgb_fm_str, RGB16{red:63488, green:64000, blue: 62976});
+        } else {
+            panic!("File: {:?} Line: {:?}", file!(), line!())
+        };
+        if let Ok(rgb_fm_str) = RGB16::from_str("RGB16(0xF800, 0xFA00, 0xF600)") {
+            assert_eq!(rgb_fm_str, RGB16{red:63488, green:64000, blue: 62976});
+        } else {
+            panic!("File: {:?} Line: {:?}", file!(), line!())
+        }
     }
 }

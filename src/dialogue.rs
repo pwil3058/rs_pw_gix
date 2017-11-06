@@ -58,7 +58,7 @@ pub fn warn_user<P: IsA<gtk::Window>>(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    //use super::*;
 
     #[test]
     fn it_works() {
