@@ -42,6 +42,7 @@ pub mod pwo {
 
 pub mod cairox;
 pub mod colour;
+pub mod dialogue;
 pub mod gdkx;
 pub mod gtkx;
 pub mod paint;

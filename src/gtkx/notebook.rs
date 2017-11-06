@@ -17,7 +17,6 @@ use std::rc::Rc;
 
 use gio;
 use gtk;
-use gtk::NotebookExtManual;
 use gtk::prelude::*;
 
 use pwo::*;
