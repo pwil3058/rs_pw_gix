@@ -21,6 +21,7 @@ pub mod value;
 #[macro_use]
 pub mod list_store;
 pub mod notebook;
+pub mod paned;
 pub mod window;
 
 #[cfg(test)]
