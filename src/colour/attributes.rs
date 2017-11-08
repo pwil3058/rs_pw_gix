@@ -521,6 +521,148 @@ impl ColourAttributeDisplayInterface for ChromaCAD {
     }
 }
 
+// GREYNESS
+#[derive(Debug)]
+pub struct GreynessCADData {
+    drawing_area: gtk::DrawingArea,
+    attr_value: Cell<Option<f64>>,
+    attr_value_fg_rgb: Cell<RGB>,
+    attr_target_value: Cell<Option<f64>>,
+    attr_target_value_fg_rgb: Cell<RGB>,
+    colour_stops: RefCell<ColourStops>,
+}
+
+impl GreynessCADData {
+    fn set_colour_stops(&self, ocolour: Option<&Colour>) {
+        *self.colour_stops.borrow_mut() = if let Some(ref colour) = ocolour {
+            if colour.is_grey() {
+                let value = colour.value();
+                vec![[0.0, value, value, value], [1.0, value, value, value]]
+            } else {
+                let start_rgb = colour.max_chroma_rgb();
+                let end_rgb = WHITE * colour.value();
+                vec![
+                    [0.0, start_rgb[0], start_rgb[1], start_rgb[2]],
+                    [1.0, end_rgb[0], end_rgb[1], end_rgb[2]],
+                ]
+            }
+        } else {
+            vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]
+        }
+    }
+
+    fn set_greyness_defaults(&self) {
+        self.attr_value.set(None);
+        if self.attr_target_value.get().is_none() {
+            self.set_colour_stops(None)
+        }
+    }
+
+    fn set_target_defaults(&self) {
+        self.attr_target_value.set(None);
+        if self.attr_value.get().is_none() {
+            self.set_colour_stops(None)
+        }
+    }
+}
+
+pub type GreynessCAD = Rc<GreynessCADData>;
+
+implement_pwo!(GreynessCAD, drawing_area, gtk::DrawingArea);
+
+impl ColourAttributeDisplayInterface for GreynessCAD {
+    type CADIType = GreynessCAD;
+
+    fn create() -> GreynessCAD {
+        let greyness_cad = Rc::new(
+            GreynessCADData {
+                drawing_area: gtk::DrawingArea::new(),
+                attr_value: Cell::new(None),
+                attr_value_fg_rgb: Cell::new(BLACK),
+                attr_target_value: Cell::new(None),
+                attr_target_value_fg_rgb: Cell::new(BLACK),
+                colour_stops: RefCell::new(vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]),
+            }
+        );
+        greyness_cad.drawing_area.set_size_request(90, 30);
+        let greyness_cad_c = greyness_cad.clone();
+        greyness_cad.drawing_area.connect_draw(
+            move |da, ctxt|
+            {
+                greyness_cad_c.draw_all(da, ctxt);
+                Inhibit(false)
+            }
+        );
+        greyness_cad
+    }
+
+    fn set_colour(&self, colour: Option<&Colour>) {
+        if let Some(colour) = colour {
+            self.attr_value.set(Some(colour.greyness()));
+            self.attr_value_fg_rgb
+                .set(colour.best_foreground_rgb());
+            if let Some(target_value) = self.attr_target_value.get() {
+                if target_value == 0.0 {
+                    self.set_colour_stops(Some(&colour));
+                }
+            } else {
+                self.set_colour_stops(Some(&colour));
+            }
+        } else {
+            self.set_greyness_defaults();
+        }
+        self.drawing_area.queue_draw()
+    }
+
+    fn attr_value(&self) -> Option<f64> {
+        self.attr_value.get()
+    }
+
+    fn attr_value_fg_rgb(&self) -> RGB {
+        self.attr_value_fg_rgb.get()
+    }
+
+    fn set_target_colour(&self, colour: Option<&Colour>) {
+        if let Some(colour) = colour {
+            self.attr_target_value.set(Some(colour.greyness()));
+            self.attr_target_value_fg_rgb
+                .set(colour.best_foreground_rgb());
+            if colour.is_grey() {
+                if let Some(attr_value) = self.attr_value.get() {
+                    if attr_value == 0.0 {
+                        self.set_colour_stops(Some(&colour));
+                    }
+                } else {
+                    self.set_colour_stops(Some(&colour));
+                }
+            } else {
+                self.set_colour_stops(Some(&colour));
+            }
+        } else {
+            self.set_target_defaults();
+        }
+        self.drawing_area.queue_draw()
+    }
+
+    fn attr_target_value(&self) -> Option<f64> {
+        self.attr_target_value.get()
+    }
+
+    fn attr_target_value_fg_rgb(&self) -> RGB {
+        self.attr_target_value_fg_rgb.get()
+    }
+
+    fn colour_stops(&self) -> ColourStops {
+        self.colour_stops.borrow().clone()
+    }
+
+    fn label(&self) -> &str {
+        "Greyness"
+    }
+}
+
+// STACK
+
 pub trait ColourAttributeDisplayStackInterface: PackableWidgetInterface {
     fn create() -> Self;
 
@@ -567,6 +709,50 @@ impl ColourAttributeDisplayStackInterface for HueChromaValueCADS {
     fn set_target_colour(&self, target_colour: Option<&Colour>) {
         self.hue_cad.set_target_colour(target_colour);
         self.chroma_cad.set_target_colour(target_colour);
+        self.value_cad.set_target_colour(target_colour);
+    }
+}
+
+
+pub struct HueGreynessValueCADSData {
+    vbox: gtk::Box,
+    hue_cad: HueCAD,
+    greyness_cad: GreynessCAD,
+    value_cad: ValueCAD,
+}
+
+pub type HueGreynessValueCADS = Rc<HueGreynessValueCADSData>;
+
+implement_pwo!(HueGreynessValueCADS, vbox, gtk::Box);
+
+impl ColourAttributeDisplayStackInterface for HueGreynessValueCADS {
+    fn create() -> HueGreynessValueCADS {
+        let vbox = gtk::Box::new(gtk::Orientation::Vertical, 1);
+        let hue_cad = HueCAD::create();
+        let greyness_cad = GreynessCAD::create();
+        let value_cad = ValueCAD::create();
+        vbox.pack_start(&hue_cad.pwo(), true, true, 0);
+        vbox.pack_start(&greyness_cad.pwo(), true, true, 0);
+        vbox.pack_start(&value_cad.pwo(), true, true, 0);
+        Rc::new(
+            HueGreynessValueCADSData {
+                vbox,
+                hue_cad,
+                greyness_cad,
+                value_cad,
+            }
+        )
+    }
+
+    fn set_colour(&self, colour: Option<&Colour>) {
+        self.hue_cad.set_colour(colour);
+        self.greyness_cad.set_colour(colour);
+        self.value_cad.set_colour(colour);
+    }
+
+    fn set_target_colour(&self, target_colour: Option<&Colour>) {
+        self.hue_cad.set_target_colour(target_colour);
+        self.greyness_cad.set_target_colour(target_colour);
         self.value_cad.set_target_colour(target_colour);
     }
 }
