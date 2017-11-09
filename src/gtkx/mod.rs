@@ -22,6 +22,7 @@ pub mod value;
 pub mod list_store;
 pub mod notebook;
 pub mod paned;
+pub mod tree_view_column;
 pub mod window;
 
 #[cfg(test)]
