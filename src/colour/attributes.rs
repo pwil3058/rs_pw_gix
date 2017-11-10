@@ -222,6 +222,94 @@ impl ColourAttributeDisplayInterface for ValueCAD {
     }
 }
 
+// WARMTH
+#[derive(Debug)]
+pub struct WarmthCADData {
+    drawing_area: gtk::DrawingArea,
+    attr_value: Cell<Option<f64>>,
+    attr_target_value: Cell<Option<f64>>,
+    attr_value_fg_rgb: Cell<RGB>,
+    attr_target_value_fg_rgb: Cell<RGB>,
+}
+
+pub type WarmthCAD = Rc<WarmthCADData>;
+
+implement_pwo!(WarmthCAD, drawing_area, gtk::DrawingArea);
+
+impl ColourAttributeDisplayInterface for WarmthCAD {
+    type CADIType = WarmthCAD;
+
+    fn create() -> WarmthCAD {
+        let warmth_cad = Rc::new(
+            WarmthCADData {
+                drawing_area: gtk::DrawingArea::new(),
+                attr_value: Cell::new(None),
+                attr_target_value: Cell::new(None),
+                attr_value_fg_rgb: Cell::new(BLACK),
+                attr_target_value_fg_rgb: Cell::new(BLACK),
+            }
+        );
+        warmth_cad.drawing_area.set_size_request(90, 30);
+        let warmth_cad_c = warmth_cad.clone();
+        warmth_cad.drawing_area.connect_draw(
+            move |da, ctxt|
+            {
+                warmth_cad_c.draw_all(da, ctxt);
+                Inhibit(false)
+            }
+        );
+        warmth_cad
+    }
+
+    fn colour_stops(&self) -> ColourStops {
+        vec![[0.0, 0.0, 1.0, 1.0], [0.5, 0.5, 0.5, 0.5], [1.0, 1.0, 0.0, 0.0]]
+    }
+
+    fn set_colour(&self, colour: Option<&Colour>) {
+        if let Some(colour) = colour {
+            self.attr_value.set(Some(colour.warmth()));
+            self.attr_value_fg_rgb
+                .set(colour.monotone_rgb().best_foreground_rgb());
+        } else {
+            self.attr_value.set(None);
+            self.attr_value_fg_rgb.set(BLACK);
+        }
+        self.drawing_area.queue_draw()
+    }
+
+    fn attr_value(&self) -> Option<f64> {
+        self.attr_value.get()
+    }
+
+    fn attr_value_fg_rgb(&self) -> RGB {
+        self.attr_value_fg_rgb.get()
+    }
+
+    fn set_target_colour(&self, colour: Option<&Colour>) {
+        if let Some(colour) = colour {
+            self.attr_target_value.set(Some(colour.warmth()));
+            self.attr_target_value_fg_rgb
+                .set(colour.monotone_rgb().best_foreground_rgb());
+        } else {
+            self.attr_target_value.set(None);
+            self.attr_target_value_fg_rgb.set(BLACK);
+        }
+        self.drawing_area.queue_draw()
+    }
+
+    fn attr_target_value(&self) -> Option<f64> {
+        self.attr_target_value.get()
+    }
+
+    fn attr_target_value_fg_rgb(&self) -> RGB {
+        self.attr_target_value_fg_rgb.get()
+    }
+
+    fn label(&self) -> &str {
+        "Warmth"
+    }
+}
+
 // HUE
 #[derive(Debug)]
 pub struct HueCADData {

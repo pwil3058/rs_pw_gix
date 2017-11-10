@@ -29,6 +29,17 @@ pub enum ScalarAttribute {
     Warmth,
 }
 
+impl ScalarAttribute {
+    pub fn to_string(&self) -> String {
+        match *self {
+            ScalarAttribute::Chroma => "Chroma".to_string(),
+            ScalarAttribute::Greyness => "Greyness".to_string(),
+            ScalarAttribute::Value => "Value".to_string(),
+            ScalarAttribute::Warmth => "Warmth".to_string(),
+        }
+    }
+}
+
 pub trait ColourInterface {
     fn rgb(&self) -> RGB;
     fn hue(&self) -> HueAngle;
@@ -40,6 +51,7 @@ pub trait ColourInterface {
     fn monotone_rgb(&self) -> RGB;
     fn best_foreground_rgb(&self) -> RGB;
     fn max_chroma_rgb(&self) -> RGB;
+    fn warmth_rgb(&self) -> RGB;
     fn scalar_attribute(&self, attr: ScalarAttribute) -> f64;
 }
 
@@ -123,6 +135,17 @@ impl ColourInterface for Colour {
 
     fn max_chroma_rgb(&self) -> RGB {
         self.hue.max_chroma_rgb()
+    }
+
+    fn warmth_rgb(&self) -> RGB {
+        let x = self.rgb.x();
+        if x < 0.0 {
+            CYAN * x.abs() + WHITE * (1.0 + x) * 0.5
+        } else if x > 0.0 {
+            RED * x + WHITE * (1.0 - x) * 0.5
+        } else {
+            WHITE * 0.5
+        }
     }
 
     fn scalar_attribute(&self, attr: ScalarAttribute) -> f64 {
