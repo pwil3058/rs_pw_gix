@@ -45,7 +45,6 @@ pub mod colour;
 pub mod dialogue;
 pub mod gdkx;
 pub mod gtkx;
-pub mod paint;
 pub mod rgb_math;
 
 pub mod recollect {
