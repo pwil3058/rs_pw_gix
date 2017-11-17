@@ -21,7 +21,7 @@ use ::rgb_math::rgb::*;
 
 pub mod attributes;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum ScalarAttribute {
     Chroma,
     Greyness,
