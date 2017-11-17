@@ -212,9 +212,9 @@ pub trait RGBEntryInterface {
     fn pwo(&self) -> Self::PackableWidgetType;
 
     fn get_rgb(&self) -> RGB;
-    fn set_rgb(&self, rgb: &RGB);
+    fn set_rgb(&self, rgb: RGB);
 
-    fn connect_value_changed<F: 'static + Fn(&RGB)>(&self, callback: F);
+    fn connect_value_changed<F: 'static + Fn(RGB)>(&self, callback: F);
     fn inform_value_changed(&self);
 }
 
@@ -223,7 +223,7 @@ pub struct RGBHexEntryBoxData {
     red_entry: HexEntry,
     green_entry: HexEntry,
     blue_entry: HexEntry,
-    callbacks: RefCell<Vec<Box<Fn(&RGB)>>>
+    callbacks: RefCell<Vec<Box<Fn(RGB)>>>
 }
 
 pub type RGBHexEntryBox = Rc<RGBHexEntryBoxData>;
@@ -236,13 +236,13 @@ impl RGBEntryInterface for RGBHexEntryBox {
         let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 1);
         let max_value = u16::max_value() as u32;
         let red_label = gtk::Label::new("Red");
-        red_label.set_widget_colour_rgb(&RED);
+        red_label.set_widget_colour_rgb(RED);
         let red_entry = HexEntry::create_with_max(max_value);
         let green_label = gtk::Label::new("Green");
-        green_label.set_widget_colour_rgb(&GREEN);
+        green_label.set_widget_colour_rgb(GREEN);
         let green_entry = HexEntry::create_with_max(max_value);
         let blue_label = gtk::Label::new("Blue");
-        blue_label.set_widget_colour_rgb(&BLUE);
+        blue_label.set_widget_colour_rgb(BLUE);
         let blue_entry = HexEntry::create_with_max(max_value);
         hbox.pack_start(&red_label, true, true, 0);
         hbox.pack_start(&red_entry.pwo(), true, true, 0);
@@ -250,7 +250,7 @@ impl RGBEntryInterface for RGBHexEntryBox {
         hbox.pack_start(&green_entry.pwo(), true, true, 0);
         hbox.pack_start(&blue_label, true, true, 0);
         hbox.pack_start(&blue_entry.pwo(), true, true, 0);
-        let callbacks: RefCell<Vec<Box<Fn(&RGB)>>> = RefCell::new(Vec::new());
+        let callbacks: RefCell<Vec<Box<Fn(RGB)>>> = RefCell::new(Vec::new());
         let rgb_entry_box = Rc::new(RGBHexEntryBoxData{hbox, red_entry, green_entry, blue_entry, callbacks});
         let reb = rgb_entry_box.clone();
         rgb_entry_box.red_entry.connect_value_changed(
@@ -279,7 +279,7 @@ impl RGBEntryInterface for RGBHexEntryBox {
         RGB::from((red, green, blue))
     }
 
-    fn set_rgb(&self, rgb: &RGB) {
+    fn set_rgb(&self, rgb: RGB) {
         let max_value = u16::max_value() as f64;
         let red = (rgb.red * max_value) as u32;
         let green = (rgb.green * max_value) as u32;
@@ -289,14 +289,14 @@ impl RGBEntryInterface for RGBHexEntryBox {
         self.blue_entry.set_value(blue);
     }
 
-    fn connect_value_changed<F: 'static + Fn(&RGB)>(&self, callback: F) {
+    fn connect_value_changed<F: 'static + Fn(RGB)>(&self, callback: F) {
         self.callbacks.borrow_mut().push(Box::new(callback))
     }
 
     fn inform_value_changed(&self) {
         let rgb = self.get_rgb();
         for callback in self.callbacks.borrow().iter() {
-            callback(&rgb);
+            callback(rgb);
         }
     }
 }

@@ -34,9 +34,9 @@ impl RGBManipulator {
         RGBManipulator{rgb, angle, last_angle, chroma}
     }
 
-    pub fn set_rgb(&self, rgb: &RGB) {
-        *self.rgb.borrow_mut() = rgb.clone();
-        let new_angle = HueAngle::from(*rgb);
+    pub fn set_rgb(&self, rgb: RGB) {
+        *self.rgb.borrow_mut() = rgb;
+        let new_angle = HueAngle::from(rgb);
         *self.chroma.borrow_mut() = rgb.hypot() * new_angle.chroma_correction();
         let is_grey = new_angle.is_grey();
         if !is_grey {
@@ -60,7 +60,7 @@ impl RGBManipulator {
             let new_chroma = (cur_chroma - delta).max(0.0);
             let rgbe = self.angle.borrow().rgb_with_chroma_and_value(new_chroma, cur_value);
             if let Some(new_rgb) = rgbe {
-                self.set_rgb(&new_rgb);
+                self.set_rgb(new_rgb);
                 // NB: beware frailties of float versus real
                 *self.chroma.borrow() != cur_chroma
             } else {
@@ -85,7 +85,7 @@ impl RGBManipulator {
             let new_chroma = (cur_chroma + adj_delta).min(max_chroma);
             let rgbe = viable_angle.rgb_with_chroma_and_value(new_chroma, cur_value);
             if let Some(new_rgb) = rgbe {
-                self.set_rgb(&new_rgb);
+                self.set_rgb(new_rgb);
                 // NB: beware frailties of float versus real
                 *self.chroma.borrow() != cur_chroma
             } else {
@@ -108,7 +108,7 @@ impl RGBManipulator {
                     let new_rgb = self.angle.borrow().rgb_with_chroma_and_value(*self.chroma.borrow(), new_value).unwrap_or_else(
                         || panic!("File: {:?} Line: {:?}", file!(), line!())
                     );
-                    self.set_rgb(&new_rgb);
+                    self.set_rgb(new_rgb);
                     // NB: beware frailties of float versus real
                     new_rgb.value() != cur_value
                 } else {
@@ -118,7 +118,7 @@ impl RGBManipulator {
             None => { //RGB is grey
                 if cur_value > 0.0 {
                     let new_rgb = WHITE * (cur_value - delta).max(0.0);
-                    self.set_rgb(&new_rgb);
+                    self.set_rgb(new_rgb);
                     // NB: beware frailties of float versus real
                     new_rgb.value() != cur_value
                 } else {
@@ -141,7 +141,7 @@ impl RGBManipulator {
                     let new_rgb = self.angle.borrow().rgb_with_chroma_and_value(*self.chroma.borrow(), new_value).unwrap_or_else(
                         || panic!("File: {:?} Line: {:?}", file!(), line!())
                     );
-                    self.set_rgb(&new_rgb);
+                    self.set_rgb(new_rgb);
                     // NB: beware frailties of float versus real
                     new_rgb.value() != cur_value
                 } else {
@@ -151,7 +151,7 @@ impl RGBManipulator {
             None => { //RGB is grey
                 if cur_value < 1.0 {
                     let new_rgb = WHITE * (cur_value + delta).min(1.0);
-                    self.set_rgb(&new_rgb);
+                    self.set_rgb(new_rgb);
                     // NB: beware frailties of float versus real
                     new_rgb.value() != cur_value
                 } else {
@@ -185,7 +185,7 @@ impl RGBManipulator {
                 || panic!("File: {:?} Line: {:?}", file!(), line!())
             )
         };
-        self.set_rgb(&new_rgb);
+        self.set_rgb(new_rgb);
         true
     }
 }

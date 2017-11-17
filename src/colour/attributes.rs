@@ -61,7 +61,7 @@ pub trait ColourAttributeDisplayInterface: PackableWidgetInterface {
             let width = drawing_area.get_allocated_width() as f64;
             let height = drawing_area.get_allocated_height() as f64;
             let indicator_x = width * attr_value;
-            cairo_context.set_source_colour_rgb(&self.attr_value_fg_rgb());
+            cairo_context.set_source_colour_rgb(self.attr_value_fg_rgb());
             cairo_context.draw_indicator(Point(indicator_x, 1.0), Side::Top, 8.0);
             cairo_context.draw_indicator(Point(indicator_x, height - 1.0), Side::Bottom, 8.0);
         }
@@ -77,7 +77,7 @@ pub trait ColourAttributeDisplayInterface: PackableWidgetInterface {
             let height = drawing_area.get_allocated_height() as f64;
             let target_x = width * attr_target_value;
             cairo_context.set_line_width(2.0);
-            cairo_context.set_source_colour_rgb(&self.attr_target_value_fg_rgb());
+            cairo_context.set_source_colour_rgb(self.attr_target_value_fg_rgb());
             cairo_context.draw_line(Point(target_x, 0.0), Point(target_x, height));
         }
     }
@@ -96,7 +96,7 @@ pub trait ColourAttributeDisplayInterface: PackableWidgetInterface {
             let x = (width - te.width) / 2.0;
             let y = (height + te.height) / 2.0;
             cairo_context.move_to(x, y);
-            cairo_context.set_source_colour_rgb(&self.label_colour());
+            cairo_context.set_source_colour_rgb(self.label_colour());
             cairo_context.show_text(&label);
         }
     }

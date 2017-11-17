@@ -146,7 +146,7 @@ pub trait Draw {
     fn move_to_point(&self, point: Point);
     fn line_to_point(&self, point: Point);
     fn set_source_colour(&self, rgb: &Colour);
-    fn set_source_colour_rgb(&self, rgb: &RGB);
+    fn set_source_colour_rgb(&self, rgb: RGB);
 }
 
 impl Draw for cairo::Context {
@@ -244,10 +244,10 @@ impl Draw for cairo::Context {
     }
 
     fn set_source_colour(&self, colour: &Colour) {
-        self.set_source_colour_rgb(&colour.rgb())
+        self.set_source_colour_rgb(colour.rgb())
     }
 
-    fn set_source_colour_rgb(&self, rgb: &RGB) {
+    fn set_source_colour_rgb(&self, rgb: RGB) {
         self.set_source_rgb(rgb[0], rgb[1], rgb[2])
     }
 }
