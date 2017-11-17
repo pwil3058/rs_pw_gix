@@ -236,13 +236,13 @@ impl RGBEntryInterface for RGBHexEntryBox {
         let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 1);
         let max_value = u16::max_value() as u32;
         let red_label = gtk::Label::new("Red");
-        red_label.set_widget_colour_rgb(RED);
+        red_label.set_widget_colour_rgb(&RED);
         let red_entry = HexEntry::create_with_max(max_value);
         let green_label = gtk::Label::new("Green");
-        green_label.set_widget_colour_rgb(GREEN);
+        green_label.set_widget_colour_rgb(&GREEN);
         let green_entry = HexEntry::create_with_max(max_value);
         let blue_label = gtk::Label::new("Blue");
-        blue_label.set_widget_colour_rgb(BLUE);
+        blue_label.set_widget_colour_rgb(&BLUE);
         let blue_entry = HexEntry::create_with_max(max_value);
         hbox.pack_start(&red_label, true, true, 0);
         hbox.pack_start(&red_entry.pwo(), true, true, 0);

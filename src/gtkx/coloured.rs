@@ -20,17 +20,18 @@ use colour::*;
 
 pub trait Colourable: gtk::WidgetExt {
     fn set_widget_colour(&self, colour: &Colour) {
-        self.set_widget_colour_rgb(colour.rgb())
+        self.set_widget_colour_rgb(&colour.rgb())
     }
 
-    fn set_widget_colour_rgb(&self, rgb: RGB) {
-        let bg_rgba = gdk::RGBA::from(rgb);
+    fn set_widget_colour_rgb(&self, rgb: &RGB) {
+        let bg_rgba = gdk::RGBA::from(*rgb);
         let fg_rgba = gdk::RGBA::from(rgb.best_foreground_rgb());
         self.override_background_color(gtk::StateFlags::empty(), Some(&bg_rgba));
         self.override_color(gtk::StateFlags::empty(), Some(&fg_rgba));
     }
 }
 
+impl Colourable for gtk::Button {}
 impl Colourable for gtk::Label {}
 impl Colourable for gtk::SpinButton {}
 
