@@ -49,8 +49,9 @@ macro_rules! normalise {
 pub struct Angle (f64);
 
 pub const DEG_0: Angle   = Angle(0.0);
-pub const DEG_5: Angle   = Angle(consts::FRAC_PI_6 / 6.0);
-pub const DEG_10: Angle  = Angle(consts::FRAC_PI_6 / 3.0);
+pub const DEG_1: Angle   = Angle(consts::PI / 180.0);
+pub const DEG_5: Angle   = Angle(consts::PI / 36.0);
+pub const DEG_10: Angle  = Angle(consts::PI / 18.0);
 pub const DEG_30: Angle  = Angle(consts::FRAC_PI_6);
 pub const DEG_45: Angle  = Angle(consts::FRAC_PI_4);
 pub const DEG_60: Angle  = Angle(consts::FRAC_PI_3);
