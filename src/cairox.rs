@@ -17,6 +17,9 @@ use std::f64::consts;
 use std::ops::*;
 
 use cairo;
+use gdk;
+use gdk::prelude::ContextExt;
+use gdk_pixbuf::Pixbuf;
 
 use colour::*;
 use rgb_math::angle::Angle;
@@ -147,6 +150,8 @@ pub trait Draw {
     fn line_to_point(&self, point: Point);
     fn set_source_colour(&self, rgb: &Colour);
     fn set_source_colour_rgb(&self, rgb: RGB);
+    fn set_source_surface_at<T: AsRef<cairo::Surface>>(&self, surface: &T, position: Point);
+    fn set_source_pixbuf_at(&self, pixbuf: &Pixbuf, position: Point, with_border: bool);
 }
 
 impl Draw for cairo::Context {
@@ -249,6 +254,21 @@ impl Draw for cairo::Context {
 
     fn set_source_colour_rgb(&self, rgb: RGB) {
         self.set_source_rgb(rgb[0], rgb[1], rgb[2])
+    }
+
+    fn set_source_surface_at<T: AsRef<cairo::Surface>>(&self, surface: &T, position: Point) {
+        self.set_source_surface(surface, position.0, position.1)
+    }
+
+    fn set_source_pixbuf_at(&self, pixbuf: &Pixbuf, position: Point, with_border: bool) {
+        if !with_border {
+            // TODO: find out how to kill border
+            if let Some(surface) = Self::cairo_surface_create_from_pixbuf(pixbuf, 0, None) {
+                self.set_source_surface_at(&surface, position);
+                return;
+            };
+        };
+        self.set_source_pixbuf(pixbuf, position.0, position.1);
     }
 }
 
