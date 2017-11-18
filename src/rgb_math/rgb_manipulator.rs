@@ -79,10 +79,12 @@ impl RGBManipulator {
         };
         let max_chroma = viable_angle.max_chroma_for_value(cur_value).min(1.0);
         let cur_chroma = *self.chroma.borrow();
-        let adj_delta = delta.min(max_chroma - cur_chroma);
-        if adj_delta > 0.0 {
-            let cur_value = self.rgb.borrow().value();
-            let new_chroma = (cur_chroma + adj_delta).min(max_chroma);
+        let new_chroma = (cur_chroma + delta).min(1.0);
+        if new_chroma >= max_chroma {
+            self.set_rgb(viable_angle.max_chroma_rgb_with_value(cur_value));
+            // NB: beware frailties of float versus real
+            *self.chroma.borrow() != cur_chroma
+        } else if new_chroma > cur_chroma {
             let rgbe = viable_angle.rgb_with_chroma_and_value(new_chroma, cur_value);
             if let Some(new_rgb) = rgbe {
                 self.set_rgb(new_rgb);

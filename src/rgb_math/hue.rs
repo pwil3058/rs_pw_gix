@@ -274,7 +274,7 @@ impl HueAngle {
                 // NB: because floats only approximate reals trying to
                 // set chroma too small (but non zero) results in a drift
                 // in the hue angle of the resulting RGB. When this
-                // happens we go straight to a zero chrom RGB
+                // happens we go straight to a zero chroma RGB
                 let rgb = self.max_chroma_rgb * req_chroma + WHITE * (req_value - min_value);
                 if (rgb.angle() - self.angle).abs().radians() < 0.00001 {
                     return Some(rgb)
