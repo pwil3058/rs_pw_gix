@@ -31,15 +31,6 @@ pub trait HexEntryInterface {
     fn create() -> Self::HexEntryType;
     fn create_with_max(max_value: u32) -> Self::HexEntryType;
     fn pwo(&self) -> Self::PackableWidgetType;
-
-    fn get_value(&self) -> u32;
-    fn set_value(&self, value: u32);
-    fn set_value_from_str(&self, text: &str);
-    fn incr_value(&self, incr: u32) -> bool;
-    fn decr_value(&self, decr: u32) -> bool;
-
-    fn connect_value_changed<F: 'static + Fn(u32)>(&self, callback: F);
-    fn inform_value_changed(&self);
 }
 
 //#[derive(Debug)]
@@ -54,6 +45,54 @@ pub struct HexEntryData {
 }
 
 impl HexEntryData {
+    pub fn get_value(&self) -> u32 {
+        self.value.get()
+    }
+
+    pub fn set_value(&self, value: u32) {
+        if value <= self.max_value {
+            self.value.set(value);
+            self.reset_entry_text();
+        } else {
+            // TODO: think about panicking here
+        }
+    }
+
+    pub fn incr_value(&self, incr: u32) -> bool {
+        let value = self.value.get();
+        let adj_incr = cmp::min(self.max_value - value, incr);
+        if adj_incr > 0 {
+            self.set_value_and_notify(self.value.get() + adj_incr);
+        }
+        self.value.get() < self.max_value
+    }
+
+    pub fn decr_value(&self, decr: u32) -> bool {
+        let value = self.value.get();
+        let adj_decr = cmp::min(value, decr);
+        if decr > 0 {
+            self.set_value_and_notify(value - adj_decr);
+        }
+        self.value.get() > 0
+    }
+
+    pub fn set_value_from_str(&self, text: &str) {
+        let value_e = if let Some(index) = text.find("x") {
+            u32::from_str_radix(&text[index + 1..], 16)
+        } else {
+            u32::from_str_radix(text, 16)
+        };
+        if let Ok(value) = value_e {
+            self.set_value_and_notify(value);
+        } else {
+            self.reset_entry_text();
+        }
+    }
+
+    pub fn connect_value_changed<F: 'static + Fn(u32)>(&self, callback: F) {
+        self.callbacks.borrow_mut().push(Box::new(callback))
+    }
+
     fn bump_current_step(&self) {
         let new_step = cmp::min(self.current_step.get() + 1, self.max_step);
         self.current_step.set(new_step);
@@ -65,6 +104,18 @@ impl HexEntryData {
 
     fn reset_entry_text(&self) {
         self.entry.set_text(&format!("0x{:0width$X}", self.value.get(), width = self.width));
+    }
+
+    fn set_value_and_notify(&self, value: u32) {
+        self.set_value(value);
+        self.inform_value_changed();
+    }
+
+    fn inform_value_changed(&self) {
+        let value = self.value.get();
+        for callback in self.callbacks.borrow().iter() {
+            callback(value);
+        }
     }
 }
 
@@ -144,62 +195,6 @@ impl HexEntryInterface for HexEntry {
 
     fn pwo(&self) -> gtk::Entry {
         self.entry.clone()
-    }
-
-    fn get_value(&self) -> u32 {
-        self.value.get()
-    }
-
-    fn set_value(&self, value: u32) {
-        if value <= self.max_value {
-            self.value.set(value);
-            self.reset_entry_text();
-            self.inform_value_changed()
-        } else {
-            // TODO: think about panicking here
-        }
-    }
-
-    fn incr_value(&self, incr: u32) -> bool {
-        let value = self.value.get();
-        let adj_incr = cmp::min(self.max_value - value, incr);
-        if adj_incr > 0 {
-            self.set_value(self.value.get() + adj_incr);
-        }
-        self.value.get() < self.max_value
-    }
-
-    fn decr_value(&self, decr: u32) -> bool {
-        let value = self.value.get();
-        let adj_decr = cmp::min(value, decr);
-        if decr > 0 {
-            self.set_value(value - adj_decr);
-        }
-        self.value.get() > 0
-    }
-
-    fn set_value_from_str(&self, text: &str) {
-        let value_e = if let Some(index) = text.find("x") {
-            u32::from_str_radix(&text[index + 1..], 16)
-        } else {
-            u32::from_str_radix(text, 16)
-        };
-        if let Ok(value) = value_e {
-            self.set_value(value);
-        } else {
-            self.reset_entry_text();
-        }
-    }
-
-    fn connect_value_changed<F: 'static + Fn(u32)>(&self, callback: F) {
-        self.callbacks.borrow_mut().push(Box::new(callback))
-    }
-
-    fn inform_value_changed(&self) {
-        let value = self.value.get();
-        for callback in self.callbacks.borrow().iter() {
-            callback(value);
-        }
     }
 }
 
