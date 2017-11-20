@@ -17,7 +17,6 @@ use std::f64::consts;
 use std::ops::*;
 
 use cairo;
-use gdk;
 use gdk::prelude::ContextExt;
 use gdk_pixbuf::Pixbuf;
 

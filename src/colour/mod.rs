@@ -43,16 +43,58 @@ impl ScalarAttribute {
 pub trait ColourInterface {
     fn rgb(&self) -> RGB;
     fn hue(&self) -> HueAngle;
-    fn is_grey(&self) -> bool;
-    fn chroma(&self) -> f64;
-    fn greyness(&self) -> f64;
-    fn value(&self) -> f64 ;
-    fn warmth(&self) -> f64 ;
-    fn monotone_rgb(&self) -> RGB;
-    fn best_foreground_rgb(&self) -> RGB;
-    fn max_chroma_rgb(&self) -> RGB;
-    fn warmth_rgb(&self) -> RGB;
-    fn scalar_attribute(&self, attr: ScalarAttribute) -> f64;
+
+    fn is_grey(&self) -> bool {
+        self.hue().is_grey()
+    }
+
+    fn chroma(&self) -> f64 {
+        self.rgb().hypot() * self.hue().chroma_correction()
+    }
+
+    fn greyness(&self) -> f64 {
+        1.0 - self.rgb().hypot() * self.hue().chroma_correction()
+    }
+
+    fn value(&self) -> f64 {
+        self.rgb().value()
+    }
+
+    fn warmth(&self) -> f64 {
+        (self.rgb().x() + 1.0) / 2.0
+    }
+
+    fn monotone_rgb(&self) -> RGB {
+        WHITE * self.rgb().value()
+    }
+
+    fn best_foreground_rgb(&self) -> RGB {
+        self.rgb().best_foreground_rgb()
+    }
+
+    fn max_chroma_rgb(&self) -> RGB {
+        self.hue().max_chroma_rgb()
+    }
+
+    fn warmth_rgb(&self) -> RGB {
+        let x = self.rgb().x();
+        if x < 0.0 {
+            CYAN * x.abs() + WHITE * (1.0 + x) * 0.5
+        } else if x > 0.0 {
+            RED * x + WHITE * (1.0 - x) * 0.5
+        } else {
+            WHITE * 0.5
+        }
+    }
+
+    fn scalar_attribute(&self, attr: ScalarAttribute) -> f64 {
+        match attr {
+            ScalarAttribute::Chroma => self.chroma(),
+            ScalarAttribute::Greyness => self.greyness(),
+            ScalarAttribute::Value => self.value(),
+            ScalarAttribute::Warmth => self.warmth(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Hash)]
@@ -104,57 +146,15 @@ impl ColourInterface for Colour {
     fn hue(&self) -> HueAngle {
         self.hue
     }
+}
 
-    fn is_grey(&self) -> bool {
-        self.hue.is_grey()
+impl ColourInterface for RGB {
+    fn rgb(&self) -> RGB {
+        *self
     }
 
-    fn chroma(&self) -> f64 {
-        self.rgb.hypot() * self.hue.chroma_correction()
-    }
-
-    fn greyness(&self) -> f64 {
-        1.0 - self.rgb.hypot() * self.hue.chroma_correction()
-    }
-
-    fn value(&self) -> f64 {
-        self.rgb.value()
-    }
-
-    fn warmth(&self) -> f64 {
-        (self.rgb.x() + 1.0) / 2.0
-    }
-
-    fn monotone_rgb(&self) -> RGB {
-        WHITE * self.rgb.value()
-    }
-
-    fn best_foreground_rgb(&self) -> RGB {
-        self.rgb().best_foreground_rgb()
-    }
-
-    fn max_chroma_rgb(&self) -> RGB {
-        self.hue.max_chroma_rgb()
-    }
-
-    fn warmth_rgb(&self) -> RGB {
-        let x = self.rgb.x();
-        if x < 0.0 {
-            CYAN * x.abs() + WHITE * (1.0 + x) * 0.5
-        } else if x > 0.0 {
-            RED * x + WHITE * (1.0 - x) * 0.5
-        } else {
-            WHITE * 0.5
-        }
-    }
-
-    fn scalar_attribute(&self, attr: ScalarAttribute) -> f64 {
-        match attr {
-            ScalarAttribute::Chroma => self.chroma(),
-            ScalarAttribute::Greyness => self.greyness(),
-            ScalarAttribute::Value => self.value(),
-            ScalarAttribute::Warmth => self.warmth(),
-        }
+    fn hue(&self) -> HueAngle {
+        HueAngle::from(*self)
     }
 }
 
