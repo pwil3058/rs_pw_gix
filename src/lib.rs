@@ -45,6 +45,7 @@ pub mod cairox;
 pub mod colour;
 pub mod dialogue;
 pub mod gdkx;
+pub mod gdk_pixbufx;
 pub mod gtkx;
 pub mod rgb_math;
 
