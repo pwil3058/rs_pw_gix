@@ -46,6 +46,7 @@ pub mod colour;
 pub mod dialogue;
 pub mod gdkx;
 pub mod gdk_pixbufx;
+pub mod geometry;
 pub mod gtkx;
 pub mod rgb_math;
 

@@ -15,6 +15,7 @@
 pub mod coloured;
 pub mod combo_box_text;
 pub mod dialog;
+pub mod drawing_area;
 pub mod entry;
 #[macro_use]
 pub mod value;

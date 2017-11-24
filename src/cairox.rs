@@ -12,124 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::convert::From;
 use std::f64::consts;
-use std::ops::*;
 
 use cairo;
 use gdk::prelude::ContextExt;
 use gdk_pixbuf::Pixbuf;
 
 use colour::*;
-use rgb_math::angle::Angle;
 use rgb_math::rgb::RGB;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct Point (pub f64, pub f64);
-
-const SQRT_2: f64 = 1.4142_13562_37309_50488;
-const SIN_45_DEG: f64 = 1.0 / SQRT_2;
-const COS_45_DEG: f64 = SIN_45_DEG;
-
-impl Point {
-    pub fn hypot(&self) -> f64 {
-        self.0.hypot(self.1)
-    }
-
-    pub fn x(&self) -> f64 {
-        self.0
-    }
-
-    pub fn y(&self) -> f64 {
-        self.1
-    }
-
-    pub fn xy(&self) -> (f64, f64) {
-        (self.0, self.1)
-    }
-
-    pub fn rotate_45_deg(&self) -> Point {
-        Point(self.0 - self.1, self.0 + self.1) * SIN_45_DEG
-    }
-}
-
-impl From<(f64, f64)> for Point {
-    fn from(tuple: (f64,f64)) -> Point {
-        Point(tuple.0, tuple.1)
-    }
-}
-
-impl From<(Angle, f64)> for Point {
-    fn from(polar: (Angle, f64)) -> Point {
-        // NB: cairo coordinates are upside down to normal people
-        let (angle, radius) = polar;
-        if angle.is_nan() {
-            Point(0.0, -radius)
-        } else {
-            Point(radius * angle.cos(), -radius * angle.sin())
-        }
-    }
-}
-
-impl Add for Point {
-    type Output = Point;
-
-    fn add(self, rhs: Point) -> Point {
-        Point(self.0 + rhs.0, self.1 + rhs.1)
-    }
-}
-
-impl AddAssign for Point {
-    fn add_assign(&mut self, rhs: Point) {
-        *self = *self + rhs
-    }
-}
-
-impl Sub for Point {
-    type Output = Point;
-
-    fn sub(self, rhs: Point) -> Point {
-        Point(self.0 - rhs.0, self.1 - rhs.1)
-    }
-}
-
-impl SubAssign for Point {
-    fn sub_assign(&mut self, rhs: Point) {
-        *self = *self - rhs
-    }
-}
-
-impl<Scalar: Into<f64> + Copy> Mul<Scalar> for Point {
-    type Output = Point;
-
-    fn mul(self, rhs: Scalar) -> Point {
-        let frhs: f64 = rhs.into();
-        Point(self.0 * frhs, self.1 * frhs)
-    }
-}
-
-impl<Scalar: Into<f64> + Copy> MulAssign<Scalar> for Point {
-    fn mul_assign(&mut self, rhs: Scalar) {
-        *self = *self * rhs
-    }
-}
-
-impl<Scalar: Into<f64> + Copy> Div<Scalar> for Point {
-    type Output = Point;
-
-    fn div(self, rhs: Scalar) -> Point {
-        let frhs: f64 = rhs.into();
-        Point(self.0 / frhs, self.1 / frhs)
-    }
-}
-
-impl<Scalar: Into<f64> + Copy> DivAssign<Scalar> for Point {
-    fn div_assign(&mut self, rhs: Scalar) {
-        *self = *self / rhs
-    }
-}
-
-pub type Points = Vec<Point>;
+pub use geometry::*;
 
 pub enum Side {
     Top,
