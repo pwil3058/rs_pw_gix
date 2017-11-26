@@ -22,6 +22,7 @@ use num::Num;
 
 use rgb_math::angle::Angle;
 
+// POINT
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Point (pub f64, pub f64);
 
@@ -48,6 +49,12 @@ impl Point {
 
     pub fn rotate_45_deg(&self) -> Point {
         Point(self.0 - self.1, self.0 + self.1) * SIN_45_DEG
+    }
+}
+
+impl From<Point> for [f64; 2] {
+    fn from(point: Point) -> [f64; 2] {
+        [point.0, point.1]
     }
 }
 
@@ -129,10 +136,55 @@ impl<Scalar: Into<f64> + Copy> DivAssign<Scalar> for Point {
 
 pub type Points = Vec<Point>;
 
+// SIZE
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub struct Size<T: Num + PartialOrd + Copy> {
     pub width: T,
     pub height: T,
+}
+
+impl<T: Num + PartialOrd + Copy> Sub for Size<T> {
+    type Output = Size<T>;
+
+    fn sub(self, rhs: Size<T>) -> Size<T> {
+        Size::<T> {
+            width: self.width - rhs.width,
+            height: self.height - rhs.width,
+        }
+    }
+}
+
+impl<T: Num + PartialOrd + Copy> Add for Size<T> {
+    type Output = Size<T>;
+
+    fn add(self, rhs: Size<T>) -> Size<T> {
+        Size::<T> {
+            width: self.width + rhs.width,
+            height: self.height + rhs.width,
+        }
+    }
+}
+
+impl<T: Num + PartialOrd + Copy> Size<T> {
+    pub fn length_longest_side(&self) -> T {
+        if self.width > self.height {
+            self.width
+        } else {
+            self.height
+        }
+    }
+}
+
+impl From<Size<f64>> for [f64; 2] {
+    fn from(size: Size<f64>) -> [f64; 2] {
+        [size.width, size.height]
+    }
+}
+
+impl From<Size<i32>> for [i32; 2] {
+    fn from(size: Size<i32>) -> [i32; 2] {
+        [size.width, size.height]
+    }
 }
 
 impl From<Size<i32>> for Size<f64> {
@@ -172,21 +224,26 @@ impl Mul<f64> for Size<i32> {
     }
 }
 
-impl<T: Num + PartialOrd + Copy> Size<T> {
-    pub fn length_longest_side(&self) -> T {
-        if self.width > self.height {
-            self.width
-        } else {
-            self.height
-        }
-    }
-}
-
 impl Size<f64> {
     pub fn scales_versus(&self, other: Size<f64>) -> Size<f64> {
         Size::<f64>{
             width: self.width / other.width,
             height: self.height / other.height,
+        }
+    }
+
+    pub fn scale_versus(&self, other: Size<f64>) -> f64 {
+        assert!(self.aspect_ratio_matches_size(other));
+        let scales = self.scales_versus(other);
+        (scales.width + scales.height) / 2.0
+    }
+}
+
+impl Size<i32> {
+    pub fn scales_versus(&self, other: Size<f64>) -> Size<f64> {
+        Size::<f64>{
+            width: self.width as f64 / other.width,
+            height: self.height as f64 / other.height,
         }
     }
 
@@ -276,6 +333,7 @@ impl AspectRatio for Size<f64> {
     }
 }
 
+// RECTANGLE
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub struct Rectangle<T: Num + PartialOrd + Copy> {
     pub x: T,
@@ -298,6 +356,28 @@ impl From<Rectangle<i32>> for Rectangle<f64> {
 impl From<Rectangle<f64>> for Rectangle<i32> {
     fn from(rectangle: Rectangle<f64>) -> Rectangle<i32> {
         Rectangle::<i32> {
+            x: rectangle.x.round() as i32,
+            y: rectangle.y.round() as i32,
+            width: rectangle.width.round() as i32,
+            height: rectangle.height.round() as i32,
+        }
+    }
+}
+
+impl From<gtk::Rectangle> for Rectangle<f64> {
+    fn from(rectangle: gtk::Rectangle) -> Rectangle<f64> {
+        Rectangle::<f64> {
+            x: rectangle.x as f64,
+            y: rectangle.y as f64,
+            width: rectangle.width as f64,
+            height: rectangle.height as f64,
+        }
+    }
+}
+
+impl From<Rectangle<f64>> for gtk::Rectangle {
+    fn from(rectangle: Rectangle<f64>) -> gtk::Rectangle {
+        gtk::Rectangle {
             x: rectangle.x.round() as i32,
             y: rectangle.y.round() as i32,
             width: rectangle.width.round() as i32,

@@ -89,6 +89,9 @@ pub trait XYSelectionInterface {
 
 impl XYSelectionInterface for XYSelection {
     fn create(drawing_area: &gtk::DrawingArea) -> XYSelection {
+        let events = gdk::POINTER_MOTION_MASK | gdk::BUTTON_PRESS_MASK |
+            gdk::BUTTON_RELEASE_MASK | gdk::LEAVE_NOTIFY_MASK;
+        drawing_area.add_events(events.bits() as i32);
         let xys = Rc::new(
             XYSelectionCore {
                 drawing_area: drawing_area.clone(),

@@ -48,6 +48,7 @@ pub mod gdkx;
 pub mod gdk_pixbufx;
 pub mod geometry;
 pub mod gtkx;
+pub mod printer;
 pub mod rgb_math;
 
 pub mod recollect {
