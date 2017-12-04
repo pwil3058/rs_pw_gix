@@ -130,7 +130,6 @@ impl PixbufViewCore {
             *self.zoomable.borrow_mut() = Some(Zoomable::from(pixbuf.clone()));
             if let Some(ref zoomable) = *self.zoomable.borrow() {
                 let alloc = self.drawing_area.get_allocation().size();
-                let sizediff = alloc - pixbuf.size();
                 if pixbuf.aspect_ratio_matches_size(alloc.into()) {
                     zoomable.set_zoomed_size(alloc);
                 } else {
@@ -380,7 +379,8 @@ impl PixbufViewInterface for PixbufView {
                         pbv_c.print_image_item.set_sensitive(false);
                         pbv_c.copy_selection_item.set_sensitive(false);
                     };
-                    pbv_c.menu.popup_at_pointer(None);
+                    // TODO: needs v3_22: pbv_c.menu.popup_at_pointer(None);
+                    pbv_c.menu.popup_easy(event.get_button(), event.get_time());
                     return gtk::Inhibit(true)
                 };
                 gtk::Inhibit(false)
