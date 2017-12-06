@@ -15,6 +15,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate which;
 
 #[macro_use]
 pub mod pwo {
@@ -50,6 +51,7 @@ pub mod geometry;
 pub mod gtkx;
 pub mod printer;
 pub mod rgb_math;
+pub mod sample;
 
 pub mod recollect {
     use std::collections::HashMap;

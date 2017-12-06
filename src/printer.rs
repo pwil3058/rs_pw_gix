@@ -75,7 +75,8 @@ fn save_printer_settings(settings: &gtk::PrintSettings) {
     };
 }
 
-pub fn print_pixbuf<P: IsA<gtk::Window>>(pixbuf: &gdk_pixbuf::Pixbuf, parent: Option<&P>) {
+// TODO: finish implementing printing
+pub fn print_pixbuf<P: IsA<gtk::Window>>(_pixbuf: &gdk_pixbuf::Pixbuf, parent: Option<&P>) {
     //let prop = gtk::PrintOperation();
     dialogue::inform_user(parent, "Printing not yet implemented", None)
 }
