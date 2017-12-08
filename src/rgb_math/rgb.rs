@@ -299,6 +299,12 @@ pub const GREYS: [RGB; 2] = [BLACK, WHITE];
 pub const PRIMARIES: [RGB; 3] = [RED, GREEN, BLUE];
 pub const SECONDARIES: [RGB; 3] = [CYAN, MAGENTA, YELLOW];
 
+impl RGB8 {
+    pub fn pango_string(&self) -> String {
+        format!("#{:02X}{:02X}{:02X}", self.red, self.green, self.blue)
+    }
+}
+
 impl RGB {
     pub fn all_are_proportions(&self) -> bool {
         is_proportion!(self.red) && is_proportion!(self.green) && is_proportion!(self.blue)
@@ -358,6 +364,11 @@ impl RGB {
             }
         }
         *self
+    }
+
+    pub fn pango_string(&self) -> String {
+        let rgb8: RGB8 = (*self).into();
+        rgb8.pango_string()
     }
 }
 
@@ -473,5 +484,18 @@ mod tests {
         } else {
             panic!("File: {:?} Line: {:?}", file!(), line!())
         }
+    }
+
+    #[test]
+    fn rgb_math_rgb_pango_string() {
+        assert_eq!(RED.pango_string(), "#FF0000");
+        assert_eq!(GREEN.pango_string(), "#00FF00");
+        assert_eq!(BLUE.pango_string(), "#0000FF");
+        assert_eq!(CYAN.pango_string(), "#00FFFF");
+        assert_eq!(MAGENTA.pango_string(), "#FF00FF");
+        assert_eq!(YELLOW.pango_string(), "#FFFF00");
+        assert_eq!(BLACK.pango_string(), "#000000");
+        assert_eq!(WHITE.pango_string(), "#FFFFFF");
+        assert_eq!(((WHITE + YELLOW) / 2.0).pango_string(), "#FFFF80");
     }
 }
