@@ -336,7 +336,7 @@ impl HueCADData {
                     let offset = i as f64 / 12.0;
                     let rgb = hue_angle.max_chroma_rgb();
                     stops.push([offset, rgb[0], rgb[1], rgb[2]]);
-                    hue_angle = hue_angle + delta_angle
+                    hue_angle = hue_angle - delta_angle
                 }
                 stops
             }
@@ -362,7 +362,7 @@ impl HueCADData {
 }
 
 fn calc_hue_value(hue_angle: Angle, target_angle: Angle) -> f64 {
-    0.5  + (target_angle - hue_angle) / DEG_360
+    0.5  - (target_angle - hue_angle) / DEG_360
 }
 
 pub type HueCAD = Rc<HueCADData>;
