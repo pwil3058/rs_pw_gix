@@ -6,6 +6,7 @@ authors = ["Peter Williams <pwil3058@gmail.com>"]
 [dependencies]
 pango = "0.3.0"
 cairo-rs = "0.3.0"
+pangocairo = "0.4.1"
 gdk = "0.7.0"
 gdk-pixbuf = "0.3.0"
 gio = "0.3.0"

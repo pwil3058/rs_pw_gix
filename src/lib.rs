@@ -4,6 +4,8 @@ extern crate gdk_pixbuf;
 extern crate gio;
 extern crate glib;
 extern crate gtk;
+extern crate pango;
+extern crate pangocairo;
 
 extern crate fs2;
 #[macro_use]
