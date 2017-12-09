@@ -28,6 +28,8 @@ use cairox::*;
 use gtkx::drawing_area::*;
 use printer;
 
+use super::PIXOPS_INTERP_BILINEAR;
+
 struct Zoomable {
     unzoomed: gdk_pixbuf::Pixbuf,
     zoomed: RefCell<gdk_pixbuf::Pixbuf>,
@@ -69,7 +71,7 @@ impl Zoomable {
 
     pub fn set_zoom(&self, zoom_factor: f64) {
         let new_size = self.unzoomed.size() * zoom_factor;
-        if let Ok(new_pixbuf) = self.unzoomed.scale_simple(new_size.width, new_size.height, gdk_pixbuf::InterpType::Bilinear) {
+        if let Ok(new_pixbuf) = self.unzoomed.scale_simple(new_size.width, new_size.height, PIXOPS_INTERP_BILINEAR) {
             *self.zoomed.borrow_mut() = new_pixbuf;
             self.zoom_factor.set(zoom_factor);
         } //TODO: do something about failure
@@ -77,7 +79,7 @@ impl Zoomable {
 
     pub fn set_zoomed_size(&self, new_zsize: Size<i32>) {
         assert!(self.aspect_ratio_matches_size(new_zsize.into()));
-        if let Ok(new_pixbuf) = self.unzoomed.scale_simple(new_zsize.width, new_zsize.height, gdk_pixbuf::InterpType::Bilinear) {
+        if let Ok(new_pixbuf) = self.unzoomed.scale_simple(new_zsize.width, new_zsize.height, PIXOPS_INTERP_BILINEAR) {
             *self.zoomed.borrow_mut() = new_pixbuf;
             self.zoom_factor.set(self.zoomed.borrow().scale_versus(&self.unzoomed));
         } //TODO: do something about failure
@@ -202,8 +204,8 @@ impl PixbufViewInterface for PixbufView {
     fn create() -> PixbufView {
         let scrolled_window = gtk::ScrolledWindow::new(None, None);
         scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
-        let events = gdk::POINTER_MOTION_MASK | gdk::BUTTON_PRESS_MASK |
-            gdk::BUTTON_RELEASE_MASK | gdk::LEAVE_NOTIFY_MASK;
+        let events = gdk::EventMask::POINTER_MOTION_MASK | gdk::EventMask::BUTTON_PRESS_MASK |
+            gdk::EventMask::BUTTON_RELEASE_MASK | gdk::EventMask::LEAVE_NOTIFY_MASK;
         scrolled_window.add_events(events.bits() as i32);
         let drawing_area = gtk::DrawingArea::new();
         scrolled_window.add_with_viewport(&drawing_area);
@@ -325,7 +327,7 @@ impl PixbufViewInterface for PixbufView {
         let pbv_c = pbv.clone();
         pbv.scrolled_window.connect_scroll_event(
             move |_, event| {
-                if event.get_state().contains(gdk::CONTROL_MASK) {
+                if event.get_state().contains(gdk::ModifierType::CONTROL_MASK) {
                     match event.get_direction() {
                         gdk::ScrollDirection::Up => {
                             pbv_c.zoom_in();
@@ -367,7 +369,7 @@ impl PixbufViewInterface for PixbufView {
         let pbv_c = pbv.clone();
         pbv.scrolled_window.connect_button_press_event(
             move |_, event| {
-                if event.get_button() == 1 && event.get_state().contains(gdk::CONTROL_MASK) {
+                if event.get_button() == 1 && event.get_state().contains(gdk::ModifierType::CONTROL_MASK) {
                     pbv_c.last_xy.set(event.get_position().into());
                     pbv_c.doing_button_motion.set(true);
                     return gtk::Inhibit(true)

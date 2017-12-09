@@ -17,7 +17,8 @@ use std::rc::Rc;
 
 use gio;
 use gtk;
-use gtk::prelude::*;
+use gtk::{BoxExt, ButtonExt, ContainerExt, WidgetExt};
+//use gtk::prelude::*;
 
 use pwo::*;
 

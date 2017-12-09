@@ -89,8 +89,8 @@ pub trait XYSelectionInterface {
 
 impl XYSelectionInterface for XYSelection {
     fn create(drawing_area: &gtk::DrawingArea) -> XYSelection {
-        let events = gdk::POINTER_MOTION_MASK | gdk::BUTTON_PRESS_MASK |
-            gdk::BUTTON_RELEASE_MASK | gdk::LEAVE_NOTIFY_MASK;
+        let events = gdk::EventMask::POINTER_MOTION_MASK | gdk::EventMask::BUTTON_PRESS_MASK |
+            gdk::EventMask::BUTTON_RELEASE_MASK | gdk::EventMask::LEAVE_NOTIFY_MASK;
         drawing_area.add_events(events.bits() as i32);
         let xys = Rc::new(
             XYSelectionCore {
@@ -104,7 +104,7 @@ impl XYSelectionInterface for XYSelection {
         let xys_c = xys.clone();
         xys.drawing_area.connect_button_press_event(
             move |da, event| {
-                if event.get_button() == 1 && !event.get_state().contains(gdk::CONTROL_MASK) {
+                if event.get_button() == 1 && !event.get_state().contains(gdk::ModifierType::CONTROL_MASK) {
                     let point = Point::from(event.get_position());
                     xys_c.start_xy.set(Some(point));
                     xys_c.end_xy.set(Some(point));

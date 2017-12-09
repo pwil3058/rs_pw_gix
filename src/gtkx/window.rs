@@ -19,7 +19,7 @@ use gtk;
 use gdkx::*;
 use recollections;
 
-pub trait RememberGeometry: gtk::WidgetExt + gtk::WindowExt {
+pub trait RememberGeometry: gtk::WidgetExt + gtk::GtkWindowExt {
     fn set_geometry_from_recollections(&self, window_name: &str, default_size: (i32, i32)) {
         let key = format!("{}::window::last_geometry", window_name);
         if let Some(last_geometry) = recollections::recall(key.as_str()) {

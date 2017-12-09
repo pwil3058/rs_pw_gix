@@ -95,7 +95,7 @@ fn recall_dialog_last_size(key: &str, default: (i32, i32)) -> (i32, i32) {
     default
 }
 
-pub trait RememberDialogSize: gtk::WidgetExt + gtk::WindowExt {
+pub trait RememberDialogSize: gtk::WidgetExt + gtk::GtkWindowExt {
     fn set_size_from_recollections(&self, dialog_name: &str, default: (i32, i32)) {
         let key = format!("{}::dialog::last_size", dialog_name);
         let (width, height) = recall_dialog_last_size(key.as_str(), default);
