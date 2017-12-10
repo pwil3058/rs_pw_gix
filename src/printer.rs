@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::error::Error;
 use std::fs;
 use std::path;
@@ -25,7 +25,7 @@ use gdk_pixbuf;
 use gtk;
 use gtk::prelude::{IsA, PrintOperationExt, PrintSettingsExt, PrintContextExt};
 use pango;
-use pango::LayoutExt;
+use pango::{LayoutExt, LayoutLine};
 use pangocairo;
 
 use gdk_pixbufx::PIXOPS_INTERP_BILINEAR;
@@ -181,21 +181,7 @@ type MarkupPrinter = Rc<MarkupPrinterCore>;
 
 pub fn print_markup_chunks<P: IsA<gtk::Window>>(chunks: Vec<String>, parent: Option<&P>) {
     let markup_printer = MarkupPrinter::create(chunks);
-    match markup_printer.print_operation.run(gtk::PrintOperationAction::PrintDialog, parent) {
-        Ok(result) => {
-            if result == gtk::PrintOperationResult::Error {
-                dialogue::warn_user(parent, "Printing failed.", None);
-            } else if result == gtk::PrintOperationResult::Apply {
-                if let Some(settings) = markup_printer.print_operation.get_print_settings() {
-                    save_printer_settings(&settings);
-                }
-            }
-        },
-        Err(err) => {
-            let explanation = err.description();
-            dialogue::warn_user(parent, "Printing failed.", Some(explanation))
-        }
-    };
+    do_print_operation(&markup_printer.print_operation, parent);
 }
 
 struct PixbufPrinterCore {
@@ -269,10 +255,93 @@ type PixbufPrinter = Rc<PixbufPrinterCore>;
 
 pub fn print_pixbuf<P: IsA<gtk::Window>>(pixbuf: &gdk_pixbuf::Pixbuf, parent: Option<&P>) {
     let pixbuf_printer = PixbufPrinter::create(pixbuf);
-    do_print_operation(&pixbuf_printer.print_operation, parent)
+    do_print_operation(&pixbuf_printer.print_operation, parent);
 }
 
-// TODO: finish implementing printing
+
+struct TextPrinterCore {
+    print_operation: gtk::PrintOperation,
+    layout: RefCell<Option<pango::Layout>>,
+    next_line_index: Cell<i32>,
+}
+
+trait TextPrinterInterface {
+    fn create(text: &str) -> Rc<TextPrinterCore>;
+}
+
+impl TextPrinterInterface for Rc<TextPrinterCore> {
+    // NB: this is all necessary because of need for callbacks
+    fn create(text: &str) -> Rc<TextPrinterCore> {
+        let mp = Rc::new(
+            TextPrinterCore {
+                print_operation: gtk::PrintOperation::new(),
+                layout: RefCell::new(None),
+                next_line_index: Cell::new(0),
+            }
+        );
+        mp.print_operation.set_print_settings(&get_printer_settings());
+        mp.print_operation.set_unit(gtk::Unit::Mm);
+
+        let mp_c = mp.clone();
+        let text_c = text.to_string();
+        mp.print_operation.connect_begin_print(
+            move |pr_op, pr_ctxt| {
+                if let Some(layout) = pr_ctxt.create_pango_layout() {
+                    let spwidth = (pr_ctxt.get_width() * pango::SCALE as f64) as i32;
+                    layout.set_width(spwidth);
+                    layout.set_text(&text_c);
+                    let (_, t_height) = layout.get_pixel_size();
+                    let l_height = t_height as f64 / layout.get_line_count() as f64;
+                    let lpp = (pr_ctxt.get_height() / l_height).floor();
+                    let np = layout.get_line_count() as f64 / lpp;
+                    pr_op.set_n_pages((np + 1.0) as i32);
+                    *mp_c.layout.borrow_mut() = Some(layout);
+                } else {
+                    panic!("File: {} Line: {}", file!(), line!());
+                }
+            }
+        );
+
+        let mp_c = mp.clone();
+        mp.print_operation.connect_draw_page(
+            move |_, pr_ctxt, page_num| {
+                if let Some(ref layout) = *mp_c.layout.borrow_mut() {
+                    if let Some(cairo_context) = pr_ctxt.get_cairo_context() {
+                        let page_height = pr_ctxt.get_height();
+                        let mut y: f64 = 0.0;
+                        let mut index = mp_c.next_line_index.get();
+                        while y < page_height {
+                            cairo_context.move_to(0.0, y);
+                            if let Some(layout_line) = layout.get_line(index) {
+                                cairo_context.move_to(0.0, y);
+                                pangocairo::functions::show_layout_line(&cairo_context, &layout_line);
+                                let (_, logical_extent) = layout_line.get_pixel_extents();
+                                y += logical_extent.height as f64;
+                                index += 1;
+                            } else {
+                                break;
+                            }
+                        };
+                        mp_c.next_line_index.set(index);
+                    } else {
+                        panic!("File: {} Line: {}", file!(), line!());
+                    }
+                } else {
+                    panic!("File: {:?} Line: {:?}", file!(), line!())
+                };
+            }
+        );
+
+        mp
+    }
+}
+
+type TextPrinter = Rc<TextPrinterCore>;
+
+pub fn print_text<P: IsA<gtk::Window>>(text: &str, parent: Option<&P>) {
+    let text_printer = TextPrinter::create(text);
+    do_print_operation(&text_printer.print_operation, parent);
+}
 
 #[cfg(test)]
 mod tests {
