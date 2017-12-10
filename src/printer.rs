@@ -20,12 +20,15 @@ use std::rc::Rc;
 
 use mut_static::*;
 
+use gdk::ContextExt;
 use gdk_pixbuf;
 use gtk;
 use gtk::prelude::{IsA, PrintOperationExt, PrintSettingsExt, PrintContextExt};
 use pango;
 use pango::LayoutExt;
 use pangocairo;
+
+use gdk_pixbufx::PIXOPS_INTERP_BILINEAR;
 
 use dialogue;
 
@@ -75,6 +78,24 @@ fn save_printer_settings(settings: &gtk::PrintSettings) {
     if let Some(ref file_path) = REMEMBERED_PRINTER_SETTINGS.write().unwrap().o_file_path {
         if let Err(err) = settings.to_file(file_path) {
             panic!("{:?}: line {:?}: {:?}", file!(), line!(), err)
+        }
+    };
+}
+
+fn do_print_operation<P: IsA<gtk::Window>>(print_operation: &gtk::PrintOperation, parent: Option<&P>) {
+    match print_operation.run(gtk::PrintOperationAction::PrintDialog, parent) {
+        Ok(result) => {
+            if result == gtk::PrintOperationResult::Error {
+                dialogue::warn_user(parent, "Printing failed.", None);
+            } else if result == gtk::PrintOperationResult::Apply {
+                if let Some(settings) = print_operation.get_print_settings() {
+                    save_printer_settings(&settings);
+                }
+            }
+        },
+        Err(err) => {
+            let explanation = err.description();
+            dialogue::warn_user(parent, "Printing failed.", Some(explanation))
         }
     };
 }
@@ -177,11 +198,81 @@ pub fn print_markup_chunks<P: IsA<gtk::Window>>(chunks: Vec<String>, parent: Opt
     };
 }
 
-// TODO: finish implementing printing
-pub fn print_pixbuf<P: IsA<gtk::Window>>(_pixbuf: &gdk_pixbuf::Pixbuf, parent: Option<&P>) {
-    let _prop = gtk::PrintOperation::new();
-    dialogue::inform_user(parent, "Printing not yet implemented", None)
+struct PixbufPrinterCore {
+    print_operation: gtk::PrintOperation,
+    pixbuf: RefCell<gdk_pixbuf::Pixbuf>,
 }
+
+trait PixbufPrinterInterface {
+    fn create(pixbuf: &gdk_pixbuf::Pixbuf) -> Rc<PixbufPrinterCore>;
+}
+
+impl PixbufPrinterInterface for Rc<PixbufPrinterCore> {
+    // NB: this is all necessary because of need for callbacks
+    fn create(pixbuf: &gdk_pixbuf::Pixbuf) -> Rc<PixbufPrinterCore> {
+        let mp = Rc::new(
+            PixbufPrinterCore {
+                print_operation: gtk::PrintOperation::new(),
+                pixbuf: RefCell::new(pixbuf.clone()),
+            }
+        );
+        mp.print_operation.set_print_settings(&get_printer_settings());
+        mp.print_operation.set_unit(gtk::Unit::Mm);
+
+        let mp_c = mp.clone();
+        mp.print_operation.connect_begin_print(
+            move |pr_op, pr_ctxt| {
+                let pixbuf = mp_c.pixbuf.borrow().clone();
+                let pheight = pixbuf.get_height();
+                let pwidth = pixbuf.get_width();
+                // TODO: use this code when pixbuf rotation available
+                //let mut pixbuf = mp_c.pixbuf.borrow().clone();
+                //let mut pheight = pixbuf.get_height();
+                //let mut pwidth = pixbuf.get_width();
+                //if pwidth > pheight {
+                    //pixbuf = pixbuf.rotate_simple(gdk_pixbuf::PixbufRotation::Clockwise);
+                    //pheight = pixbuf.get_height();
+                    //pwidth = pixbuf.get_width();
+                //};
+                let hscale = pr_ctxt.get_height() / pheight as f64;
+                let wscale = pr_ctxt.get_width() / pwidth as f64;
+                let scale = hscale.min(wscale);
+                let new_width = (pwidth as f64 * scale).round() as i32;
+                let new_height = (pheight as f64 * scale).round() as i32;
+                if let Ok(new_pixbuf) = pixbuf.scale_simple(new_width, new_height, PIXOPS_INTERP_BILINEAR) {
+                    *mp_c.pixbuf.borrow_mut() = new_pixbuf
+                } else {
+                    panic!("File: {} Line: {}", file!(), line!())
+                };
+                pr_op.set_n_pages(1);
+            }
+        );
+
+        let mp_c = mp.clone();
+        mp.print_operation.connect_draw_page(
+            move |_, pr_ctxt, _| {
+                let pixbuf = mp_c.pixbuf.borrow();
+                if let Some(cairo_context) = pr_ctxt.get_cairo_context() {
+                    cairo_context.set_source_pixbuf(&pixbuf, 0.0, 0.0);
+                    cairo_context.paint();
+                } else {
+                    panic!("File: {} Line: {}", file!(), line!());
+                }
+            }
+        );
+
+        mp
+    }
+}
+
+type PixbufPrinter = Rc<PixbufPrinterCore>;
+
+pub fn print_pixbuf<P: IsA<gtk::Window>>(pixbuf: &gdk_pixbuf::Pixbuf, parent: Option<&P>) {
+    let pixbuf_printer = PixbufPrinter::create(pixbuf);
+    do_print_operation(&pixbuf_printer.print_operation, parent)
+}
+
+// TODO: finish implementing printing
 
 #[cfg(test)]
 mod tests {
