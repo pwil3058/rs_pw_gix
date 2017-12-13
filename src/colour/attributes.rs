@@ -22,12 +22,12 @@ use gtk::WidgetExt;
 
 use colour::*;
 use cairox::*;
-use pwo::*;
+use struct_traits::*;
 use rgb_math::angle::*;
 
 type ColourStops = Vec<[f64; 4]>;
 
-pub trait ColourAttributeDisplayInterface: PackableWidgetInterface {
+pub trait ColourAttributeDisplayInterface: PackableWidgetObject<gtk::DrawingArea> {
     type CADIType;
 
     fn create() -> Self::CADIType;
@@ -751,7 +751,7 @@ impl ColourAttributeDisplayInterface for GreynessCAD {
 
 // STACK
 
-pub trait ColourAttributeDisplayStackInterface: PackableWidgetInterface {
+pub trait ColourAttributeDisplayStackInterface: PackableWidgetObject<gtk::Box> {
     fn create() -> Self;
 
     fn set_colour(&self, colour: Option<&Colour>);

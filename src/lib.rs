@@ -20,13 +20,11 @@ extern crate serde_json;
 extern crate which;
 
 #[macro_use]
-pub mod pwo {
+pub mod struct_traits {
     #[macro_export]
     macro_rules! implement_pwo {
         ( $f:ty, $field:ident, $t:ty ) => (
-            impl PackableWidgetInterface for $f {
-                type PackableWidgetType = $t;
-
+            impl PackableWidgetObject<$t> for $f {
                 fn pwo(&self) -> $t {
                     self.$field.clone()
                 }
@@ -37,10 +35,24 @@ pub mod pwo {
     extern crate glib;
     extern crate gtk;
 
-    pub trait PackableWidgetInterface {
-        type PackableWidgetType: glib::IsA<gtk::Widget>;
+    pub trait PackableWidgetObject<PWT: glib::IsA<gtk::Widget>> {
+        fn pwo(&self) -> PWT;
+    }
 
-        fn pwo(&self) -> Self::PackableWidgetType;
+    pub trait SimpleCreation {
+        fn create() -> Self;
+    }
+
+    pub trait SingleArgCreation<A> {
+        fn create(a: A) -> Self;
+    }
+
+    pub trait DoubleArgCreation<A, B> {
+        fn create(a: A, b: B) -> Self;
+    }
+
+    pub trait TripleArgCreation<A, B, C> {
+        fn create(a: A, b: B, c:C) -> Self;
     }
 }
 

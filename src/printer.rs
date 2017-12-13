@@ -25,7 +25,7 @@ use gdk_pixbuf;
 use gtk;
 use gtk::prelude::{IsA, PrintOperationExt, PrintSettingsExt, PrintContextExt};
 use pango;
-use pango::{LayoutExt, LayoutLine};
+use pango::{LayoutExt};
 use pangocairo;
 
 use gdk_pixbufx::PIXOPS_INTERP_BILINEAR;
@@ -304,7 +304,7 @@ impl TextPrinterInterface for Rc<TextPrinterCore> {
 
         let mp_c = mp.clone();
         mp.print_operation.connect_draw_page(
-            move |_, pr_ctxt, page_num| {
+            move |_, pr_ctxt, _| {
                 if let Some(ref layout) = *mp_c.layout.borrow_mut() {
                     if let Some(cairo_context) = pr_ctxt.get_cairo_context() {
                         let page_height = pr_ctxt.get_height();

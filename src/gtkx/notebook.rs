@@ -20,7 +20,7 @@ use gtk;
 use gtk::{BoxExt, ButtonExt, ContainerExt, WidgetExt};
 //use gtk::prelude::*;
 
-use pwo::*;
+use struct_traits::*;
 
 pub struct TabRemoveLabelCore {
     hbox: gtk::Box,
