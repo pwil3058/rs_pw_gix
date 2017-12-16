@@ -15,6 +15,12 @@
 use gtk;
 use gtk::prelude::*;
 
+pub fn parent_none() -> Option<&'static gtk::Window> {
+    let none: Option<&gtk::Window> = None;
+    none
+}
+
+// INFORM
 fn low_inform_user<P: IsA<gtk::Window>>(
     dialog_parent: Option<&P>,
     msg: &str,
@@ -54,6 +60,39 @@ pub fn warn_user<P: IsA<gtk::Window>>(
     expln: Option<&str>,
 ) {
     low_inform_user(dialog_parent, msg, expln, gtk::MessageType::Warning)
+}
+
+
+// ASK OK OR CANCEL
+pub fn create_ok_or_cancel_dialog<P: IsA<gtk::Window>>(
+    dialog_parent: Option<&P>,
+    msg: &str,
+    expln: Option<&str>,
+) -> gtk::MessageDialog {
+    let dialog = gtk::MessageDialog::new(
+        dialog_parent,
+        gtk::DialogFlags::empty(),
+        gtk::MessageType::Question,
+        gtk::ButtonsType::OkCancel,
+        msg
+    );
+    if let Some(explanation) = expln {
+        dialog.set_property_secondary_text(Some(explanation));
+    };
+    dialog
+}
+
+pub fn ask_confirm_action<P: IsA<gtk::Window>>(
+    dialog_parent: Option<&P>,
+    msg: &str,
+    expln: Option<&str>,
+) -> bool {
+    let dialog = create_ok_or_cancel_dialog(dialog_parent, msg, expln);
+    let response: i32 = dialog.run();
+    dialog.destroy();
+    let ok = gtk::ResponseType::Ok;
+    let ok: i32 = ok.into();
+    response == ok
 }
 
 #[cfg(test)]
