@@ -15,6 +15,7 @@
 use std;
 use std::cmp::PartialOrd;
 use std::convert::From;
+use std::fmt;
 use std::hash::*;
 use std::ops::{Index, Div, Mul, Add, Sub, AddAssign};
 use std::str::FromStr;
@@ -281,6 +282,12 @@ impl FromStr for RGB16 {
         } else {
             Err(RGBError::MalformedText(string.to_string()))
         }
+    }
+}
+
+impl fmt::Display for RGB16 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "RGB16(red=0x{:04X}, green=0x{:04X}, blue=0x{:04X})", self.red, self.green, self.blue)
     }
 }
 
