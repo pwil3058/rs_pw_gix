@@ -20,7 +20,7 @@ extern crate serde_json;
 extern crate which;
 
 #[macro_use]
-pub mod struct_traits {
+pub mod pwo_trait {
     #[macro_export]
     macro_rules! implement_pwo {
         ( $f:ty, $field:ident, $t:ty ) => (
@@ -37,22 +37,6 @@ pub mod struct_traits {
 
     pub trait PackableWidgetObject<PWT: glib::IsA<gtk::Widget>> {
         fn pwo(&self) -> PWT;
-    }
-
-    pub trait SimpleCreation {
-        fn create() -> Self;
-    }
-
-    pub trait SingleArgCreation<A> {
-        fn create(a: A) -> Self;
-    }
-
-    pub trait DoubleArgCreation<A, B> {
-        fn create(a: A, b: B) -> Self;
-    }
-
-    pub trait TripleArgCreation<A, B, C> {
-        fn create(a: A, b: B, c:C) -> Self;
     }
 }
 

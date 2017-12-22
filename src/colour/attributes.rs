@@ -22,7 +22,7 @@ use gtk::WidgetExt;
 
 use colour::*;
 use cairox::*;
-use struct_traits::*;
+use pwo_trait::*;
 use rgb_math::angle::*;
 
 type ColourStops = Vec<[f64; 4]>;
