@@ -14,6 +14,7 @@
 
 use std::cell::{Cell, RefCell};
 use std::cmp;
+use std::path::MAIN_SEPARATOR;
 use std::rc::Rc;
 
 use gdk;
@@ -21,16 +22,16 @@ use glib::signal::Inhibit;
 use gtk;
 use gtk::prelude::*;
 
+use pw_pathux;
+
 use gtkx::coloured::*;
+use gtkx::list_store::*;
+use pwo_trait::*;
 use rgb_math::rgb::*;
 
 pub trait HexEntryInterface {
-    type HexEntryType;
-    type PackableWidgetType;
-
-    fn create() -> Self::HexEntryType;
-    fn create_with_max(max_value: u32) -> Self::HexEntryType;
-    fn pwo(&self) -> Self::PackableWidgetType;
+    fn create() -> Self;
+    fn create_with_max(max_value: u32) -> Self;
 }
 
 //#[derive(Debug)]
@@ -43,6 +44,8 @@ pub struct HexEntryData {
     width: usize,
     callbacks: RefCell<Vec<Box<Fn(u32)>>>
 }
+
+implement_pwo!(HexEntryData, entry, gtk::Entry);
 
 impl HexEntryData {
     pub fn get_value(&self) -> u32 {
@@ -131,10 +134,7 @@ fn sig_hex_digits(mut max_value: u32) -> usize {
 }
 
 impl HexEntryInterface for HexEntry {
-    type HexEntryType = HexEntry;
-    type PackableWidgetType = gtk::Entry;
-
-    fn create() -> Self::HexEntryType {
+    fn create() -> HexEntry {
         Self::create_with_max(u32::max_value())
     }
 
@@ -192,25 +192,11 @@ impl HexEntryInterface for HexEntry {
         );
         hex_entry
     }
-
-    fn pwo(&self) -> gtk::Entry {
-        self.entry.clone()
-    }
 }
 
 
 pub trait RGBEntryInterface {
-    type RGBEntryType;
-    type PackableWidgetType;
-
-    fn create() -> Self::RGBEntryType;
-    fn pwo(&self) -> Self::PackableWidgetType;
-
-    fn get_rgb(&self) -> RGB;
-    fn set_rgb(&self, rgb: RGB);
-
-    fn connect_value_changed<F: 'static + Fn(RGB)>(&self, callback: F);
-    fn inform_value_changed(&self);
+    fn create() -> Self;
 }
 
 pub struct RGBHexEntryBoxData {
@@ -221,12 +207,42 @@ pub struct RGBHexEntryBoxData {
     callbacks: RefCell<Vec<Box<Fn(RGB)>>>
 }
 
+implement_pwo!(RGBHexEntryBoxData, hbox, gtk::Box);
+
+impl RGBHexEntryBoxData {
+    pub fn get_rgb(&self) -> RGB {
+        let max_value = u16::max_value() as f64;
+        let red = self.red_entry.get_value() as f64 / max_value;
+        let green = self.green_entry.get_value() as f64 / max_value;
+        let blue = self.blue_entry.get_value() as f64 / max_value;
+        RGB::from((red, green, blue))
+    }
+
+    pub fn set_rgb(&self, rgb: RGB) {
+        let max_value = u16::max_value() as f64;
+        let red = (rgb.red * max_value) as u32;
+        let green = (rgb.green * max_value) as u32;
+        let blue = (rgb.blue * max_value) as u32;
+        self.red_entry.set_value(red);
+        self.green_entry.set_value(green);
+        self.blue_entry.set_value(blue);
+    }
+
+    pub fn connect_value_changed<F: 'static + Fn(RGB)>(&self, callback: F) {
+        self.callbacks.borrow_mut().push(Box::new(callback))
+    }
+
+    fn inform_value_changed(&self) {
+        let rgb = self.get_rgb();
+        for callback in self.callbacks.borrow().iter() {
+            callback(rgb);
+        }
+    }
+}
+
 pub type RGBHexEntryBox = Rc<RGBHexEntryBoxData>;
 
 impl RGBEntryInterface for RGBHexEntryBox {
-    type RGBEntryType = RGBHexEntryBox;
-    type PackableWidgetType = gtk::Box;
-
     fn create() -> RGBHexEntryBox {
         let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 1);
         let max_value = u16::max_value() as u32;
@@ -261,40 +277,65 @@ impl RGBEntryInterface for RGBHexEntryBox {
         );
         rgb_entry_box
     }
+}
 
-    fn pwo(&self) -> gtk::Box {
-        self.hbox.clone()
+// FILEPATH COMPLETION
+
+pub trait PathCompletion: gtk::EntryExt + gtk::EditableSignals {
+    fn _enable_path_completion(&self, dirs_only: bool) {
+        let entry_completion = gtk::EntryCompletion::new();
+        entry_completion.pack_start(&gtk::CellRendererText::new(), true);
+        entry_completion.set_text_column(0);
+        entry_completion.set_inline_completion(true);
+        entry_completion.set_inline_selection(true);
+        entry_completion.set_minimum_key_length(0);
+        let list_store = gtk::ListStore::new(&[gtk::Type::String]);
+        entry_completion.set_model(Some(&list_store.clone()));
+
+        self.set_completion(&entry_completion);
+        self.connect_changed(
+            move |editable| {
+                let dir_path_txt = match editable.get_text() {
+                    Some(text) => pw_pathux::dir_path_text(&text),
+                    None => "".to_string()
+                };
+                list_store.clear();
+                if let Ok(abs_dir_path) = pw_pathux::abs_dir_path(&dir_path_txt) {
+                    if let Ok(entries) = pw_pathux::usable_dir_entries(&abs_dir_path) {
+                        if dirs_only {
+                            for entry in entries.iter() {
+                                if !entry.is_dir() {
+                                    continue
+                                };
+                                list_store.append_row(&vec![entry.file_name().to_value()]);
+                            }
+                        } else {
+                            let msep = format!("{}", MAIN_SEPARATOR);
+                            for entry in entries.iter() {
+                                if entry.is_dir() {
+                                    let name = entry.file_name() + &msep;
+                                    list_store.append_row(&vec![name.to_value()]);
+                                } else {
+                                    list_store.append_row(&vec![entry.file_name().to_value()]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        );
     }
 
-    fn get_rgb(&self) -> RGB {
-        let max_value = u16::max_value() as f64;
-        let red = self.red_entry.get_value() as f64 / max_value;
-        let green = self.green_entry.get_value() as f64 / max_value;
-        let blue = self.blue_entry.get_value() as f64 / max_value;
-        RGB::from((red, green, blue))
+    fn enable_dir_path_completion(&self) {
+        self._enable_path_completion(true)
     }
 
-    fn set_rgb(&self, rgb: RGB) {
-        let max_value = u16::max_value() as f64;
-        let red = (rgb.red * max_value) as u32;
-        let green = (rgb.green * max_value) as u32;
-        let blue = (rgb.blue * max_value) as u32;
-        self.red_entry.set_value(red);
-        self.green_entry.set_value(green);
-        self.blue_entry.set_value(blue);
-    }
-
-    fn connect_value_changed<F: 'static + Fn(RGB)>(&self, callback: F) {
-        self.callbacks.borrow_mut().push(Box::new(callback))
-    }
-
-    fn inform_value_changed(&self) {
-        let rgb = self.get_rgb();
-        for callback in self.callbacks.borrow().iter() {
-            callback(rgb);
-        }
+    fn enable_file_path_completion(&self) {
+        self._enable_path_completion(false)
     }
 }
+
+impl PathCompletion for gtk::Entry {}
 
 #[cfg(test)]
 mod tests {

@@ -19,6 +19,8 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate which;
 
+extern crate pw_pathux;
+
 #[macro_use]
 pub mod pwo_trait {
     #[macro_export]
