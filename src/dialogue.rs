@@ -12,8 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::{PathBuf};
+
 use gtk;
 use gtk::prelude::*;
+
+use pw_pathux;
+
+use gtkx::entry::*;
 
 pub fn parent_none() -> Option<&'static gtk::Window> {
     let none: Option<&gtk::Window> = None;
@@ -93,6 +99,110 @@ pub fn ask_confirm_action<P: IsA<gtk::Window>>(
     let ok = gtk::ResponseType::Ok;
     let ok: i32 = ok.into();
     response == ok
+}
+
+pub fn select_file<P: IsA<gtk::Window>>(
+    dialog_parent: Option<&P>,
+    prompt: Option<&str>,
+    suggestion: Option<&str>,
+    existing: bool,
+    absolute: bool,
+) -> Option<PathBuf> {
+    let action = if existing {
+        gtk::FileChooserAction::Open
+    } else {
+        gtk::FileChooserAction::Save
+    };
+    let dialog = gtk::FileChooserDialog::new(prompt, dialog_parent, action);
+    dialog.add_button("gtk-cancel", gtk::ResponseType::Cancel.into());
+    dialog.add_button("gtk-ok", gtk::ResponseType::Ok.into());
+    let ok = gtk::ResponseType::Ok;
+    let ok = ok.into();
+    dialog.set_default_response(ok);
+    if let Some(suggestion) = suggestion {
+        dialog.set_filename(suggestion);
+    };
+    if dialog.run() == ok {
+        if let Some(file_path) = dialog.get_filename() {
+            dialog.destroy();
+            if absolute {
+                return Some(pw_pathux::absolute_path_buf(&file_path));
+            } else {
+                return Some(pw_pathux::relative_path_buf_or_mine(&file_path));
+            }
+        };
+    };
+    dialog.destroy();
+    None
+}
+
+pub fn ask_file_path<P: IsA<gtk::Window>>(
+    dialog_parent: Option<&P>,
+    prompt: Option<&str>,
+    suggestion: Option<&str>,
+    existing: bool,
+) -> Option<PathBuf> {
+    let dialog = gtk::Dialog::new_with_buttons(
+        None,
+        dialog_parent,
+        gtk::DialogFlags::DESTROY_WITH_PARENT,
+        &[("gtk-cancel", gtk::ResponseType::Cancel.into()), ("gtk-ok", gtk::ResponseType::Ok.into())]
+    );
+    let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 1);
+    dialog.get_content_area().pack_start(&hbox, false, false, 0);
+
+    let prompt_label = if prompt.is_some() {
+        gtk::Label::new(prompt)
+    } else {
+        gtk::Label::new(Some("File Path:"))
+    };
+    hbox.pack_start(&prompt_label, false, false, 0);
+
+    let entry = gtk::Entry::new();
+    entry.enable_file_path_completion();
+    entry.set_activates_default(true);
+    entry.set_width_chars(32);
+    if let Some(suggestion) = suggestion {
+        entry.set_text(suggestion)
+    };
+    hbox.pack_start(&entry, true, true, 0);
+
+    let button = gtk::Button::new_with_label("Browse");
+    hbox.pack_start(&button, false, false, 0);
+    hbox.show_all();
+    let b_prompt = if let Some(prompt_text) = prompt {
+        format!("Select {}", prompt_text)
+    } else {
+        "Select File Path:".to_string()
+    };
+    let entry_c = entry.clone();
+    let dialog_c = dialog.clone();
+    button.connect_clicked(
+        move |_| {
+            // NB: following gymnastics need to satisfy lifetime  checks
+            let text = &entry_c.get_text().unwrap_or("".to_string());
+            let suggestion: Option<&str> = if text.len() > 0 { Some(text) } else { None };
+            if let Some(file_path) = select_file(Some(&dialog_c), Some(&b_prompt), suggestion, existing, false) {
+                let text = pw_pathux::path_to_string(&file_path);
+                entry_c.set_text(&text);
+            }
+        }
+    );
+
+    let ok = gtk::ResponseType::Ok;
+    let ok = ok.into();
+    dialog.set_default_response(ok);
+    if dialog.run() == ok {
+        dialog.close();
+        if let Some(text) = entry.get_text() {
+            Some(PathBuf::from(text))
+        } else {
+            Some(PathBuf::new())
+        }
+    } else {
+        dialog.close();
+        None
+    }
 }
 
 #[cfg(test)]

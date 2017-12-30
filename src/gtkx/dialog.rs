@@ -66,6 +66,9 @@ pub mod dialog_user {
     impl TopGtkWindow for gtk::Bin {}
     impl TopGtkWindow for gtk::DrawingArea {}
     impl TopGtkWindow for gtk::EventBox {}
+    impl TopGtkWindow for gtk::Frame {}
+    impl TopGtkWindow for gtk::Notebook {}
+    impl TopGtkWindow for gtk::ScrolledWindow {}
     impl TopGtkWindow for gtk::TextView {}
     impl TopGtkWindow for gtk::TreeView {}
 }
