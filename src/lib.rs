@@ -22,25 +22,7 @@ extern crate which;
 extern crate pw_pathux;
 
 #[macro_use]
-pub mod pwo_trait {
-    #[macro_export]
-    macro_rules! implement_pwo {
-        ( $f:ty, $field:ident, $t:ty ) => (
-            impl PackableWidgetObject<$t> for $f {
-                fn pwo(&self) -> $t {
-                    self.$field.clone()
-                }
-            }
-        )
-    }
-
-    extern crate glib;
-    extern crate gtk;
-
-    pub trait PackableWidgetObject<PWT: glib::IsA<gtk::Widget>> {
-        fn pwo(&self) -> PWT;
-    }
-}
+pub mod wrapper;
 
 pub mod cairox;
 pub mod colour;

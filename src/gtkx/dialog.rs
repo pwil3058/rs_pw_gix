@@ -18,6 +18,16 @@ use gtk;
 
 use gdkx::*;
 use recollections;
+pub use gtkx::window::DerivedTransientFor;
+
+impl DerivedTransientFor for gtk::Dialog {}
+impl DerivedTransientFor for gtk::AboutDialog {}
+impl DerivedTransientFor for gtk::AppChooserDialog {}
+impl DerivedTransientFor for gtk::ColorChooserDialog {}
+impl DerivedTransientFor for gtk::FileChooserDialog {}
+impl DerivedTransientFor for gtk::FontChooserDialog {}
+impl DerivedTransientFor for gtk::MessageDialog {}
+impl DerivedTransientFor for gtk::RecentChooserDialog {}
 
 #[macro_use]
 pub mod dialog_user {

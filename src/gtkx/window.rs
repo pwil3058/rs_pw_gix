@@ -15,6 +15,7 @@
 use std::io::{self, Write};
 
 use gtk;
+use gtk::prelude::*;
 
 use gdkx::*;
 use recollections;
@@ -46,6 +47,21 @@ pub trait RememberGeometry: gtk::WidgetExt + gtk::GtkWindowExt {
 
 impl RememberGeometry for gtk::ApplicationWindow {}
 impl RememberGeometry for gtk::Window {}
+
+pub trait DerivedTransientFor: gtk::GtkWindowExt {
+    fn set_transient_for_from<W: gtk::WidgetExt>(&self, widget: &W) {
+        if let Some(tl) = widget.get_toplevel() {
+            if tl.is_toplevel() {
+                if let Ok(window) = tl.dynamic_cast::<gtk::Window>() {
+                    self.set_transient_for(Some(&window))
+                }
+            }
+        }
+    }
+}
+
+impl DerivedTransientFor for gtk::ApplicationWindow {}
+impl DerivedTransientFor for gtk::Window {}
 
 #[cfg(test)]
 mod tests {

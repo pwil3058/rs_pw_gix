@@ -18,16 +18,15 @@ use std::rc::Rc;
 use gio;
 use gtk;
 use gtk::{BoxExt, ButtonExt, ContainerExt, WidgetExt};
-//use gtk::prelude::*;
 
-pub use pwo_trait::*;
+use wrapper::*;
 
 pub struct TabRemoveLabelCore {
     hbox: gtk::Box,
     remove_page_callbacks: RefCell<Vec<Box<Fn()>>>,
 }
 
-implement_pwo!(TabRemoveLabelCore, hbox, gtk::Box);
+impl_widget_wrapper!(TabRemoveLabelCore, hbox, gtk::Box);
 
 impl TabRemoveLabelCore {
     pub fn connect_remove_page<F: 'static + Fn()>(&self, callback: F) {

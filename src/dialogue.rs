@@ -27,12 +27,12 @@ pub fn parent_none() -> Option<&'static gtk::Window> {
 }
 
 // INFORM
-fn low_inform_user<P: IsA<gtk::Window>>(
+pub fn create_inform_user_dialog<P: IsA<gtk::Window>>(
     dialog_parent: Option<&P>,
     msg: &str,
     expln: Option<&str>,
     problem_type: gtk::MessageType
-) {
+) -> gtk::MessageDialog {
     let dialog = gtk::MessageDialog::new(
         dialog_parent,
         gtk::DialogFlags::empty(),
@@ -49,7 +49,7 @@ fn low_inform_user<P: IsA<gtk::Window>>(
     dialog.connect_response(
         |d,_| d.destroy()
     );
-    dialog.run();
+    dialog
 }
 
 pub fn inform_user<P: IsA<gtk::Window>>(
@@ -57,7 +57,7 @@ pub fn inform_user<P: IsA<gtk::Window>>(
     msg: &str,
     expln: Option<&str>,
 ) {
-    low_inform_user(dialog_parent, msg, expln, gtk::MessageType::Info)
+    create_inform_user_dialog(dialog_parent, msg, expln, gtk::MessageType::Info).run();
 }
 
 pub fn warn_user<P: IsA<gtk::Window>>(
@@ -65,9 +65,8 @@ pub fn warn_user<P: IsA<gtk::Window>>(
     msg: &str,
     expln: Option<&str>,
 ) {
-    low_inform_user(dialog_parent, msg, expln, gtk::MessageType::Warning)
+    create_inform_user_dialog(dialog_parent, msg, expln, gtk::MessageType::Warning).run();
 }
-
 
 // ASK OK OR CANCEL
 pub fn create_ok_or_cancel_dialog<P: IsA<gtk::Window>>(

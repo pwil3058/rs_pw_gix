@@ -22,12 +22,12 @@ use gtk::WidgetExt;
 
 use colour::*;
 use cairox::*;
-use pwo_trait::*;
 use rgb_math::angle::*;
+use wrapper::*;
 
 type ColourStops = Vec<[f64; 4]>;
 
-pub trait ColourAttributeDisplayInterface: PackableWidgetObject<gtk::DrawingArea> {
+pub trait ColourAttributeDisplayInterface: WidgetWrapper<gtk::DrawingArea> {
     type CADIType;
 
     fn create() -> Self::CADIType;
@@ -150,7 +150,7 @@ pub struct ValueCADData {
 
 pub type ValueCAD = Rc<ValueCADData>;
 
-implement_pwo!(ValueCAD, drawing_area, gtk::DrawingArea);
+impl_widget_wrapper!(ValueCAD, drawing_area, gtk::DrawingArea);
 
 impl ColourAttributeDisplayInterface for ValueCAD {
     type CADIType = ValueCAD;
@@ -234,7 +234,7 @@ pub struct WarmthCADData {
 
 pub type WarmthCAD = Rc<WarmthCADData>;
 
-implement_pwo!(WarmthCAD, drawing_area, gtk::DrawingArea);
+impl_widget_wrapper!(WarmthCAD, drawing_area, gtk::DrawingArea);
 
 impl ColourAttributeDisplayInterface for WarmthCAD {
     type CADIType = WarmthCAD;
@@ -367,7 +367,7 @@ fn calc_hue_value(hue_angle: Angle, target_angle: Angle) -> f64 {
 
 pub type HueCAD = Rc<HueCADData>;
 
-implement_pwo!(HueCAD, drawing_area, gtk::DrawingArea);
+impl_widget_wrapper!(HueCAD, drawing_area, gtk::DrawingArea);
 
 impl ColourAttributeDisplayInterface for HueCAD {
     type CADIType = HueCAD;
@@ -516,7 +516,7 @@ impl ChromaCADData {
 
 pub type ChromaCAD = Rc<ChromaCADData>;
 
-implement_pwo!(ChromaCAD, drawing_area, gtk::DrawingArea);
+impl_widget_wrapper!(ChromaCAD, drawing_area, gtk::DrawingArea);
 
 impl ColourAttributeDisplayInterface for ChromaCAD {
     type CADIType = ChromaCAD;
@@ -656,7 +656,7 @@ impl GreynessCADData {
 
 pub type GreynessCAD = Rc<GreynessCADData>;
 
-implement_pwo!(GreynessCAD, drawing_area, gtk::DrawingArea);
+impl_widget_wrapper!(GreynessCAD, drawing_area, gtk::DrawingArea);
 
 impl ColourAttributeDisplayInterface for GreynessCAD {
     type CADIType = GreynessCAD;
@@ -751,7 +751,7 @@ impl ColourAttributeDisplayInterface for GreynessCAD {
 
 // STACK
 
-pub trait ColourAttributeDisplayStackInterface: PackableWidgetObject<gtk::Box> {
+pub trait ColourAttributeDisplayStackInterface: WidgetWrapper<gtk::Box> {
     fn create() -> Self;
 
     fn set_colour(&self, colour: Option<&Colour>);
@@ -767,7 +767,7 @@ pub struct HueChromaValueCADSData {
 
 pub type HueChromaValueCADS = Rc<HueChromaValueCADSData>;
 
-implement_pwo!(HueChromaValueCADS, vbox, gtk::Box);
+impl_widget_wrapper!(HueChromaValueCADS, vbox, gtk::Box);
 
 impl ColourAttributeDisplayStackInterface for HueChromaValueCADS {
     fn create() -> HueChromaValueCADS {
@@ -811,7 +811,7 @@ pub struct HueGreynessValueCADSData {
 
 pub type HueGreynessValueCADS = Rc<HueGreynessValueCADSData>;
 
-implement_pwo!(HueGreynessValueCADS, vbox, gtk::Box);
+impl_widget_wrapper!(HueGreynessValueCADS, vbox, gtk::Box);
 
 impl ColourAttributeDisplayStackInterface for HueGreynessValueCADS {
     fn create() -> HueGreynessValueCADS {

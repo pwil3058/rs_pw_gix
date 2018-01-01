@@ -26,8 +26,8 @@ use pw_pathux;
 
 use gtkx::coloured::*;
 use gtkx::list_store::*;
-pub use pwo_trait::*;
 use rgb_math::rgb::*;
+use wrapper::*;
 
 pub trait HexEntryInterface {
     fn create() -> Self;
@@ -45,7 +45,7 @@ pub struct HexEntryData {
     callbacks: RefCell<Vec<Box<Fn(u32)>>>
 }
 
-implement_pwo!(HexEntryData, entry, gtk::Entry);
+impl_widget_wrapper!(HexEntryData, entry, gtk::Entry);
 
 impl HexEntryData {
     pub fn get_value(&self) -> u32 {
@@ -207,7 +207,7 @@ pub struct RGBHexEntryBoxData {
     callbacks: RefCell<Vec<Box<Fn(RGB)>>>
 }
 
-implement_pwo!(RGBHexEntryBoxData, hbox, gtk::Box);
+impl_widget_wrapper!(RGBHexEntryBoxData, hbox, gtk::Box);
 
 impl RGBHexEntryBoxData {
     pub fn get_rgb(&self) -> RGB {
