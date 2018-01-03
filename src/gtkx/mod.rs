@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#[macro_use]
+pub mod value;
+#[macro_use]
+pub mod list_store;
+
 pub mod coloured;
 pub mod combo_box_text;
 pub mod dialog;
 pub mod drawing_area;
 pub mod entry;
-#[macro_use]
-pub mod value;
-#[macro_use]
-pub mod list_store;
+pub mod menu;
 pub mod notebook;
 pub mod paned;
 pub mod tree_view_column;
