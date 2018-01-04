@@ -14,6 +14,9 @@
 
 use std::path::{PathBuf};
 
+use gdk;
+use gdk::WindowExt;
+use gdk_pixbuf::Pixbuf;
 use glib;
 use gtk;
 use gtk::prelude::*;
@@ -31,6 +34,12 @@ macro_rules! impl_widget_wrapper {
     )
 }
 
+pub enum CursorSpec<'a> {
+    Type(gdk::CursorType),
+    Name(&'a str),
+    Pixbuf((&'a Pixbuf, i32, i32)),
+}
+
 pub trait WidgetWrapper<PWT: glib::IsA<gtk::Widget> + WidgetExt> {
     fn pwo(&self) -> PWT;
 
@@ -43,6 +52,69 @@ pub trait WidgetWrapper<PWT: glib::IsA<gtk::Widget> + WidgetExt> {
             }
         };
         None
+    }
+
+    fn get_cursor(&self) -> Option<gdk::Cursor> {
+        if let Some(gdk_window) = self.pwo().get_window() {
+            gdk_window.get_cursor()
+        } else {
+            None
+        }
+    }
+
+    fn set_cursor(&self, o_cursor: Option<&gdk::Cursor>) {
+        if let Some(gdk_window) = self.pwo().get_window() {
+            gdk_window.set_cursor(o_cursor)
+        }
+    }
+
+    fn set_cursor_from_spec(&self, spec: CursorSpec) {
+        if let Some(cursor) = self.new_cursor_from_spec(spec) {
+            self.set_cursor(Some(&cursor))
+        }
+    }
+
+    fn new_cursor(&self, cursor_type: gdk::CursorType) -> Option<gdk::Cursor> {
+        if let Some(ref display) = self.pwo().get_display() {
+            Some(gdk::Cursor::new_for_display(display, cursor_type))
+        } else {
+            None
+        }
+    }
+
+    fn new_cursor_from_name(&self, name: &str) -> Option<gdk::Cursor> {
+        if let Some(ref display) = self.pwo().get_display() {
+            Some(gdk::Cursor::new_from_name(display, name))
+        } else {
+            None
+        }
+    }
+
+    fn new_cursor_from_pixbuf(&self, pixbuf: &Pixbuf, x: i32, y: i32) -> Option<gdk::Cursor> {
+        if let Some(ref display) = self.pwo().get_display() {
+            Some(gdk::Cursor::new_from_pixbuf(display, pixbuf, x, y))
+        } else {
+            None
+        }
+    }
+
+    fn new_cursor_from_spec(&self, spec: CursorSpec) -> Option<gdk::Cursor> {
+        match spec {
+            CursorSpec::Type(cursor_type) => self.new_cursor(cursor_type),
+            CursorSpec::Name(name) => self.new_cursor_from_name(name),
+            CursorSpec::Pixbuf(pbd) => self.new_cursor_from_pixbuf(pbd.0, pbd.1, pbd.2),
+        }
+    }
+
+    fn do_showing_busy<F: 'static + Fn(&Self)>(&self, action: F) {
+        let o_old_cursor = self.get_cursor();
+        self.set_cursor_from_spec(CursorSpec::Type(gdk::CursorType::Clock));
+        action(self);
+        if let Some(old_cursor) = o_old_cursor {
+            self.set_cursor(Some(&old_cursor));
+        } else {
+            self.set_cursor(None);
+        }
     }
 
     fn inform_user(&self, msg: &str, expln: Option<&str>) {
@@ -77,7 +149,7 @@ pub trait WidgetWrapper<PWT: glib::IsA<gtk::Widget> + WidgetExt> {
         }
     }
 
-    fn ask_file_path<P: IsA<gtk::Window>>(&self, prompt: Option<&str>, suggestion: Option<&str>, existing: bool) -> Option<PathBuf> {
+    fn ask_file_path(&self, prompt: Option<&str>, suggestion: Option<&str>, existing: bool) -> Option<PathBuf> {
         if let Some(parent) = self.get_toplevel_gtk_window() {
             ask_file_path(Some(&parent), prompt, suggestion, existing)
         } else {
