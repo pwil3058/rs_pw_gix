@@ -19,14 +19,14 @@ use gdk;
 use gtk;
 use gtk::prelude::*;
 
-pub struct PopupMenu {
+pub struct WrappedMenu {
     menu: gtk::Menu,
     items: RefCell<HashMap<String, gtk::MenuItem>>,
 }
 
-impl PopupMenu {
-    pub fn new(items: &Vec<(&str, &str, &str)>) -> PopupMenu {
-        let pm = PopupMenu {
+impl WrappedMenu {
+    pub fn new(items: &Vec<(&str, &str, &str)>) -> WrappedMenu {
+        let pm = WrappedMenu {
             menu: gtk::Menu::new(),
             items: RefCell::new(HashMap::<String, gtk::MenuItem>::new()),
         };
