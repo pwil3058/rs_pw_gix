@@ -133,6 +133,14 @@ pub trait WidgetWrapper<PWT: glib::IsA<gtk::Widget> + WidgetExt> {
         }
     }
 
+    fn ask_question(&self, question: &str, expln: Option<&str>, buttons: &[(&str, i32)],) -> i32 {
+        if let Some(parent) = self.get_toplevel_gtk_window() {
+            ask_question(Some(&parent), question, expln, buttons)
+        } else {
+            ask_question(parent_none(), question, expln, buttons)
+        }
+    }
+
     fn ask_confirm_action(&self, msg: &str, expln: Option<&str>) -> bool {
         if let Some(parent) = self.get_toplevel_gtk_window() {
             ask_confirm_action(Some(&parent), msg, expln)

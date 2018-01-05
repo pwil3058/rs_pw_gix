@@ -68,6 +68,29 @@ pub fn warn_user<P: IsA<gtk::Window>>(
     create_inform_user_dialog(dialog_parent, msg, expln, gtk::MessageType::Warning).run();
 }
 
+// ASK QUESTION
+pub fn ask_question<P: IsA<gtk::Window>>(
+    dialog_parent: Option<&P>,
+    question: &str,
+    expln: Option<&str>,
+    buttons: &[(&str, i32)],
+) -> i32 {
+    let dialog = gtk::MessageDialog::new(
+        dialog_parent,
+        gtk::DialogFlags::empty(),
+        gtk::MessageType::Question,
+        gtk::ButtonsType::None,
+        question,
+    );
+    for button in buttons {
+        dialog.add_button(button.0, button.1);
+    }
+    if let Some(explanation) = expln {
+        dialog.set_property_secondary_text(Some(explanation));
+    };
+    dialog.run()
+}
+
 // ASK OK OR CANCEL
 pub fn create_ok_or_cancel_dialog<P: IsA<gtk::Window>>(
     dialog_parent: Option<&P>,
@@ -100,6 +123,7 @@ pub fn ask_confirm_action<P: IsA<gtk::Window>>(
     response == ok
 }
 
+// PATHS
 pub fn select_file<P: IsA<gtk::Window>>(
     dialog_parent: Option<&P>,
     prompt: Option<&str>,
