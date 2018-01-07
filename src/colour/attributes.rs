@@ -314,8 +314,8 @@ impl ColourAttributeDisplayInterface for WarmthCAD {
 #[derive(Debug)]
 pub struct HueCADData {
     drawing_area: gtk::DrawingArea,
-    value_angle: Cell<Option<Angle>>,
-    target_angle: Cell<Option<Angle>>,
+    value_angle: Cell<Option<HueAngle>>,
+    target_angle: Cell<Option<HueAngle>>,
     attr_value: Cell<Option<f64>>,
     attr_value_fg_rgb: Cell<RGB>,
     attr_target_value_fg_rgb: Cell<RGB>,
@@ -323,46 +323,55 @@ pub struct HueCADData {
 }
 
 impl HueCADData {
+    fn set_colour_stops_for_hue_angle(&self, angle: HueAngle) {
+        let mut stops: ColourStops = Vec::new();
+        let mut hue_angle = angle + DEG_180;
+        let delta_angle = DEG_180 / 6;
+        for i in 0..13 {
+            let offset = i as f64 / 12.0;
+            let rgb = hue_angle.max_chroma_rgb();
+            stops.push([offset, rgb[0], rgb[1], rgb[2]]);
+            hue_angle = hue_angle - delta_angle
+        }
+        *self.colour_stops.borrow_mut() = stops;
+    }
+
     fn set_colour_stops(&self, ocolour: Option<&Colour>) {
-        *self.colour_stops.borrow_mut() = if let Some(ref colour) = ocolour {
+        if let Some(ref colour) = ocolour {
             if colour.is_grey() {
                 let value = colour.value();
-                vec![[0.0, value, value, value], [1.0, value, value, value]]
+                *self.colour_stops.borrow_mut() = vec![[0.0, value, value, value], [1.0, value, value, value]]
             } else {
-                let mut stops: ColourStops = Vec::new();
-                let mut hue_angle = colour.hue() + DEG_180;
-                let delta_angle = DEG_180 / 6;
-                for i in 0..13 {
-                    let offset = i as f64 / 12.0;
-                    let rgb = hue_angle.max_chroma_rgb();
-                    stops.push([offset, rgb[0], rgb[1], rgb[2]]);
-                    hue_angle = hue_angle - delta_angle
-                }
-                stops
+                self.set_colour_stops_for_hue_angle(colour.hue());
             }
         } else {
-            vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]
+            *self.colour_stops.borrow_mut() = vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]
         }
     }
 
     fn set_hue_defaults(&self) {
         self.value_angle.set(None);
         self.attr_value.set(None);
-        if self.target_angle.get().is_none() {
+        if let Some(target_angle) = self.target_angle.get() {
+            self.set_colour_stops_for_hue_angle(target_angle);
+        } else {
             self.set_colour_stops(None);
         }
     }
 
     fn set_target_defaults(&self) {
         self.target_angle.set(None);
-        if self.value_angle.get().is_none() {
+        if let Some(value_angle) = self.value_angle.get() {
+            self.set_colour_stops_for_hue_angle(value_angle);
+            self.attr_value.set(Some(0.5))
+        } else {
             self.set_colour_stops(None);
         }
     }
 }
 
-fn calc_hue_value(hue_angle: Angle, target_angle: Angle) -> f64 {
-    0.5  - (target_angle - hue_angle) / DEG_360
+fn calc_hue_value(hue: HueAngle, target_hue: HueAngle) -> f64 {
+    0.5  - (target_hue.angle() - hue.angle()) / DEG_360
 }
 
 pub type HueCAD = Rc<HueCADData>;
@@ -401,7 +410,7 @@ impl ColourAttributeDisplayInterface for HueCAD {
             if colour.is_grey() {
                 self.set_hue_defaults();
             } else {
-                let val_angle = colour.hue.angle();
+                let val_angle = colour.hue();
                 self.value_angle.set(Some(val_angle));
                 self.attr_value_fg_rgb
                     .set(colour.best_foreground_rgb());
@@ -432,7 +441,7 @@ impl ColourAttributeDisplayInterface for HueCAD {
             if colour.is_grey() {
                 self.set_target_defaults();
             } else {
-                let target_angle = colour.hue.angle();
+                let target_angle = colour.hue;
                 self.target_angle.set(Some(target_angle));
                 self.attr_target_value_fg_rgb
                     .set(colour.best_foreground_rgb());
