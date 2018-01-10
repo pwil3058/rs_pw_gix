@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::error::Error;
 use std::path::{PathBuf};
 
 use gtk;
@@ -68,6 +69,18 @@ pub fn warn_user<P: IsA<gtk::Window>>(
     create_inform_user_dialog(dialog_parent, msg, expln, gtk::MessageType::Warning).run();
 }
 
+pub fn report_error<P: IsA<gtk::Window>, E: Error>(
+    dialog_parent: Option<&P>,
+    msg: &str,
+    error: &E,
+) {
+    let mut expln = error.description().to_string();
+    if let Some(cause) = error.cause() {
+        expln += &format!("\nCaused by: {}.", cause.description());
+    };
+    create_inform_user_dialog(dialog_parent, msg, Some(&expln), gtk::MessageType::Error).run();
+}
+
 // ASK QUESTION
 pub fn ask_question<P: IsA<gtk::Window>>(
     dialog_parent: Option<&P>,
@@ -88,6 +101,12 @@ pub fn ask_question<P: IsA<gtk::Window>>(
     if let Some(explanation) = expln {
         dialog.set_property_secondary_text(Some(explanation));
     };
+    dialog.connect_close(
+        |d| d.destroy()
+    );
+    dialog.connect_response(
+        |d,_| d.destroy()
+    );
     dialog.run()
 }
 
@@ -107,6 +126,12 @@ pub fn create_ok_or_cancel_dialog<P: IsA<gtk::Window>>(
     if let Some(explanation) = expln {
         dialog.set_property_secondary_text(Some(explanation));
     };
+    dialog.connect_close(
+        |d| d.destroy()
+    );
+    dialog.connect_response(
+        |d,_| d.destroy()
+    );
     dialog
 }
 
@@ -117,7 +142,6 @@ pub fn ask_confirm_action<P: IsA<gtk::Window>>(
 ) -> bool {
     let dialog = create_ok_or_cancel_dialog(dialog_parent, msg, expln);
     let response: i32 = dialog.run();
-    dialog.destroy();
     let ok = gtk::ResponseType::Ok;
     let ok: i32 = ok.into();
     response == ok

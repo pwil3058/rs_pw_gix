@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::error::Error;
 use std::path::{PathBuf};
 
 use gdk;
@@ -130,6 +131,14 @@ pub trait WidgetWrapper<PWT: glib::IsA<gtk::Widget> + WidgetExt> {
             warn_user(Some(&parent), msg, expln)
         } else {
             warn_user(parent_none(), msg, expln)
+        }
+    }
+
+    fn report_error<E: Error>(&self, msg: &str, error: &E) {
+        if let Some(parent) = self.get_toplevel_gtk_window() {
+            report_error(Some(&parent), msg, error)
+        } else {
+            report_error(parent_none(), msg, error)
         }
     }
 
