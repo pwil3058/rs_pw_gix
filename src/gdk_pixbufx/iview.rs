@@ -236,12 +236,15 @@ impl PixbufViewInterface for PixbufView {
                 zoom_out_adj: Cell::new([0.0, 0.0]),
             }
         );
+        // TODO: fix problem with first selection not showing rectangle during selection
         let pbv_c = pbv.clone();
         pbv.drawing_area.connect_draw(
             move |_, cairo_context| {
                 if let Some(ref zoomable) = *pbv_c.zoomable.borrow() {
                     cairo_context.set_source_pixbuf(&zoomable.get_pixbuf(), 0.0, 0.0);
                     cairo_context.paint();
+//println!("IN PROGRESS: {}", pbv_c.xy_selection.in_progress());
+//println!("{} {} : {:?}", pbv_c.xy_selection.is_drawable(), pbv_c.xy_selection.selection_made(), pbv_c.xy_selection.get_selected_rectangle(zoomable.zoom_factor() / pbv_c.selection_zoom.get()));
                     if pbv_c.xy_selection.is_drawable() {
                         let scale = zoomable.zoom_factor() / pbv_c.selection_zoom.get();
                         let rect = pbv_c.xy_selection.get_selected_rectangle(scale).unwrap();
@@ -254,6 +257,7 @@ impl PixbufViewInterface for PixbufView {
                         cairo_context.set_source_rgb(0.0, 0.0, 0.0);
                         cairo_context.set_operator(Operator::Xor);
                         cairo_context.stroke();
+//println!("stroke: {:?} {:?}", (rect.width, rect.height), cairo_context.status());
                     }
                 };
                 gtk::Inhibit(false)
