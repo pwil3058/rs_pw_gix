@@ -195,6 +195,9 @@ pub fn ask_file_path<P: IsA<gtk::Window>>(
         gtk::DialogFlags::DESTROY_WITH_PARENT,
         &[("gtk-cancel", gtk::ResponseType::Cancel.into()), ("gtk-ok", gtk::ResponseType::Ok.into())]
     );
+    dialog.connect_close(
+        |d| d.destroy()
+    );
     let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 1);
     dialog.get_content_area().pack_start(&hbox, false, false, 0);
 
@@ -240,14 +243,15 @@ pub fn ask_file_path<P: IsA<gtk::Window>>(
     let ok = ok.into();
     dialog.set_default_response(ok);
     if dialog.run() == ok {
-        dialog.close();
-        if let Some(text) = entry.get_text() {
+        let o_text = entry.get_text();
+        dialog.destroy();
+        if let Some(text) = o_text {
             Some(PathBuf::from(text))
         } else {
             Some(PathBuf::new())
         }
     } else {
-        dialog.close();
+        dialog.destroy();
         None
     }
 }
