@@ -48,7 +48,7 @@ pub fn create_inform_user_dialog<P: IsA<gtk::Window>>(
         |d| d.destroy()
     );
     dialog.connect_response(
-        |d,_| d.destroy()
+        |d,_| d.close()
     );
     dialog
 }
@@ -105,12 +105,13 @@ pub fn ask_question<P: IsA<gtk::Window>>(
         |d| d.destroy()
     );
     dialog.connect_response(
-        |d,_| d.destroy()
+        |d,_| d.close()
     );
     dialog.run()
 }
 
 // ASK OK OR CANCEL
+// NB: Does not work using gtk::ResponseTYpe
 pub fn create_ok_or_cancel_dialog<P: IsA<gtk::Window>>(
     dialog_parent: Option<&P>,
     msg: &str,
@@ -130,7 +131,7 @@ pub fn create_ok_or_cancel_dialog<P: IsA<gtk::Window>>(
         |d| d.destroy()
     );
     dialog.connect_response(
-        |d,_| d.destroy()
+        |d,_| d.close()
     );
     dialog
 }
@@ -141,7 +142,7 @@ pub fn ask_confirm_action<P: IsA<gtk::Window>>(
     expln: Option<&str>,
 ) -> bool {
     let dialog = create_ok_or_cancel_dialog(dialog_parent, msg, expln);
-    let response: i32 = dialog.run();
+    let response = dialog.run();
     let ok = gtk::ResponseType::Ok;
     let ok: i32 = ok.into();
     response == ok
