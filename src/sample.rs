@@ -12,39 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::process::Command;
-
-use gtk;
-use gtk::{ButtonExt, WidgetExt};
+use std::io;
+use std::process::{Child, Command};
 
 use which::which;
-
-use dialogue;
 
 pub fn screen_sampling_available() -> bool {
     which("gnome-screenshot").is_ok()
 }
 
-pub fn take_screen_sample() {
-    match Command::new("gnome-screenshot").arg("-ac").spawn() {
-        Ok(_) => (),
-        Err(err) => {
-            let none: Option<&gtk::Window> = None;
-            let explanation = format!("{:?}", err);
-            dialogue::warn_user(none, "Screen sampling failed", Some(&explanation))
-        }
-    }
-}
-
-pub fn new_screen_sample_button(label: &str, tooltip_text: &str) -> gtk::Button {
-    let btn = gtk::Button::new_with_label(label);
-    if tooltip_text.len() > 0 {
-        btn.set_tooltip_text(tooltip_text)
-    }
-    btn.connect_clicked(
-        |_| take_screen_sample()
-    );
-    btn
+pub fn take_screen_sample() -> io::Result<Child> {
+    Command::new("gnome-screenshot").arg("-ac").spawn()
 }
 
 #[cfg(test)]

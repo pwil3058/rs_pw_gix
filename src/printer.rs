@@ -14,14 +14,17 @@
 
 use std::cell::{Cell, RefCell};
 use std::error::Error;
+use std::fmt;
 use std::fs;
 use std::path;
 use std::rc::Rc;
+use std::result;
 
 use mut_static::*;
 
 use gdk::ContextExt;
 use gdk_pixbuf;
+use glib;
 use gtk;
 use gtk::prelude::{IsA, PrintOperationExt, PrintSettingsExt, PrintContextExt};
 use pango;
@@ -29,8 +32,6 @@ use pango::{LayoutExt};
 use pangocairo;
 
 use gdk_pixbufx::PIXOPS_INTERP_BILINEAR;
-
-use dialogue;
 
 struct RememberedPrinterSettings {
     pub o_file_path: Option<path::PathBuf>,
@@ -82,22 +83,48 @@ fn save_printer_settings(settings: &gtk::PrintSettings) {
     };
 }
 
-fn do_print_operation<P: IsA<gtk::Window>>(print_operation: &gtk::PrintOperation, parent: Option<&P>) {
-    match print_operation.run(gtk::PrintOperationAction::PrintDialog, parent) {
-        Ok(result) => {
-            if result == gtk::PrintOperationResult::Error {
-                dialogue::warn_user(parent, "Printing failed.", None);
-            } else if result == gtk::PrintOperationResult::Apply {
-                if let Some(settings) = print_operation.get_print_settings() {
-                    save_printer_settings(&settings);
-                }
-            }
-        },
-        Err(err) => {
-            let explanation = err.description();
-            dialogue::warn_user(parent, "Printing failed.", Some(explanation))
+#[derive(Debug)]
+pub struct PrintError (Option<glib::Error>);
+
+impl fmt::Display for PrintError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "PrintError({}): {:?}.", self.description(), self.cause())?;
+        Ok(())
+    }
+}
+
+impl Error for PrintError {
+    fn description(&self) -> &str {
+        "Printing failed."
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        if let Some(ref error) = self.0 {
+            Some(error)
+        } else {
+            None
+        }
+    }
+}
+
+impl From<glib::Error> for PrintError {
+    fn from(glib_error: glib::Error) -> PrintError {
+        PrintError(Some(glib_error))
+    }
+}
+
+pub type PrintResult = result::Result<(), PrintError>;
+
+fn do_print_operation<P: IsA<gtk::Window>>(print_operation: &gtk::PrintOperation, parent: Option<&P>) -> PrintResult {
+    let result = print_operation.run(gtk::PrintOperationAction::PrintDialog, parent)?;
+    if result == gtk::PrintOperationResult::Error {
+        return Err(PrintError(None));
+    } else if result == gtk::PrintOperationResult::Apply {
+        if let Some(settings) = print_operation.get_print_settings() {
+            save_printer_settings(&settings);
         }
     };
+    Ok(())
 }
 
 struct MarkupPrinterCore {
@@ -179,9 +206,9 @@ impl MarkupPrinterInterface for Rc<MarkupPrinterCore> {
 
 type MarkupPrinter = Rc<MarkupPrinterCore>;
 
-pub fn print_markup_chunks<P: IsA<gtk::Window>>(chunks: Vec<String>, parent: Option<&P>) {
+pub fn print_markup_chunks<P: IsA<gtk::Window>>(chunks: Vec<String>, parent: Option<&P>) -> PrintResult {
     let markup_printer = MarkupPrinter::create(chunks);
-    do_print_operation(&markup_printer.print_operation, parent);
+    do_print_operation(&markup_printer.print_operation, parent)
 }
 
 struct PixbufPrinterCore {
@@ -253,9 +280,9 @@ impl PixbufPrinterInterface for Rc<PixbufPrinterCore> {
 
 type PixbufPrinter = Rc<PixbufPrinterCore>;
 
-pub fn print_pixbuf<P: IsA<gtk::Window>>(pixbuf: &gdk_pixbuf::Pixbuf, parent: Option<&P>) {
+pub fn print_pixbuf<P: IsA<gtk::Window>>(pixbuf: &gdk_pixbuf::Pixbuf, parent: Option<&P>) -> PrintResult {
     let pixbuf_printer = PixbufPrinter::create(pixbuf);
-    do_print_operation(&pixbuf_printer.print_operation, parent);
+    do_print_operation(&pixbuf_printer.print_operation, parent)
 }
 
 
@@ -338,9 +365,9 @@ impl TextPrinterInterface for Rc<TextPrinterCore> {
 
 type TextPrinter = Rc<TextPrinterCore>;
 
-pub fn print_text<P: IsA<gtk::Window>>(text: &str, parent: Option<&P>) {
+pub fn print_text<P: IsA<gtk::Window>>(text: &str, parent: Option<&P>) -> PrintResult {
     let text_printer = TextPrinter::create(text);
-    do_print_operation(&text_printer.print_operation, parent);
+    do_print_operation(&text_printer.print_operation, parent)
 }
 
 #[cfg(test)]

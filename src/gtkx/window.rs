@@ -58,6 +58,19 @@ pub trait DerivedTransientFor: gtk::GtkWindowExt {
             }
         }
     }
+
+    fn set_transient_for_and_icon_from<W: gtk::WidgetExt>(&self, widget: &W) {
+        if let Some(tl) = widget.get_toplevel() {
+            if tl.is_toplevel() {
+                if let Ok(window) = tl.dynamic_cast::<gtk::Window>() {
+                    self.set_transient_for(Some(&window));
+                    if let Some(ref icon) = window.get_icon() {
+                        self.set_icon(Some(icon));
+                    }
+                }
+            }
+        }
+    }
 }
 
 impl DerivedTransientFor for gtk::ApplicationWindow {}

@@ -27,7 +27,7 @@ use wrapper::*;
 
 type ColourStops = Vec<[f64; 4]>;
 
-pub trait ColourAttributeDisplayInterface: WidgetWrapper<gtk::DrawingArea> {
+pub trait ColourAttributeDisplayInterface: WidgetWrapper {
     type CADIType;
 
     fn create() -> Self::CADIType;
@@ -760,7 +760,7 @@ impl ColourAttributeDisplayInterface for GreynessCAD {
 
 // STACK
 
-pub trait ColourAttributeDisplayStackInterface: WidgetWrapper<gtk::Box> {
+pub trait ColourAttributeDisplayStackInterface: WidgetWrapper {
     fn create() -> Self;
 
     fn set_colour(&self, colour: Option<&Colour>);

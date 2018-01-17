@@ -18,45 +18,28 @@ use gtk;
 
 use gdkx::*;
 use recollections;
-pub use gtkx::window::DerivedTransientFor;
 
-impl DerivedTransientFor for gtk::Dialog {}
-impl DerivedTransientFor for gtk::AboutDialog {}
-impl DerivedTransientFor for gtk::AppChooserDialog {}
-impl DerivedTransientFor for gtk::ColorChooserDialog {}
-impl DerivedTransientFor for gtk::FileChooserDialog {}
-impl DerivedTransientFor for gtk::FontChooserDialog {}
-impl DerivedTransientFor for gtk::MessageDialog {}
-impl DerivedTransientFor for gtk::RecentChooserDialog {}
+pub trait AutoClose: gtk::DialogExt + gtk::GtkWindowExt + gtk::WidgetExt {
+    fn enable_auto_close(&self) {
+        self.connect_close(
+            |d| d.destroy()
+        );
+        self.connect_response(
+            |d,_| d.close()
+        );
+    }
+}
 
-#[macro_use]
+impl AutoClose for gtk::Dialog {}
+impl AutoClose for gtk::AboutDialog {}
+impl AutoClose for gtk::AppChooserDialog {}
+impl AutoClose for gtk::ColorChooserDialog {}
+impl AutoClose for gtk::FileChooserDialog {}
+impl AutoClose for gtk::FontChooserDialog {}
+impl AutoClose for gtk::MessageDialog {}
+impl AutoClose for gtk::RecentChooserDialog {}
+
 pub mod dialog_user {
-    // NB: this macro will not work due to "lifetime" problems
-    // caused by fact top_level() returns Option(gtk::Window)
-    // instead of Option(&gtk::Window)
-    // NB: this technique works for C and Python
-    // TODO: check to see if this works now
-    //#[macro_export]
-    //macro_rules! find_parent_for_dialog {
-        //( $widget:ident ) => (
-            //{
-                //if let Some(ref widget) = $widget.get_toplevel() {
-                    //if widget.is_toplevel() {
-                        //if let Ok(ref window) = widget.clone().dynamic_cast::<gtk::Window>() {
-                            //Some(window)
-                        //} else {
-                            //None
-                        //}
-                    //} else {
-                        //None
-                    //}
-                //} else {
-                    //None
-                //}
-            //}
-        //)
-    //}
-
     use gtk;
     use gtk::prelude::*;
 

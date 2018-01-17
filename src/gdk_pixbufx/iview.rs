@@ -26,7 +26,7 @@ use cairo::Operator;
 use cairox::*;
 
 use gtkx::drawing_area::*;
-use printer;
+use wrapper::*;
 
 use super::PIXOPS_INTERP_BILINEAR;
 
@@ -88,10 +88,6 @@ impl Zoomable {
     pub fn calc_zooms_for(&self, size: Size<f64>) -> Size<f64> {
         size.scales_versus(self.unzoomed.size().into())
     }
-
-    pub fn print<P: IsA<gtk::Window>>(&self, parent: Option<&P>) {
-        printer::print_pixbuf(&self.unzoomed, parent)
-    }
 }
 
 pub struct PixbufViewCore {
@@ -110,6 +106,8 @@ pub struct PixbufViewCore {
     zoom_in_adj: Cell<[f64; 2]>,
     zoom_out_adj: Cell<[f64; 2]>,
 }
+
+impl_widget_wrapper!(PixbufViewCore, scrolled_window, gtk::ScrolledWindow);
 
 pub type PixbufView = Rc<PixbufViewCore>;
 
@@ -449,8 +447,9 @@ impl PixbufViewInterface for PixbufView {
         pbv.print_image_item.clone().connect_activate(
             move |_| {
                 if let Some(ref zoomable) = *pbv_c.zoomable.borrow() {
-                    let parent: Option<&gtk::Window> = None;
-                    zoomable.print(parent);
+                    if let Err(ref err) = pbv_c.print_pixbuf(&zoomable.get_pixbuf()) {
+                        pbv_c.report_error("Print Error", err);
+                    }
                 } else {
                     panic!("File: {:?} Line: {:?}", file!(), line!())
                 }

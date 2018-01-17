@@ -26,7 +26,6 @@ pub mod wrapper;
 
 pub mod cairox;
 pub mod colour;
-pub mod dialogue;
 pub mod gdkx;
 pub mod gdk_pixbufx;
 pub mod geometry;
