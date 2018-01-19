@@ -37,6 +37,11 @@ impl WrappedMenu {
 
         pm
     }
+
+    pub fn len(&self) -> usize {
+        self.items.borrow().len()
+    }
+
     pub fn menu(&self) -> gtk::Menu {
         self.menu.clone()
     }
@@ -130,7 +135,9 @@ impl WrappedMenu {
     }
 
     pub fn popup_at_event(&self, event: &gdk::EventButton) {
-        self.menu.popup_easy(event.get_button(), event.get_time());
+        if self.len() > 0 {
+            self.menu.popup_easy(event.get_button(), event.get_time());
+        }
     }
 }
 
