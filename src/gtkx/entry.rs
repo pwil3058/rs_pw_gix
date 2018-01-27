@@ -45,7 +45,7 @@ pub struct HexEntryData {
     callbacks: RefCell<Vec<Box<Fn(u32)>>>
 }
 
-impl_widget_wrapper!(HexEntryData, entry, gtk::Entry);
+impl_widget_wrapper!(entry: gtk::Entry, HexEntryData);
 
 impl HexEntryData {
     pub fn get_value(&self) -> u32 {
@@ -207,7 +207,7 @@ pub struct RGBHexEntryBoxData {
     callbacks: RefCell<Vec<Box<Fn(RGB)>>>
 }
 
-impl_widget_wrapper!(RGBHexEntryBoxData, hbox, gtk::Box);
+impl_widget_wrapper!(hbox: gtk::Box, RGBHexEntryBoxData);
 
 impl RGBHexEntryBoxData {
     pub fn get_rgb(&self) -> RGB {

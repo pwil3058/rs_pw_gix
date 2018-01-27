@@ -150,7 +150,7 @@ pub struct ValueCADData {
 
 pub type ValueCAD = Rc<ValueCADData>;
 
-impl_widget_wrapper!(ValueCAD, drawing_area, gtk::DrawingArea);
+impl_widget_wrapper!(drawing_area: gtk::DrawingArea, ValueCAD);
 
 impl ColourAttributeDisplayInterface for ValueCAD {
     type CADIType = ValueCAD;
@@ -234,7 +234,7 @@ pub struct WarmthCADData {
 
 pub type WarmthCAD = Rc<WarmthCADData>;
 
-impl_widget_wrapper!(WarmthCAD, drawing_area, gtk::DrawingArea);
+impl_widget_wrapper!(drawing_area: gtk::DrawingArea, WarmthCAD);
 
 impl ColourAttributeDisplayInterface for WarmthCAD {
     type CADIType = WarmthCAD;
@@ -376,7 +376,7 @@ fn calc_hue_value(hue: HueAngle, target_hue: HueAngle) -> f64 {
 
 pub type HueCAD = Rc<HueCADData>;
 
-impl_widget_wrapper!(HueCAD, drawing_area, gtk::DrawingArea);
+impl_widget_wrapper!(drawing_area: gtk::DrawingArea, HueCAD);
 
 impl ColourAttributeDisplayInterface for HueCAD {
     type CADIType = HueCAD;
@@ -525,7 +525,7 @@ impl ChromaCADData {
 
 pub type ChromaCAD = Rc<ChromaCADData>;
 
-impl_widget_wrapper!(ChromaCAD, drawing_area, gtk::DrawingArea);
+impl_widget_wrapper!(drawing_area: gtk::DrawingArea, ChromaCAD);
 
 impl ColourAttributeDisplayInterface for ChromaCAD {
     type CADIType = ChromaCAD;
@@ -665,7 +665,7 @@ impl GreynessCADData {
 
 pub type GreynessCAD = Rc<GreynessCADData>;
 
-impl_widget_wrapper!(GreynessCAD, drawing_area, gtk::DrawingArea);
+impl_widget_wrapper!(drawing_area: gtk::DrawingArea, GreynessCAD);
 
 impl ColourAttributeDisplayInterface for GreynessCAD {
     type CADIType = GreynessCAD;
@@ -776,7 +776,7 @@ pub struct HueChromaValueCADSData {
 
 pub type HueChromaValueCADS = Rc<HueChromaValueCADSData>;
 
-impl_widget_wrapper!(HueChromaValueCADS, vbox, gtk::Box);
+impl_widget_wrapper!(vbox: gtk::Box, HueChromaValueCADS);
 
 impl ColourAttributeDisplayStackInterface for HueChromaValueCADS {
     fn create() -> HueChromaValueCADS {
@@ -820,7 +820,7 @@ pub struct HueGreynessValueCADSData {
 
 pub type HueGreynessValueCADS = Rc<HueGreynessValueCADSData>;
 
-impl_widget_wrapper!(HueGreynessValueCADS, vbox, gtk::Box);
+impl_widget_wrapper!(vbox: gtk::Box, HueGreynessValueCADS);
 
 impl ColourAttributeDisplayStackInterface for HueGreynessValueCADS {
     fn create() -> HueGreynessValueCADS {

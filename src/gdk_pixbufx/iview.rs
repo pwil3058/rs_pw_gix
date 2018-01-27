@@ -107,7 +107,7 @@ pub struct PixbufViewCore {
     zoom_out_adj: Cell<[f64; 2]>,
 }
 
-impl_widget_wrapper!(PixbufViewCore, scrolled_window, gtk::ScrolledWindow);
+impl_widget_wrapper!(scrolled_window: gtk::ScrolledWindow, PixbufViewCore);
 
 pub type PixbufView = Rc<PixbufViewCore>;
 
@@ -463,7 +463,7 @@ impl PixbufViewInterface for PixbufView {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    //use super::*;
 
     #[test]
     fn it_works() {

@@ -27,7 +27,7 @@ pub fn take_screen_sample() -> io::Result<Child> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    //use super::*;
 
     #[test]
     fn it_works() {

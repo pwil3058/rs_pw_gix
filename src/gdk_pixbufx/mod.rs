@@ -22,7 +22,7 @@ pub const PIXOPS_INTERP_HYPER: i32 = 3;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    //use super::*;
 
     #[test]
     fn it_works() {

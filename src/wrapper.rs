@@ -30,7 +30,7 @@ use printer::*;
 
 #[macro_export]
 macro_rules! impl_widget_wrapper {
-    ( $f:ty, $field:ident, $t:ty ) => (
+    ( $field:ident: $t:ty, $f:ident ) => (
         impl WidgetWrapper for $f {
             type PWT = $t;
 
@@ -38,7 +38,38 @@ macro_rules! impl_widget_wrapper {
                 self.$field.clone()
             }
         }
-    )
+    );
+    ( $field:ident: $t:ty, $f:ident < $( $g:ident ),+ > $( $constraints:tt )*) => (
+        impl<$($g),*> WidgetWrapper for $f<$($g),*>
+            $($constraints)*
+        {
+            type PWT = $t;
+
+            fn pwo(&self) -> $t {
+                self.$field.clone()
+            }
+        }
+    );
+    ( $($i:ident).+() -> $t:ty, $f:ident ) => (
+        impl WidgetWrapper for $f {
+            type PWT = $t;
+
+            fn pwo(&self) -> $t {
+                self.$($i).*()
+            }
+        }
+    );
+    ( $($i:ident).+() -> $t:ty, $f:ident < $( $g:ident ),+ > $( $constraints:tt )*) => (
+        impl<$($g),*> WidgetWrapper for $f<$($g),*>
+            $($constraints)*
+        {
+            type PWT = $t;
+
+            fn pwo(&self) -> $t {
+                self.$($i).*()
+            }
+        }
+    );
 }
 
 pub fn parent_none() -> Option<&'static gtk::Window> {
@@ -427,10 +458,60 @@ fn browse_path<P: IsA<gtk::Window> + gtk::GtkWindowExt>(
 
 #[cfg(test)]
 mod tests {
-    //use super::*;
+    use super::*;
+    use gtk;
 
     #[test]
-    fn it_works() {
+    fn widget_wrapper_simple() {
+        struct _TestWrapper {
+            vbox: gtk::Box,
+        }
 
+        impl_widget_wrapper!(vbox: gtk::Box, _TestWrapper);
+    }
+
+    #[test]
+    fn widget_wrapper_simple_expr() {
+        struct _TestWrapper {
+            vbox: gtk::Box,
+        }
+
+        impl _TestWrapper {
+            fn vbox(&self) -> gtk::Box {
+                self.vbox.clone()
+            }
+        }
+
+        impl_widget_wrapper!(vbox() -> gtk::Box, _TestWrapper);
+    }
+
+    #[test]
+    fn widget_wrapper_generic_simple() {
+        struct _TestWrapper<A, B, C> {
+            vbox: gtk::Box,
+            a: A,
+            b: B,
+            c: C,
+        }
+
+        impl_widget_wrapper!(vbox: gtk::Box, _TestWrapper<A, B, C>);
+    }
+
+    #[test]
+    fn widget_wrapper_generic_constrained() {
+        struct _TestWrapper<A, B, C>
+            where   A: Eq,
+                    C: PartialEq,
+        {
+            vbox: gtk::Box,
+            a: A,
+            b: B,
+            c: C,
+        }
+
+        impl_widget_wrapper!(vbox: gtk::Box, _TestWrapper<A, B, C>
+            where   A: Eq,
+                    C: PartialEq,
+        );
     }
 }

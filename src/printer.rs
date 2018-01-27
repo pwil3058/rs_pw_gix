@@ -372,7 +372,7 @@ pub fn print_text<P: IsA<gtk::Window>>(text: &str, parent: Option<&P>) -> PrintR
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    //use super::*;
 
     #[test]
     fn it_works() {

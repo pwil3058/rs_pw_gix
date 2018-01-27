@@ -26,7 +26,7 @@ pub struct TabRemoveLabelCore {
     remove_page_callbacks: RefCell<Vec<Box<Fn()>>>,
 }
 
-impl_widget_wrapper!(TabRemoveLabelCore, hbox, gtk::Box);
+impl_widget_wrapper!(hbox: gtk::Box, TabRemoveLabelCore);
 
 impl TabRemoveLabelCore {
     pub fn connect_remove_page<F: 'static + Fn()>(&self, callback: F) {

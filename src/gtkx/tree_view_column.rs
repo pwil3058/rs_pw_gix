@@ -81,7 +81,7 @@ pub fn editable_text_column<F: Fn(&gtk::CellRendererText, gtk::TreePath, &str) +
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    //use super::*;
 
     #[test]
     fn it_works() {
