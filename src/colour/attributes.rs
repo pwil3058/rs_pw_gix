@@ -62,8 +62,8 @@ pub trait ColourAttributeDisplayInterface: WidgetWrapper {
             let height = drawing_area.get_allocated_height() as f64;
             let indicator_x = width * attr_value;
             cairo_context.set_source_colour_rgb(self.attr_value_fg_rgb());
-            cairo_context.draw_indicator(Point(indicator_x, 1.0), Side::Top, 8.0);
-            cairo_context.draw_indicator(Point(indicator_x, height - 1.0), Side::Bottom, 8.0);
+            cairo_context.draw_indicator(Point(indicator_x, 1.0), Dirn::Down, 8.0);
+            cairo_context.draw_indicator(Point(indicator_x, height - 1.0), Dirn::Up, 8.0);
         }
     }
 

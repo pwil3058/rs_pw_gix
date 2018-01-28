@@ -23,20 +23,21 @@ use rgb_math::rgb::RGB;
 
 pub use geometry::*;
 
-pub enum Side {
-    Top,
-    Bottom,
+/// Direction in which to draw indicators
+pub enum Dirn {
+    Down,
+    Up,
+    Right,
     Left,
-    Right
 }
 
 pub trait Draw {
     fn draw_circle(&self, centre: Point, radius: f64, fill: bool);
-    fn draw_diamond(&self, centre: Point, side: f64, filled: bool);
+    fn draw_diamond(&self, centre: Point, side_length: f64, filled: bool);
     fn draw_line(&self, start: Point, end: Point);
     fn draw_polygon(&self, polygon: Points, fill: bool);
-    fn draw_square(&self, centre: Point, side: f64, filled: bool);
-    fn draw_indicator(&self, position: Point, side: Side, size: f64);
+    fn draw_square(&self, centre: Point, side_length: f64, filled: bool);
+    fn draw_indicator(&self, position: Point, dirn: Dirn, size: f64);
     fn move_to_point(&self, point: Point);
     fn line_to_point(&self, point: Point);
     fn set_source_colour(&self, rgb: &Colour);
@@ -55,8 +56,8 @@ impl Draw for cairo::Context {
         }
     }
 
-    fn draw_diamond(&self, centre: Point, side: f64, fill: bool) {
-        let dist = side * COS_45_DEG;
+    fn draw_diamond(&self, centre: Point, side_length: f64, fill: bool) {
+        let dist = side_length * COS_45_DEG;
         self.move_to(centre.0, centre.1 + dist);
         self.line_to(centre.0 + dist, centre.1);
         self.line_to(centre.0, centre.1 - dist);
@@ -88,13 +89,13 @@ impl Draw for cairo::Context {
         }
     }
 
-    fn draw_square(&self, centre: Point, side: f64, fill: bool) {
-        let start_x = centre.0 - side / 2.0;
-        let start_y = centre.1 - side / 2.0;
+    fn draw_square(&self, centre: Point, side_length: f64, fill: bool) {
+        let start_x = centre.0 - side_length / 2.0;
+        let start_y = centre.1 - side_length / 2.0;
         self.move_to(start_x, start_y);
-        self.line_to(start_x + side, start_y);
-        self.line_to(start_x + side, start_y + side);
-        self.line_to(start_x, start_y + side);
+        self.line_to(start_x + side_length, start_y);
+        self.line_to(start_x + side_length, start_y + side_length);
+        self.line_to(start_x, start_y + side_length);
         self.close_path();
         if fill {
             self.fill();
@@ -103,25 +104,25 @@ impl Draw for cairo::Context {
         }
     }
 
-    fn draw_indicator(&self, position: Point, side: Side, size: f64) {
+    fn draw_indicator(&self, position: Point, dirn: Dirn, size: f64) {
         self.move_to(position.0, position.1);
-        match side {
-            Side::Top => {
+        match dirn {
+            Dirn::Down => {
                 self.line_to(position.0 + size / 2.0, position.1);
                 self.line_to(position.0, position.1 + size);
                 self.line_to(position.0 - size / 2.0, position.1);
             },
-            Side::Bottom => {
+            Dirn::Up => {
                 self.line_to(position.0 + size / 2.0, position.1);
                 self.line_to(position.0, position.1 - size);
                 self.line_to(position.0 - size / 2.0, position.1);
             },
-            Side::Left => {
+            Dirn::Right => {
                 self.line_to(position.0, position.1 + size / 2.0);
                 self.line_to(position.0 + size, position.1);
                 self.line_to(position.0, position.1 - size / 2.0);
             },
-            Side::Right => {
+            Dirn::Left => {
                 self.line_to(position.0, position.1 + size / 2.0);
                 self.line_to(position.0 - size, position.1);
                 self.line_to(position.0, position.1 - size / 2.0);
