@@ -1,3 +1,21 @@
+// Copyright 2017 Peter Williams <pwil3058@gmail.com>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+//! Assist in simplifying GUI programming using the crates
+//! included in the **gtk-rs** project <http://gtk-rs.org/> by providing
+//! mechanisms to do common operations.
+
 extern crate cairo;
 extern crate gdk;
 extern crate gdk_pixbuf;
@@ -34,7 +52,7 @@ pub mod printer;
 pub mod rgb_math;
 pub mod sample;
 
-pub mod recollect {
+mod recollect {
     use std::collections::HashMap;
     use std::fs;
     use std::io::{self, Seek};
@@ -155,6 +173,8 @@ pub mod recollect {
 }
 
 pub mod recollections {
+    //! Provide a mechanism for widgets to remember configuration
+    //! data (size, position, etc.) from one session to the next.
     use std::path;
     use recollect::*;
     use mut_static::*;
@@ -165,19 +185,47 @@ pub mod recollections {
         };
     }
 
+    /// Initialise the mechanism by providing the path of the file
+    /// where the data should be stored.  This would normally be a
+    /// hidden file in the user's home directory or a hidden configuration
+    /// directory for the application.
+    ///
+    /// This function should normally be called early in the application's
+    /// `main()` function e.g.
+    ///
+    /// ```no_run
+    /// fn main() {
+    ///     use pw_gix::recollections;
+    ///
+    ///     let home_dir = env::home_dir().expect("badly designed OS");
+    ///     recollections::init(&home_dir.join(".this_apps_recollections"));
+    /// }
+    /// ```
+    ///
+    /// If this initialisation is not performed then calls to `recall()`
+    /// will return `None`, calls to `recall_or_else()` will return the
+    /// default supplied and calls to `remember()` will be ignored.
+    /// The operation of the application will not be effected otherwise.
     pub fn init(file_path: &path::Path) {
         RECOLLECTIONS.write().unwrap().set_data_file_path(file_path);
     }
 
+    /// Return the `String` value associated with the given `name` or
+    /// `None` if `pw_gix::recollections` has not been initialised or
+    /// asked remember data associated with the given `name`.
     pub fn recall(name: &str) -> Option<String> {
         RECOLLECTIONS.read().unwrap().recall(name)
     }
 
-
+    /// Return the `String` value associated with the given `name` or
+    /// `default` if `pw_gix::recollections` has not been initialised or
+    /// asked remember data associated with the given `name`.
     pub fn recall_or_else(name: &str, default: &str) -> String {
         RECOLLECTIONS.read().unwrap().recall_or_else(name, default)
     }
 
+    /// Remember the string specified by `value` and associate it with
+    /// the given `name` for later recall.
     pub fn remember(name: &str, value: &str) {
         RECOLLECTIONS.read().unwrap().remember(name, value)
     }
