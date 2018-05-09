@@ -276,6 +276,8 @@ pub mod area_selection {
             } else {
                 return Err(Failure::new(FailureReason::NoDefaultScreen))
             }
+            let events = gdk::EventMask::KEY_PRESS_MASK | gdk::EventMask::BUTTON_PRESS_MASK | gdk::EventMask::BUTTON_RELEASE_MASK | gdk::EventMask::BUTTON_MOTION_MASK;
+            sad.window.add_events(events.bits() as i32);
 
             let sad_c = sad.clone();
             sad.window.connect_draw(
