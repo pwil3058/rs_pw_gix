@@ -191,6 +191,7 @@ pub mod area_selection {
         }
     }
 
+    #[derive(Debug)]
     struct SelectAreaDataCore {
         start_position: Cell<Option<(f64, f64)>>,
         current_position: Cell<Option<(f64, f64)>>,
@@ -367,6 +368,7 @@ pub mod area_selection {
         }
     }
 
+    #[derive(Debug)]
     struct PointerAndKeyboard {
         pointer: gdk::Device,
         keyboard: gdk::Device,

@@ -23,15 +23,13 @@ use std::result;
 use mut_static::*;
 
 use gdk::ContextExt;
-use gdk_pixbuf;
+use gdk_pixbuf::{self, PixbufExt};
 use glib;
 use gtk;
 use gtk::prelude::{IsA, PrintOperationExt, PrintSettingsExt, PrintContextExt};
 use pango;
 use pango::{LayoutExt};
 use pangocairo;
-
-use gdk_pixbufx::PIXOPS_INTERP_BILINEAR;
 
 struct RememberedPrinterSettings {
     pub o_file_path: Option<path::PathBuf>,
@@ -252,7 +250,7 @@ impl PixbufPrinterInterface for Rc<PixbufPrinterCore> {
                 let scale = hscale.min(wscale);
                 let new_width = (pwidth as f64 * scale).round() as i32;
                 let new_height = (pheight as f64 * scale).round() as i32;
-                if let Ok(new_pixbuf) = pixbuf.scale_simple(new_width, new_height, PIXOPS_INTERP_BILINEAR) {
+                if let Some(new_pixbuf) = pixbuf.scale_simple(new_width, new_height, gdk_pixbuf::InterpType::Bilinear) {
                     *mp_c.pixbuf.borrow_mut() = new_pixbuf
                 } else {
                     panic!("File: {} Line: {}", file!(), line!())

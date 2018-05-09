@@ -18,7 +18,7 @@ use std::rc::Rc;
 
 use gdk;
 use gdk::prelude::ContextExt;
-use gdk_pixbuf;
+use gdk_pixbuf::{self, PixbufExt};
 use gtk;
 use gtk::prelude::*;
 
@@ -27,8 +27,6 @@ use cairox::*;
 
 use gtkx::drawing_area::*;
 use wrapper::*;
-
-use super::PIXOPS_INTERP_BILINEAR;
 
 struct Zoomable {
     unzoomed: gdk_pixbuf::Pixbuf,
@@ -58,7 +56,7 @@ impl Zoomable {
     }
 
     pub fn get_subpixbuf(&self, rect: Rectangle<i32>) -> gdk_pixbuf::Pixbuf {
-        self.zoomed.borrow().new_subpixbuf(rect.x, rect.y, rect.width, rect.height)
+        self.zoomed.borrow().new_subpixbuf(rect.x, rect.y, rect.width, rect.height).expect("Programmer Error")
     }
 
     pub fn zoom_factor(&self) -> f64 {
@@ -71,7 +69,7 @@ impl Zoomable {
 
     pub fn set_zoom(&self, zoom_factor: f64) {
         let new_size = self.unzoomed.size() * zoom_factor;
-        if let Ok(new_pixbuf) = self.unzoomed.scale_simple(new_size.width, new_size.height, PIXOPS_INTERP_BILINEAR) {
+        if let Some(new_pixbuf) = self.unzoomed.scale_simple(new_size.width, new_size.height, gdk_pixbuf::InterpType::Bilinear) {
             *self.zoomed.borrow_mut() = new_pixbuf;
             self.zoom_factor.set(zoom_factor);
         } //TODO: do something about failure
@@ -79,7 +77,7 @@ impl Zoomable {
 
     pub fn set_zoomed_size(&self, new_zsize: Size<i32>) {
         assert!(self.aspect_ratio_matches_size(new_zsize.into()));
-        if let Ok(new_pixbuf) = self.unzoomed.scale_simple(new_zsize.width, new_zsize.height, PIXOPS_INTERP_BILINEAR) {
+        if let Some(new_pixbuf) = self.unzoomed.scale_simple(new_zsize.width, new_zsize.height, gdk_pixbuf::InterpType::Bilinear) {
             *self.zoomed.borrow_mut() = new_pixbuf;
             self.zoom_factor.set(self.zoomed.borrow().scale_versus(&self.unzoomed));
         } //TODO: do something about failure
