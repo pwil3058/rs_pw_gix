@@ -14,6 +14,7 @@
 
 use std::cell::{Cell, RefCell};
 use std::convert::From;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use gdk;
@@ -103,6 +104,7 @@ pub struct PixbufViewCore {
     last_xy: Cell<Point>,
     zoom_in_adj: Cell<[f64; 2]>,
     zoom_out_adj: Cell<[f64; 2]>,
+    current_file_path: RefCell<Option<PathBuf>>,
 }
 
 impl_widget_wrapper!(scrolled_window: gtk::ScrolledWindow, PixbufViewCore);
@@ -140,6 +142,20 @@ impl PixbufViewCore {
             }
         } else {
             *self.zoomable.borrow_mut() = None
+        }
+    }
+
+    pub fn set_pixbuf_fm_file<P: AsRef<Path>>(&self, file_path: P) -> Result<(), gdk_pixbuf::Error> {
+        let pixbuf = gdk_pixbuf::Pixbuf::new_from_file(file_path.as_ref())?;
+        self.set_pixbuf(Some(&pixbuf));
+        *self.current_file_path.borrow_mut() = Some(file_path.as_ref().to_path_buf());
+        Ok(())
+    }
+
+    pub fn current_file_path(&self) -> Option<PathBuf> {
+        match *self.current_file_path.borrow() {
+            Some(ref path_buf) => Some(path_buf.clone()),
+            None => None
         }
     }
 
@@ -204,7 +220,7 @@ impl PixbufViewInterface for PixbufView {
             gdk::EventMask::BUTTON_RELEASE_MASK | gdk::EventMask::LEAVE_NOTIFY_MASK;
         scrolled_window.add_events(events.bits() as i32);
         let drawing_area = gtk::DrawingArea::new();
-        scrolled_window.add_with_viewport(&drawing_area);
+        scrolled_window.add(&drawing_area);
         let xy_selection = XYSelection::create(&drawing_area);
         let menu = gtk::Menu::new();
         let copy_selection_item = gtk::MenuItem::new_with_label("Copy");
@@ -230,6 +246,7 @@ impl PixbufViewInterface for PixbufView {
                 last_xy: Cell::new(Point(0.0, 0.0)),
                 zoom_in_adj: Cell::new([0.0, 0.0]),
                 zoom_out_adj: Cell::new([0.0, 0.0]),
+                current_file_path: RefCell::new(None),
             }
         );
         // TODO: fix problem with first selection not showing rectangle during selection
@@ -239,8 +256,6 @@ impl PixbufViewInterface for PixbufView {
                 if let Some(ref zoomable) = *pbv_c.zoomable.borrow() {
                     cairo_context.set_source_pixbuf(&zoomable.get_pixbuf(), 0.0, 0.0);
                     cairo_context.paint();
-//println!("IN PROGRESS: {}", pbv_c.xy_selection.in_progress());
-//println!("{} {} : {:?}", pbv_c.xy_selection.is_drawable(), pbv_c.xy_selection.selection_made(), pbv_c.xy_selection.get_selected_rectangle(zoomable.zoom_factor() / pbv_c.selection_zoom.get()));
                     if pbv_c.xy_selection.is_drawable() {
                         let scale = zoomable.zoom_factor() / pbv_c.selection_zoom.get();
                         let rect = pbv_c.xy_selection.get_selected_rectangle(scale).unwrap();
@@ -253,7 +268,6 @@ impl PixbufViewInterface for PixbufView {
                         cairo_context.set_source_rgb(0.0, 0.0, 0.0);
                         cairo_context.set_operator(Operator::Xor);
                         cairo_context.stroke();
-//println!("stroke: {:?} {:?}", (rect.width, rect.height), cairo_context.status());
                     }
                 };
                 gtk::Inhibit(false)
