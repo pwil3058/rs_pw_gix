@@ -19,6 +19,7 @@ use gtk::prelude::*;
 use rgb_math::rgb::*;
 use colour::*;
 
+#[allow(deprecated)]
 pub trait Colourable: gtk::WidgetExt {
     fn set_widget_colour(&self, colour: &Colour) {
         self.set_widget_colour_rgb(colour.rgb())
@@ -32,6 +33,7 @@ pub trait Colourable: gtk::WidgetExt {
     }
 }
 
+#[allow(deprecated)]
 impl Colourable for gtk::Button {
     fn set_widget_colour_rgb(&self, rgb: RGB) {
         let bg_rgba = gdk::RGBA::from(rgb);
