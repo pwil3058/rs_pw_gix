@@ -233,9 +233,12 @@ impl Size<f64> {
     }
 
     pub fn scale_versus(&self, other: Size<f64>) -> f64 {
-        assert!(self.aspect_ratio_matches_size(other));
         let scales = self.scales_versus(other);
-        (scales.width + scales.height) / 2.0
+        if self.aspect_ratio_matches_size(other) {
+            (scales.width + scales.height) / 2.0
+        } else {
+            scales.width.max(scales.height)
+        }
     }
 }
 
