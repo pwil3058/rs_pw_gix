@@ -14,6 +14,7 @@
 
 use std::cell::{Cell, RefCell};
 use std::convert::From;
+use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -27,6 +28,7 @@ use cairo::Operator;
 use cairox::*;
 
 use gtkx::drawing_area::*;
+use recollections;
 use wrapper::*;
 
 struct Zoomable {
@@ -94,6 +96,7 @@ pub struct PixbufViewCore {
     drawing_area: gtk::DrawingArea,
     menu: gtk::Menu,
     copy_selection_item: gtk::MenuItem,
+    load_image_item: gtk::MenuItem,
     print_image_item: gtk::MenuItem,
     xy_selection: XYSelection,
     last_allocation: RefCell<Option<Size<f64>>>,
@@ -142,14 +145,30 @@ impl PixbufViewCore {
             }
         } else {
             *self.zoomable.borrow_mut() = None
-        }
+        };
+        self.drawing_area.queue_draw();
     }
 
     pub fn set_pixbuf_fm_file<P: AsRef<Path>>(&self, file_path: P) -> Result<(), gdk_pixbuf::Error> {
         let pixbuf = gdk_pixbuf::Pixbuf::new_from_file(file_path.as_ref())?;
         self.set_pixbuf(Some(&pixbuf));
         *self.current_file_path.borrow_mut() = Some(file_path.as_ref().to_path_buf());
+        if let Some(current_file_path) = self.current_file_path(){
+            let o_path_str = current_file_path.to_str();
+            if let Some(path_str) = o_path_str {
+                recollections::remember("image_viewer::last_image_file", path_str);
+            }
+        }
         Ok(())
+    }
+
+    pub fn reload_last_image(&self) {
+        let o_last_file = recollections::recall("image_viewer::last_image_file");
+        if let Some(ref last_file_path) = o_last_file {
+            if let Err(err) = self.set_pixbuf_fm_file(last_file_path) {
+                self.inform_user("Failed To Load Previous Image", Some(err.description()));
+            };
+        };
     }
 
     pub fn current_file_path(&self) -> Option<PathBuf> {
@@ -222,20 +241,26 @@ impl PixbufViewInterface for PixbufView {
         let drawing_area = gtk::DrawingArea::new();
         scrolled_window.add(&drawing_area);
         let xy_selection = XYSelection::create(&drawing_area);
+
         let menu = gtk::Menu::new();
         let copy_selection_item = gtk::MenuItem::new_with_label("Copy");
         copy_selection_item.set_tooltip_text("Copy the selection to the clipboard");
         menu.append(&copy_selection_item.clone());
+        let load_image_item = gtk::MenuItem::new_with_label("Load");
+        load_image_item.set_tooltip_text("Load an image from a file");
+        menu.append(&load_image_item.clone());
         let print_image_item = gtk::MenuItem::new_with_label("Print");
         print_image_item.set_tooltip_text("Print the image");
         menu.append(&print_image_item.clone());
         menu.show_all();
+
         let pbv = Rc::new(
             PixbufViewCore {
                 scrolled_window: scrolled_window,
                 drawing_area: drawing_area,
                 menu: menu,
                 copy_selection_item: copy_selection_item,
+                load_image_item: load_image_item,
                 print_image_item: print_image_item,
                 xy_selection: xy_selection,
                 last_allocation: RefCell::new(None),
@@ -419,6 +444,7 @@ impl PixbufViewInterface for PixbufView {
                 gtk::Inhibit(false)
             }
         );
+        // TODO: fix problem with first use of selection mechanism (draws in wrong position)
         let pbv_c = pbv.clone();
         pbv.scrolled_window.connect_motion_notify_event(
             move |_, event| {
@@ -452,6 +478,22 @@ impl PixbufViewInterface for PixbufView {
                     }
                 } else {
                     panic!("File: {:?} Line: {:?}", file!(), line!())
+                }
+            }
+        );
+        let pbv_c = pbv.clone();
+        pbv.load_image_item.clone().connect_activate(
+            move |_| {
+                let o_last_file = recollections::recall("image_viewer::last_image_file");
+                let last_file = if let Some(ref text) = o_last_file {
+                    Some(text.as_str())
+                } else {
+                    None
+                };
+                if let Some(path) = pbv_c.ask_file_path(Some("Image File"), last_file, true) {
+                    if let Err(err) = pbv_c.set_pixbuf_fm_file(path) {
+                        pbv_c.inform_user("Failed To Load Image", Some(err.description()));
+                    }
                 }
             }
         );
