@@ -40,30 +40,319 @@ impl AutoClose for gtk::MessageDialog {}
 impl AutoClose for gtk::RecentChooserDialog {}
 
 pub mod dialog_user {
+    use std::error::Error;
+    use std::path::PathBuf;
+
     use gtk;
     use gtk::prelude::*;
 
-    pub trait TopGtkWindow: gtk::WidgetExt {
-        fn get_toplevel_gtk_window(&self) -> Option<gtk::Window> {
-            if let Some(widget) = self.get_toplevel() {
-                if widget.is_toplevel() {
-                    if let Ok(window) = widget.dynamic_cast::<gtk::Window>() {
-                        return Some(window)
-                    }
+    use pw_pathux;
+
+    use gtkx::entry::PathCompletion;
+    use super::AutoClose;
+
+    pub trait TopGtkWindow {
+        fn get_toplevel_gtk_window(&self) -> Option<gtk::Window>;
+    }
+
+    macro_rules! implement_tgw_for_widget {
+        ( $f:ident ) => (
+            impl TopGtkWindow for gtk::$f {
+                fn get_toplevel_gtk_window(&self) -> Option<gtk::Window> {
+                    if let Some(widget) = self.get_toplevel() {
+                        if widget.is_toplevel() {
+                            if let Ok(window) = widget.dynamic_cast::<gtk::Window>() {
+                                return Some(window)
+                            }
+                        }
+                    };
+                    None
+                }
+            }
+        )
+    }
+
+    implement_tgw_for_widget!(Bin);
+    implement_tgw_for_widget!(DrawingArea);
+    implement_tgw_for_widget!(EventBox);
+    implement_tgw_for_widget!(Frame);
+    implement_tgw_for_widget!(Notebook);
+    implement_tgw_for_widget!(ScrolledWindow);
+    implement_tgw_for_widget!(TextView);
+    implement_tgw_for_widget!(TreeView);
+    implement_tgw_for_widget!(Window);
+    implement_tgw_for_widget!(ApplicationWindow);
+
+    pub fn parent_none() -> Option<&'static gtk::Window> {
+        let none: Option<&gtk::Window> = None;
+        none
+    }
+
+    pub static CANCEL_OK_BUTTONS: &[(&str, i32)] = &[("Cancel", 0), ("Ok", 1)];
+
+    fn browse_path<P: IsA<gtk::Window> + gtk::GtkWindowExt>(
+        dialog_parent: Option<&P>,
+        o_prompt: Option<&str>,
+        o_suggestion: Option<&str>,
+        action: gtk::FileChooserAction,
+        absolute: bool,
+    ) -> Option<PathBuf> {
+        let dialog = gtk::FileChooserDialog::new(o_prompt, dialog_parent, action);
+        if let Some(parent) = dialog_parent {
+            if let Some(ref icon) = parent.get_icon() {
+                dialog.set_icon(icon)
+            }
+        };
+        for button in CANCEL_OK_BUTTONS {
+            dialog.add_button(button.0, button.1);
+        }
+        let ok = CANCEL_OK_BUTTONS[1].1;
+        dialog.set_default_response(ok);
+        if let Some(suggestion) = o_suggestion {
+            dialog.set_filename(suggestion);
+        };
+        if dialog.run() == ok {
+            if let Some(file_path) = dialog.get_filename() {
+                dialog.destroy();
+                if absolute {
+                    return Some(pw_pathux::absolute_path_buf(&file_path));
+                } else {
+                    return Some(pw_pathux::relative_path_buf_or_mine(&file_path));
                 }
             };
-            None
+        };
+        dialog.destroy();
+        None
+    }
+
+    pub trait DialogUser: TopGtkWindow {
+        fn set_transient_for_and_icon_on<W: gtk::GtkWindowExt>(&self, window: &W) {
+            if let Some(tlw) = self.get_toplevel_gtk_window() {
+                window.set_transient_for(Some(&tlw));
+                if let Some(ref icon) = tlw.get_icon() {
+                    window.set_icon(Some(icon));
+                }
+            };
+        }
+
+        fn new_dialog(&self) -> gtk::Dialog {
+            let dialog = gtk::Dialog::new();
+            self.set_transient_for_and_icon_on(&dialog);
+            dialog
+        }
+
+        fn new_dialog_with_buttons(
+            &self,
+            title: Option<&str>,
+            flags: gtk::DialogFlags,
+            buttons: &[(&str, i32)]
+        )  -> gtk::Dialog {
+            let dialog = gtk::Dialog::new_with_buttons(title, parent_none(), flags, buttons);
+            self.set_transient_for_and_icon_on(&dialog);
+            dialog
+        }
+
+        fn new_message_dialog(
+            &self,
+            flags: gtk::DialogFlags,
+            type_: gtk::MessageType,
+            buttons: &[(&str, i32)],
+            message: &str,
+        ) -> gtk::MessageDialog {
+            let dialog = gtk::MessageDialog::new(parent_none(), flags, type_, gtk::ButtonsType::None, message);
+            for button in buttons {
+                dialog.add_button(button.0, button.1);
+            }
+            self.set_transient_for_and_icon_on(&dialog);
+            dialog
+        }
+
+        fn new_inform_user_dialog(
+            &self,
+            msg: &str,
+            o_expln: Option<&str>,
+            problem_type: gtk::MessageType
+        ) -> gtk::MessageDialog {
+            let buttons = &[("Close", 0),];
+            let dialog = self.new_message_dialog(gtk::DialogFlags::empty(), problem_type, buttons, msg);
+            if let Some(expln) = o_expln {
+                dialog.set_property_secondary_text(Some(expln));
+            };
+            dialog.enable_auto_close();
+            dialog
+        }
+
+        fn inform_user(&self, msg: &str, o_expln: Option<&str>) {
+            self.new_inform_user_dialog(msg, o_expln, gtk::MessageType::Info).run();
+        }
+
+        fn warn_user(&self, msg: &str, o_expln: Option<&str>) {
+            self.new_inform_user_dialog(msg, o_expln, gtk::MessageType::Warning).run();
+        }
+
+        fn report_error<E: Error>(&self, msg: &str, error: &E) {
+            let mut expln = error.description().to_string();
+            if let Some(cause) = error.cause() {
+                expln += &format!("\nCaused by: {}.", cause.description());
+            };
+            self.new_inform_user_dialog( msg, Some(&expln), gtk::MessageType::Error).run();
+        }
+
+        fn ask_question(&self, question: &str, o_expln: Option<&str>, buttons: &[(&str, i32)],) -> i32 {
+            let dialog = self.new_message_dialog(gtk::DialogFlags::empty(), gtk::MessageType::Question, buttons, question);
+            if let Some(expln) = o_expln {
+                dialog.set_property_secondary_text(Some(expln));
+            };
+            dialog.enable_auto_close();
+            dialog.run()
+        }
+
+        fn ask_confirm_action(&self, msg: &str, expln: Option<&str>) -> bool {
+            self.ask_question(msg, expln, CANCEL_OK_BUTTONS) == 1
+        }
+
+        fn new_file_chooser_dialog(
+            &self,
+            o_title: Option<&str>,
+            action: gtk::FileChooserAction,
+        ) -> gtk::FileChooserDialog {
+            let dialog = gtk::FileChooserDialog::new(o_title, parent_none(), action);
+            self.set_transient_for_and_icon_on(&dialog);
+            dialog
+        }
+
+        fn browse_path(
+            &self,
+            o_prompt: Option<&str>,
+            o_suggestion: Option<&str>,
+            action: gtk::FileChooserAction,
+            absolute: bool,
+        ) -> Option<PathBuf> {
+            if let Some(tlw) = self.get_toplevel_gtk_window() {
+                browse_path(Some(&tlw), o_prompt, o_suggestion, action, absolute)
+            } else {
+                browse_path(parent_none(), o_prompt, o_suggestion, action, absolute)
+            }
+        }
+
+        fn ask_path(
+            &self,
+            prompt: Option<&str>,
+            suggestion: Option<&str>,
+            action: gtk::FileChooserAction,
+        ) -> Option<PathBuf> {
+            let dialog = self.new_dialog_with_buttons(None, gtk::DialogFlags::DESTROY_WITH_PARENT,CANCEL_OK_BUTTONS);
+            dialog.connect_close(
+                |d| d.destroy()
+            );
+            let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 1);
+            dialog.get_content_area().pack_start(&hbox, false, false, 0);
+
+            let prompt_label = if prompt.is_some() {
+                gtk::Label::new(prompt)
+            } else {
+                gtk::Label::new(Some("File Path:"))
+            };
+            hbox.pack_start(&prompt_label, false, false, 0);
+
+            let entry = gtk::Entry::new();
+            match action {
+                gtk::FileChooserAction::Open | gtk::FileChooserAction::Save => {
+                    entry.enable_file_path_completion();
+                },
+                gtk::FileChooserAction::SelectFolder | gtk::FileChooserAction::CreateFolder => {
+                    entry.enable_dir_path_completion();
+                },
+                _ => panic!("File: {} Line: {}: must specify a (useful) action"),
+            };
+            entry.set_activates_default(true);
+            entry.set_width_chars(32);
+            if let Some(suggestion) = suggestion {
+                entry.set_text(suggestion)
+            };
+            hbox.pack_start(&entry, true, true, 0);
+
+            let button = gtk::Button::new_with_label("Browse");
+            hbox.pack_start(&button, false, false, 0);
+            hbox.show_all();
+            let b_prompt = if let Some(prompt_text) = prompt {
+                format!("Select {}", prompt_text)
+            } else {
+                "Select Path:".to_string()
+            };
+            let entry_c = entry.clone();
+            let dialog_c = dialog.clone();
+            button.connect_clicked(
+                move |_| {
+                    // NB: following gymnastics need to satisfy lifetime  checks
+                    let text = &entry_c.get_text().unwrap_or("".to_string());
+                    let suggestion: Option<&str> = if text.len() > 0 { Some(text) } else { None };
+                    if let Some(path) = browse_path(Some(&dialog_c), Some(&b_prompt), suggestion, action, false) {
+                        let text = pw_pathux::path_to_string(&path);
+                        entry_c.set_text(&text);
+                    }
+                }
+            );
+
+            let ok = CANCEL_OK_BUTTONS[1].1;
+            dialog.set_default_response(ok);
+            if dialog.run() == ok {
+                let o_text = entry.get_text();
+                dialog.destroy();
+                if let Some(text) = o_text {
+                    Some(PathBuf::from(text))
+                } else {
+                    Some(PathBuf::new())
+                }
+            } else {
+                dialog.destroy();
+                None
+            }
+        }
+
+        fn select_dir(&self, o_prompt: Option<&str>, o_suggestion: Option<&str>, existing: bool, absolute: bool) -> Option<PathBuf> {
+            if existing {
+                self.browse_path(o_prompt, o_suggestion, gtk::FileChooserAction::SelectFolder, absolute)
+            } else {
+                self.browse_path(o_prompt, o_suggestion, gtk::FileChooserAction::CreateFolder, absolute)
+            }
+        }
+
+        fn select_file(&self, o_prompt: Option<&str>, o_suggestion: Option<&str>, existing: bool, absolute: bool) -> Option<PathBuf> {
+            if existing {
+                self.browse_path(o_prompt, o_suggestion, gtk::FileChooserAction::Open, absolute)
+            } else {
+                self.browse_path(o_prompt, o_suggestion, gtk::FileChooserAction::Save, absolute)
+            }
+        }
+
+        fn ask_dir_path(&self, o_prompt: Option<&str>, o_suggestion: Option<&str>, existing: bool) -> Option<PathBuf> {
+            if existing {
+                self.ask_path(o_prompt, o_suggestion, gtk::FileChooserAction::SelectFolder)
+            } else {
+                self.ask_path(o_prompt, o_suggestion, gtk::FileChooserAction::CreateFolder)
+            }
+        }
+
+        fn ask_file_path(&self, o_prompt: Option<&str>, o_suggestion: Option<&str>, existing: bool) -> Option<PathBuf> {
+            if existing {
+                self.ask_path(o_prompt, o_suggestion, gtk::FileChooserAction::Open)
+            } else {
+                self.ask_path(o_prompt, o_suggestion, gtk::FileChooserAction::Save)
+            }
         }
     }
 
-    impl TopGtkWindow for gtk::Bin {}
-    impl TopGtkWindow for gtk::DrawingArea {}
-    impl TopGtkWindow for gtk::EventBox {}
-    impl TopGtkWindow for gtk::Frame {}
-    impl TopGtkWindow for gtk::Notebook {}
-    impl TopGtkWindow for gtk::ScrolledWindow {}
-    impl TopGtkWindow for gtk::TextView {}
-    impl TopGtkWindow for gtk::TreeView {}
+    impl DialogUser for gtk::Bin {}
+    impl DialogUser for gtk::DrawingArea {}
+    impl DialogUser for gtk::EventBox {}
+    impl DialogUser for gtk::Frame {}
+    impl DialogUser for gtk::Notebook {}
+    impl DialogUser for gtk::ScrolledWindow {}
+    impl DialogUser for gtk::TextView {}
+    impl DialogUser for gtk::TreeView {}
+    impl DialogUser for gtk::Window {}
+    impl DialogUser for gtk::ApplicationWindow {}
 }
 
 
