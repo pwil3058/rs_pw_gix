@@ -190,6 +190,7 @@ impl PixbufViewCore {
                 self.scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic)
             };
             self.ignore_size_alloc.set(false);
+            self.selection_zoom.set(zoomable.zoom_factor())
         }
     }
 
@@ -204,6 +205,7 @@ impl PixbufViewCore {
                     adj.set_value(new_val);
                 }
             }
+            self.selection_zoom.set(zoomable.zoom_factor())
         }
     }
 
@@ -227,6 +229,7 @@ impl PixbufViewCore {
                     adj.set_value(new_val.max(0.0));
                 }
             }
+            self.selection_zoom.set(zoomable.zoom_factor())
         }
     }
 }
@@ -274,7 +277,6 @@ impl PixbufViewInterface for PixbufView {
                 current_file_path: RefCell::new(None),
             }
         );
-        // TODO: fix problem with first selection not showing rectangle during selection
         let pbv_c = pbv.clone();
         pbv.drawing_area.connect_draw(
             move |_, cairo_context| {
@@ -444,7 +446,6 @@ impl PixbufViewInterface for PixbufView {
                 gtk::Inhibit(false)
             }
         );
-        // TODO: fix problem with first use of selection mechanism (draws in wrong position)
         let pbv_c = pbv.clone();
         pbv.scrolled_window.connect_motion_notify_event(
             move |_, event| {
