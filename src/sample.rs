@@ -449,7 +449,11 @@ pub mod area_selection {
     }
 
     pub fn is_available() -> bool {
-        SelectAreaDataCore::is_makeable() && PointerAndKeyboard::is_makeable()
+        if cfg!(targt_os = "windows") {
+            false
+        } else {
+            SelectAreaDataCore::is_makeable() && PointerAndKeyboard::is_makeable()
+        }
     }
 
     pub fn select_area() -> Result<gdk::Rectangle, Failure> {
