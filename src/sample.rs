@@ -449,7 +449,7 @@ pub mod area_selection {
     }
 
     pub fn is_available() -> bool {
-        if cfg!(targt_os = "windows") {
+        if cfg!(target_os = "windows") {
             false
         } else {
             SelectAreaDataCore::is_makeable() && PointerAndKeyboard::is_makeable()
