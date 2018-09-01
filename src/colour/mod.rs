@@ -49,11 +49,13 @@ pub trait ColourInterface {
     }
 
     fn chroma(&self) -> f64 {
-        self.rgb().hypot() * self.hue().chroma_correction()
+        // Be paranoid about fact floats only approximate reals
+        (self.rgb().hypot() * self.hue().chroma_correction()).min(1.0)
     }
 
     fn greyness(&self) -> f64 {
-        1.0 - self.rgb().hypot() * self.hue().chroma_correction()
+        // Be paranoid about fact floats only approximate reals
+        (1.0 - self.rgb().hypot() * self.hue().chroma_correction()).max(0.0)
     }
 
     fn value(&self) -> f64 {

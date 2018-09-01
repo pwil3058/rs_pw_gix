@@ -30,14 +30,16 @@ impl RGBManipulator {
         let rgb = RefCell::new(WHITE);
         let angle = RefCell::new(HueAngle::from(*rgb.borrow()));
         let last_angle = RefCell::new(HueAngle::from(RED));
-        let chroma = RefCell::new(rgb.borrow().hypot() * angle.borrow().chroma_correction());
+        // Be paranoid about fact floats only approximate reals
+        let chroma = RefCell::new((rgb.borrow().hypot() * angle.borrow().chroma_correction()).min(1.0));
         RGBManipulator{rgb, angle, last_angle, chroma}
     }
 
     pub fn set_rgb(&self, rgb: RGB) {
         *self.rgb.borrow_mut() = rgb;
         let new_angle = HueAngle::from(rgb);
-        *self.chroma.borrow_mut() = rgb.hypot() * new_angle.chroma_correction();
+        // Be paranoid about fact floats only approximate reals
+        *self.chroma.borrow_mut() = (rgb.hypot() * new_angle.chroma_correction()).min(1.0);
         let is_grey = new_angle.is_grey();
         if !is_grey {
             *self.last_angle.borrow_mut() = new_angle;

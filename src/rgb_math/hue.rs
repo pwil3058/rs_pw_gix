@@ -65,7 +65,8 @@ impl XYHA for RGB {
     }
 
     fn hypot(&self) -> f64 {
-        rgb_x_coord!(self).hypot(rgb_y_coord!(self))
+        // Be paranoid about fact floats only approximate reals
+        rgb_x_coord!(self).hypot(rgb_y_coord!(self)).min(1.0)
     }
 
     fn angle(&self) -> Angle {
