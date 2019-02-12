@@ -19,7 +19,6 @@
 
 use std::clone::Clone;
 use std::collections::HashMap;
-use std::default::Default;
 use std::ops::BitOr;
 
 use gtk::{TreeSelection, TreeSelectionExt, WidgetExt};
@@ -88,99 +87,120 @@ impl MaskedCondnProvider for TreeSelection {
     }
 }
 
-#[derive(Debug)]
-struct SensitiveWidgetGroup<W>
-where
-    W: WidgetExt + Clone,
-{
-    widgets: HashMap<String, W>,
-    is_sensitive: bool,
+#[derive(Debug, Clone, Copy)]
+pub enum WidgetStatesControlled {
+    Sensitivity,
+    Visibility,
+    Both,
 }
 
-impl<W> Default for SensitiveWidgetGroup<W>
+use self::WidgetStatesControlled::*;
+
+#[derive(Debug)]
+struct ConditionalWidgetGroup<W>
 where
-    W: WidgetExt + Clone,
+    W: WidgetExt + Clone + PartialEq,
 {
-    fn default() -> Self {
-        SensitiveWidgetGroup::<W> {
-            widgets: HashMap::new(),
-            is_sensitive: false,
+    widget_states_controlled: WidgetStatesControlled,
+    widgets: Vec<W>,
+    is_on: bool,
+}
+
+impl<W> ConditionalWidgetGroup<W>
+where
+    W: WidgetExt + Clone + PartialEq,
+{
+    fn new(wsc: WidgetStatesControlled) -> ConditionalWidgetGroup<W> {
+        ConditionalWidgetGroup::<W> {
+            widget_states_controlled: wsc,
+            widgets: Vec::new(),
+            is_on: false,
         }
     }
-}
 
-impl<W> SensitiveWidgetGroup<W>
-where
-    W: WidgetExt + Clone,
-{
-    fn add_widget(&mut self, name: &str, widget: W) {
-        widget.set_sensitive(self.is_sensitive);
-        self.widgets.insert(name.to_string(), widget.clone());
+    fn contains_widget(&self, widget: &W) -> bool {
+        self.widgets.contains(widget)
     }
 
-    fn get_widget(&self, name: &str) -> Option<&W> {
-        self.widgets.get(name)
-    }
-
-    fn set_sensitive(&mut self, sensitive: bool) {
-        for widget in self.widgets.values() {
-            widget.set_sensitive(sensitive)
+    fn add_widget(&mut self, widget: W) {
+        match self.widget_states_controlled {
+            Sensitivity => widget.set_sensitive(self.is_on),
+            Visibility => widget.set_visible(self.is_on),
+            Both => {
+                widget.set_sensitive(self.is_on);
+                widget.set_visible(self.is_on);
+            }
         }
-        self.is_sensitive = sensitive
+        self.widgets.push(widget.clone());
+    }
+
+    fn set_state(&mut self, on: bool) {
+        match self.widget_states_controlled {
+            Sensitivity => {
+                for widget in self.widgets.iter() {
+                    widget.set_sensitive(on);
+                }
+            }
+            Visibility => {
+                for widget in self.widgets.iter() {
+                    widget.set_visible(on);
+                }
+            }
+            Both => {
+                for widget in self.widgets.iter() {
+                    widget.set_sensitive(on);
+                    widget.set_visible(on);
+                }
+            }
+        }
+        self.is_on = on
     }
 }
 
-/// Groups of widgets whose sensitivity is determined by the current
-/// conditions
-// TODO: get a better name than SensitiveWidgetGroups
+/// Groups of widgets whose sensitivity and/or visibility is determined
+/// by the current conditions
+// TODO: get a better name than ConditionalWidgetGroups
 #[derive(Debug)]
-pub struct SensitiveWidgetGroups<W>
+pub struct ConditionalWidgetGroups<W>
 where
-    W: WidgetExt + Clone,
+    W: WidgetExt + Clone + PartialEq,
 {
-    groups: HashMap<u64, SensitiveWidgetGroup<W>>,
+    widget_states_controlled: WidgetStatesControlled,
+    groups: HashMap<u64, ConditionalWidgetGroup<W>>,
     current_condns: u64,
 }
 
-impl<W> Default for SensitiveWidgetGroups<W>
+impl<W> ConditionalWidgetGroups<W>
 where
-    W: WidgetExt + Clone,
+    W: WidgetExt + Clone + PartialEq,
 {
-    fn default() -> Self {
-        SensitiveWidgetGroups::<W> {
+    pub fn new(wsc: WidgetStatesControlled) -> ConditionalWidgetGroups<W> {
+        ConditionalWidgetGroups::<W> {
+            widget_states_controlled: wsc,
             groups: HashMap::new(),
             current_condns: 0,
         }
     }
-}
 
-impl<W> SensitiveWidgetGroups<W>
-where
-    W: WidgetExt + Clone,
-{
-    pub fn add_widget(&mut self, name: &str, widget: W, condns: u64) {
+    fn contains_widget(&self, widget: &W) -> bool {
         for group in self.groups.values() {
-            if group.widgets.contains_key(name) {
-                panic!("{}: duplicate key in SensitiveWidgetGroups", name);
+            if group.contains_widget(widget) {
+                return true;
             }
         }
-        if let Some(group) = self.groups.get_mut(&condns) {
-            group.add_widget(name, widget);
-            return;
-        }
-        let mut group = SensitiveWidgetGroup::<W>::default();
-        group.add_widget(name, widget);
-        self.groups.insert(condns, group);
+        false
     }
 
-    pub fn get_widget(&self, name: &str) -> Option<&W> {
-        for group in self.groups.values() {
-            match group.get_widget(name) {
-                Some(w) => return Some(w),
-                None => (),
-            }
+    pub fn add_widget(&mut self, widget: W, condns: u64) {
+        assert!(!self.contains_widget(&widget));
+        if let Some(group) = self.groups.get_mut(&condns) {
+            group.add_widget(widget);
+            return;
         }
-        None
+        let mut group = ConditionalWidgetGroup::<W>::new(self.widget_states_controlled);
+        group.set_state((condns & self.current_condns) == condns);
+        group.add_widget(widget);
+        self.groups.insert(condns, group);
     }
 
     pub fn update_condns(&mut self, changed_condns: MaskedCondns) {
@@ -188,111 +208,7 @@ where
         let new_condns = changed_condns.condns | (self.current_condns & !changed_condns.mask);
         for (key_condns, group) in self.groups.iter_mut() {
             if changed_condns.mask & key_condns != 0 {
-                group.set_sensitive((key_condns & new_condns) == *key_condns);
-            };
-        }
-        self.current_condns = new_condns
-    }
-}
-
-#[derive(Debug)]
-struct VisibleWidgetGroup<W>
-where
-    W: WidgetExt + Clone,
-{
-    widgets: HashMap<String, W>,
-    is_visible: bool,
-}
-
-impl<W> Default for VisibleWidgetGroup<W>
-where
-    W: WidgetExt + Clone,
-{
-    fn default() -> Self {
-        VisibleWidgetGroup::<W> {
-            widgets: HashMap::new(),
-            is_visible: false,
-        }
-    }
-}
-
-impl<W> VisibleWidgetGroup<W>
-where
-    W: WidgetExt + Clone,
-{
-    fn add_widget(&mut self, name: &str, widget: W) {
-        widget.set_sensitive(self.is_visible);
-        self.widgets.insert(name.to_string(), widget.clone());
-    }
-
-    fn get_widget(&self, name: &str) -> Option<&W> {
-        self.widgets.get(name)
-    }
-
-    fn set_visible(&mut self, visible: bool) {
-        for widget in self.widgets.values() {
-            widget.set_visible(visible)
-        }
-        self.is_visible = visible
-    }
-}
-
-#[derive(Debug)]
-pub struct VisibleWidgetGroups<W>
-where
-    W: WidgetExt + Clone,
-{
-    groups: HashMap<u64, VisibleWidgetGroup<W>>,
-    current_condns: u64,
-}
-
-impl<W> Default for VisibleWidgetGroups<W>
-where
-    W: WidgetExt + Clone,
-{
-    fn default() -> Self {
-        VisibleWidgetGroups::<W> {
-            groups: HashMap::new(),
-            current_condns: 0,
-        }
-    }
-}
-
-impl<W> VisibleWidgetGroups<W>
-where
-    W: WidgetExt + Clone,
-{
-    pub fn add_widget(&mut self, name: &str, widget: W, condns: u64) {
-        for group in self.groups.values() {
-            if group.widgets.contains_key(name) {
-                panic!("{}: duplicate key in VisibleWidgetGroups", name);
-            }
-        }
-        if let Some(group) = self.groups.get_mut(&condns) {
-            group.add_widget(name, widget);
-            return;
-        }
-        let mut group = VisibleWidgetGroup::<W>::default();
-        group.add_widget(name, widget);
-        self.groups.insert(condns, group);
-    }
-
-    pub fn get_widget(&self, name: &str) -> Option<&W> {
-        for group in self.groups.values() {
-            match group.get_widget(name) {
-                Some(w) => return Some(w),
-                None => (),
-            }
-        }
-        None
-    }
-
-    pub fn update_condns(&mut self, changed_condns: MaskedCondns) {
-        assert!(changed_condns.is_consistent());
-        let new_condns = changed_condns.condns | (self.current_condns & !changed_condns.mask);
-        for (key_condns, group) in self.groups.iter_mut() {
-            if changed_condns.mask & key_condns != 0 {
-                group.set_visible((key_condns & new_condns) == *key_condns);
+                group.set_state((key_condns & new_condns) == *key_condns);
             };
         }
         self.current_condns = new_condns
