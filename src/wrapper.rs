@@ -20,7 +20,7 @@ pub use glib::Cast;
 use gtk;
 use gtk::prelude::*;
 
-pub use gtkx::dialog::dialog_user::{TopGtkWindow, DialogUser, parent_none, CANCEL_OK_BUTTONS};
+pub use gtkx::dialog::dialog_user::{parent_none, DialogUser, TopGtkWindow, CANCEL_OK_BUTTONS};
 use printer::*;
 
 #[macro_export]
@@ -264,8 +264,9 @@ mod tests {
     #[test]
     fn widget_wrapper_generic_constrained() {
         struct _TestWrapper<A, B, C>
-            where   A: Eq,
-                    C: PartialEq,
+        where
+            A: Eq,
+            C: PartialEq,
         {
             vbox: gtk::Box,
             a: A,

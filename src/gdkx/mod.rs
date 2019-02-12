@@ -16,18 +16,18 @@ use std::num::ParseIntError;
 
 use gdk;
 
-pub fn format_geometry(event: &gdk::EventConfigure) ->String {
+pub fn format_geometry(event: &gdk::EventConfigure) -> String {
     let (x, y) = event.get_position();
     let (w, h) = event.get_size();
     format!("{}x{}+{}+{}", w, h, x, y)
 }
 
-pub fn format_geometry_size(event: &gdk::EventConfigure) ->String {
+pub fn format_geometry_size(event: &gdk::EventConfigure) -> String {
     let (w, h) = event.get_size();
     format!("{}x{}", w, h)
 }
 
-pub fn format_geometry_position(event: &gdk::EventConfigure) ->String {
+pub fn format_geometry_position(event: &gdk::EventConfigure) -> String {
     let (x, y) = event.get_position();
     format!("{}+{}", x, y)
 }
@@ -53,13 +53,10 @@ pub fn parse_geometry_position(text: &str) -> Result<(i32, i32), ParseIntError> 
     Ok((x, y))
 }
 
-
 #[cfg(test)]
 mod tests {
     //use super::*;
 
     #[test]
-    fn it_works() {
-
-    }
+    fn it_works() {}
 }

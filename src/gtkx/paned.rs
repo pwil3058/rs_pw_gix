@@ -23,13 +23,11 @@ pub trait RememberPosition: gtk::WidgetExt + gtk::PanedExt {
     fn recall_last_position(&self, paned_name: &str, default: i32) -> i32 {
         let key = format!("{}::paned::last_position", paned_name);
         let key_c = key.clone();
-        self.connect_property_position_notify (
-            move |paned| {
-                let position = paned.get_position();
-                let text = format!("{}", position);
-                recollections::remember(key_c.as_str(), text.as_str());
-            }
-        );
+        self.connect_property_position_notify(move |paned| {
+            let position = paned.get_position();
+            let text = format!("{}", position);
+            recollections::remember(key_c.as_str(), text.as_str());
+        });
         if let Some(last_position_str) = recollections::recall(key.as_str()) {
             if let Ok(last_position) = i32::from_str(last_position_str.as_str()) {
                 return last_position;
@@ -49,13 +47,10 @@ pub trait RememberPosition: gtk::WidgetExt + gtk::PanedExt {
 
 impl RememberPosition for gtk::Paned {}
 
-
 #[cfg(test)]
 mod tests {
     //use super::*;
 
     #[test]
-    fn it_works() {
-
-    }
+    fn it_works() {}
 }

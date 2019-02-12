@@ -111,22 +111,22 @@ impl Draw for cairo::Context {
                 self.line_to(position.0 + size / 2.0, position.1);
                 self.line_to(position.0, position.1 + size);
                 self.line_to(position.0 - size / 2.0, position.1);
-            },
+            }
             Dirn::Up => {
                 self.line_to(position.0 + size / 2.0, position.1);
                 self.line_to(position.0, position.1 - size);
                 self.line_to(position.0 - size / 2.0, position.1);
-            },
+            }
             Dirn::Right => {
                 self.line_to(position.0, position.1 + size / 2.0);
                 self.line_to(position.0 + size, position.1);
                 self.line_to(position.0, position.1 - size / 2.0);
-            },
+            }
             Dirn::Left => {
                 self.line_to(position.0, position.1 + size / 2.0);
                 self.line_to(position.0 - size, position.1);
                 self.line_to(position.0, position.1 - size / 2.0);
-            },
+            }
         }
         self.close_path();
         self.fill();
@@ -169,7 +169,5 @@ mod tests {
     //use super::*;
 
     #[test]
-    fn it_works() {
-
-    }
+    fn it_works() {}
 }

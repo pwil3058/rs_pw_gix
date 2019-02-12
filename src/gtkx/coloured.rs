@@ -16,8 +16,8 @@ use gdk;
 use gtk;
 use gtk::prelude::*;
 
-use rgb_math::rgb::*;
 use colour::*;
+use rgb_math::rgb::*;
 
 #[allow(deprecated)]
 pub trait Colourable: gtk::WidgetExt {
@@ -75,7 +75,5 @@ mod tests {
     //use super::*;
 
     #[test]
-    fn it_works() {
-
-    }
+    fn it_works() {}
 }

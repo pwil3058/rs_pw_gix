@@ -30,7 +30,9 @@ impl_widget_wrapper!(hbox: gtk::Box, TabRemoveLabelCore);
 
 impl TabRemoveLabelCore {
     pub fn connect_remove_page<F: 'static + Fn()>(&self, callback: F) {
-        self.remove_page_callbacks.borrow_mut().push(Box::new(callback))
+        self.remove_page_callbacks
+            .borrow_mut()
+            .push(Box::new(callback))
     }
 
     pub fn inform_remove_page(&self) {
@@ -48,12 +50,10 @@ pub trait TabRemoveLabelInterface {
 
 impl TabRemoveLabelInterface for TabRemoveLabel {
     fn create(label_text: Option<&str>, tooltip_text: Option<&str>) -> TabRemoveLabel {
-        let trl = Rc::new(
-            TabRemoveLabelCore {
-                hbox: gtk::Box::new(gtk::Orientation::Horizontal, 0),
-                remove_page_callbacks: RefCell::new(Vec::new()),
-            }
-        );
+        let trl = Rc::new(TabRemoveLabelCore {
+            hbox: gtk::Box::new(gtk::Orientation::Horizontal, 0),
+            remove_page_callbacks: RefCell::new(Vec::new()),
+        });
         let label = gtk::Label::new(label_text);
         trl.hbox.pack_start(&label, true, true, 0);
         let button = gtk::Button::new();
@@ -67,9 +67,7 @@ impl TabRemoveLabelInterface for TabRemoveLabel {
         trl.hbox.pack_start(&button, false, false, 0);
         trl.hbox.show_all();
         let trl_c = trl.clone();
-        button.connect_clicked(
-            move |_| trl_c.inform_remove_page()
-        );
+        button.connect_clicked(move |_| trl_c.inform_remove_page());
 
         trl
     }
@@ -80,7 +78,5 @@ mod tests {
     //use super::*;
 
     #[test]
-    fn it_works() {
-
-    }
+    fn it_works() {}
 }

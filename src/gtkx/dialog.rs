@@ -21,12 +21,8 @@ use recollections;
 
 pub trait AutoClose: gtk::DialogExt + gtk::GtkWindowExt + gtk::WidgetExt {
     fn enable_auto_close(&self) {
-        self.connect_close(
-            |d| d.destroy()
-        );
-        self.connect_response(
-            |d,_| d.close()
-        );
+        self.connect_close(|d| d.destroy());
+        self.connect_response(|d, _| d.close());
     }
 }
 
@@ -48,28 +44,28 @@ pub mod dialog_user {
 
     use pw_pathux;
 
-    use gtkx::entry::PathCompletion;
     use super::AutoClose;
+    use gtkx::entry::PathCompletion;
 
     pub trait TopGtkWindow {
         fn get_toplevel_gtk_window(&self) -> Option<gtk::Window>;
     }
 
     macro_rules! implement_tgw_for_widget {
-        ( $f:ident ) => (
+        ( $f:ident ) => {
             impl TopGtkWindow for gtk::$f {
                 fn get_toplevel_gtk_window(&self) -> Option<gtk::Window> {
                     if let Some(widget) = self.get_toplevel() {
                         if widget.is_toplevel() {
                             if let Ok(window) = widget.dynamic_cast::<gtk::Window>() {
-                                return Some(window)
+                                return Some(window);
                             }
                         }
                     };
                     None
                 }
             }
-        )
+        };
     }
 
     implement_tgw_for_widget!(Bin);
@@ -145,8 +141,8 @@ pub mod dialog_user {
             &self,
             title: Option<&str>,
             flags: gtk::DialogFlags,
-            buttons: &[(&str, i32)]
-        )  -> gtk::Dialog {
+            buttons: &[(&str, i32)],
+        ) -> gtk::Dialog {
             let dialog = gtk::Dialog::new_with_buttons(title, parent_none(), flags, buttons);
             self.set_transient_for_and_icon_on(&dialog);
             dialog
@@ -159,7 +155,13 @@ pub mod dialog_user {
             buttons: &[(&str, i32)],
             message: &str,
         ) -> gtk::MessageDialog {
-            let dialog = gtk::MessageDialog::new(parent_none(), flags, type_, gtk::ButtonsType::None, message);
+            let dialog = gtk::MessageDialog::new(
+                parent_none(),
+                flags,
+                type_,
+                gtk::ButtonsType::None,
+                message,
+            );
             for button in buttons {
                 dialog.add_button(button.0, button.1);
             }
@@ -171,10 +173,11 @@ pub mod dialog_user {
             &self,
             msg: &str,
             o_expln: Option<&str>,
-            problem_type: gtk::MessageType
+            problem_type: gtk::MessageType,
         ) -> gtk::MessageDialog {
-            let buttons = &[("Close", 0),];
-            let dialog = self.new_message_dialog(gtk::DialogFlags::empty(), problem_type, buttons, msg);
+            let buttons = &[("Close", 0)];
+            let dialog =
+                self.new_message_dialog(gtk::DialogFlags::empty(), problem_type, buttons, msg);
             if let Some(expln) = o_expln {
                 dialog.set_property_secondary_text(Some(expln));
             };
@@ -183,11 +186,13 @@ pub mod dialog_user {
         }
 
         fn inform_user(&self, msg: &str, o_expln: Option<&str>) {
-            self.new_inform_user_dialog(msg, o_expln, gtk::MessageType::Info).run();
+            self.new_inform_user_dialog(msg, o_expln, gtk::MessageType::Info)
+                .run();
         }
 
         fn warn_user(&self, msg: &str, o_expln: Option<&str>) {
-            self.new_inform_user_dialog(msg, o_expln, gtk::MessageType::Warning).run();
+            self.new_inform_user_dialog(msg, o_expln, gtk::MessageType::Warning)
+                .run();
         }
 
         fn report_error<E: Error>(&self, msg: &str, error: &E) {
@@ -195,11 +200,22 @@ pub mod dialog_user {
             if let Some(cause) = error.cause() {
                 expln += &format!("\nCaused by: {}.", cause.description());
             };
-            self.new_inform_user_dialog( msg, Some(&expln), gtk::MessageType::Error).run();
+            self.new_inform_user_dialog(msg, Some(&expln), gtk::MessageType::Error)
+                .run();
         }
 
-        fn ask_question(&self, question: &str, o_expln: Option<&str>, buttons: &[(&str, i32)],) -> i32 {
-            let dialog = self.new_message_dialog(gtk::DialogFlags::empty(), gtk::MessageType::Question, buttons, question);
+        fn ask_question(
+            &self,
+            question: &str,
+            o_expln: Option<&str>,
+            buttons: &[(&str, i32)],
+        ) -> i32 {
+            let dialog = self.new_message_dialog(
+                gtk::DialogFlags::empty(),
+                gtk::MessageType::Question,
+                buttons,
+                question,
+            );
             if let Some(expln) = o_expln {
                 dialog.set_property_secondary_text(Some(expln));
             };
@@ -241,10 +257,12 @@ pub mod dialog_user {
             suggestion: Option<&str>,
             action: gtk::FileChooserAction,
         ) -> Option<PathBuf> {
-            let dialog = self.new_dialog_with_buttons(None, gtk::DialogFlags::DESTROY_WITH_PARENT,CANCEL_OK_BUTTONS);
-            dialog.connect_close(
-                |d| d.destroy()
+            let dialog = self.new_dialog_with_buttons(
+                None,
+                gtk::DialogFlags::DESTROY_WITH_PARENT,
+                CANCEL_OK_BUTTONS,
             );
+            dialog.connect_close(|d| d.destroy());
             let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 1);
             dialog.get_content_area().pack_start(&hbox, false, false, 0);
 
@@ -259,10 +277,10 @@ pub mod dialog_user {
             match action {
                 gtk::FileChooserAction::Open | gtk::FileChooserAction::Save => {
                     entry.enable_file_path_completion();
-                },
+                }
                 gtk::FileChooserAction::SelectFolder | gtk::FileChooserAction::CreateFolder => {
                     entry.enable_dir_path_completion();
-                },
+                }
                 _ => panic!("File: {} Line: {}: must specify a (useful) action"),
             };
             entry.set_activates_default(true);
@@ -282,17 +300,17 @@ pub mod dialog_user {
             };
             let entry_c = entry.clone();
             let dialog_c = dialog.clone();
-            button.connect_clicked(
-                move |_| {
-                    // NB: following gymnastics need to satisfy lifetime  checks
-                    let text = &entry_c.get_text().unwrap_or("".to_string());
-                    let suggestion: Option<&str> = if text.len() > 0 { Some(text) } else { None };
-                    if let Some(path) = browse_path(Some(&dialog_c), Some(&b_prompt), suggestion, action, false) {
-                        let text = pw_pathux::path_to_string(&path);
-                        entry_c.set_text(&text);
-                    }
+            button.connect_clicked(move |_| {
+                // NB: following gymnastics need to satisfy lifetime  checks
+                let text = &entry_c.get_text().unwrap_or("".to_string());
+                let suggestion: Option<&str> = if text.len() > 0 { Some(text) } else { None };
+                if let Some(path) =
+                    browse_path(Some(&dialog_c), Some(&b_prompt), suggestion, action, false)
+                {
+                    let text = pw_pathux::path_to_string(&path);
+                    entry_c.set_text(&text);
                 }
-            );
+            });
 
             let ok = CANCEL_OK_BUTTONS[1].1;
             dialog.set_default_response(ok);
@@ -310,23 +328,60 @@ pub mod dialog_user {
             }
         }
 
-        fn select_dir(&self, o_prompt: Option<&str>, o_suggestion: Option<&str>, existing: bool, absolute: bool) -> Option<PathBuf> {
+        fn select_dir(
+            &self,
+            o_prompt: Option<&str>,
+            o_suggestion: Option<&str>,
+            existing: bool,
+            absolute: bool,
+        ) -> Option<PathBuf> {
             if existing {
-                self.browse_path(o_prompt, o_suggestion, gtk::FileChooserAction::SelectFolder, absolute)
+                self.browse_path(
+                    o_prompt,
+                    o_suggestion,
+                    gtk::FileChooserAction::SelectFolder,
+                    absolute,
+                )
             } else {
-                self.browse_path(o_prompt, o_suggestion, gtk::FileChooserAction::CreateFolder, absolute)
+                self.browse_path(
+                    o_prompt,
+                    o_suggestion,
+                    gtk::FileChooserAction::CreateFolder,
+                    absolute,
+                )
             }
         }
 
-        fn select_file(&self, o_prompt: Option<&str>, o_suggestion: Option<&str>, existing: bool, absolute: bool) -> Option<PathBuf> {
+        fn select_file(
+            &self,
+            o_prompt: Option<&str>,
+            o_suggestion: Option<&str>,
+            existing: bool,
+            absolute: bool,
+        ) -> Option<PathBuf> {
             if existing {
-                self.browse_path(o_prompt, o_suggestion, gtk::FileChooserAction::Open, absolute)
+                self.browse_path(
+                    o_prompt,
+                    o_suggestion,
+                    gtk::FileChooserAction::Open,
+                    absolute,
+                )
             } else {
-                self.browse_path(o_prompt, o_suggestion, gtk::FileChooserAction::Save, absolute)
+                self.browse_path(
+                    o_prompt,
+                    o_suggestion,
+                    gtk::FileChooserAction::Save,
+                    absolute,
+                )
             }
         }
 
-        fn ask_dir_path(&self, o_prompt: Option<&str>, o_suggestion: Option<&str>, existing: bool) -> Option<PathBuf> {
+        fn ask_dir_path(
+            &self,
+            o_prompt: Option<&str>,
+            o_suggestion: Option<&str>,
+            existing: bool,
+        ) -> Option<PathBuf> {
             if existing {
                 self.ask_path(o_prompt, o_suggestion, gtk::FileChooserAction::SelectFolder)
             } else {
@@ -334,7 +389,12 @@ pub mod dialog_user {
             }
         }
 
-        fn ask_file_path(&self, o_prompt: Option<&str>, o_suggestion: Option<&str>, existing: bool) -> Option<PathBuf> {
+        fn ask_file_path(
+            &self,
+            o_prompt: Option<&str>,
+            o_suggestion: Option<&str>,
+            existing: bool,
+        ) -> Option<PathBuf> {
             if existing {
                 self.ask_path(o_prompt, o_suggestion, gtk::FileChooserAction::Open)
             } else {
@@ -355,13 +415,14 @@ pub mod dialog_user {
     impl DialogUser for gtk::ApplicationWindow {}
 }
 
-
 fn get_dialog_size_corrn() -> (i32, i32) {
     if let Some(corrn) = recollections::recall("dialog::size_correction") {
         if let Ok((width, height)) = parse_geometry_size(corrn.as_str()) {
             return (width, height);
         } else {
-            io::stderr().write(b"Error parsing \"dialog::size_correction\"\n").unwrap();
+            io::stderr()
+                .write(b"Error parsing \"dialog::size_correction\"\n")
+                .unwrap();
         }
     };
     (0, 0)
@@ -385,23 +446,27 @@ pub trait RememberDialogSize: gtk::WidgetExt + gtk::GtkWindowExt {
         let key = format!("{}::dialog::last_size", dialog_name);
         let (width, height) = recall_dialog_last_size(key.as_str(), default);
         self.set_default_size(width, height);
-        self.connect_configure_event(
-            move |_, event| {
-                let text = format_geometry_size(event);
-                recollections::remember(key.as_str(), text.as_str());
-                false
-            }
-        );
-        self.connect_realize(
-            |widget| {
-                let (req_width, req_height) = widget.get_default_size();
-                let allocation = widget.get_allocation();
-                let width_corrn = if req_width > 0 { req_width - allocation.width } else { 0 };
-                let height_corrn = if req_height > 0 { req_height - allocation.height } else { 0 };
-                let text = format!("{}x{}", width_corrn, height_corrn);
-                recollections::remember("dialog::size_correction", text.as_str())
-            }
-        );
+        self.connect_configure_event(move |_, event| {
+            let text = format_geometry_size(event);
+            recollections::remember(key.as_str(), text.as_str());
+            false
+        });
+        self.connect_realize(|widget| {
+            let (req_width, req_height) = widget.get_default_size();
+            let allocation = widget.get_allocation();
+            let width_corrn = if req_width > 0 {
+                req_width - allocation.width
+            } else {
+                0
+            };
+            let height_corrn = if req_height > 0 {
+                req_height - allocation.height
+            } else {
+                0
+            };
+            let text = format!("{}x{}", width_corrn, height_corrn);
+            recollections::remember("dialog::size_correction", text.as_str())
+        });
     }
 }
 
@@ -419,7 +484,5 @@ mod tests {
     //use super::*;
 
     #[test]
-    fn it_works() {
-
-    }
+    fn it_works() {}
 }

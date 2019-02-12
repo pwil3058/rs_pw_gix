@@ -42,7 +42,7 @@ pub struct HexEntryData {
     current_step: Cell<u32>,
     max_step: u32,
     width: usize,
-    callbacks: RefCell<Vec<Box<Fn(u32)>>>
+    callbacks: RefCell<Vec<Box<Fn(u32)>>>,
 }
 
 impl_widget_wrapper!(entry: gtk::Entry, HexEntryData);
@@ -106,7 +106,11 @@ impl HexEntryData {
     }
 
     fn reset_entry_text(&self) {
-        self.entry.set_text(&format!("0x{:0width$X}", self.value.get(), width = self.width));
+        self.entry.set_text(&format!(
+            "0x{:0width$X}",
+            self.value.get(),
+            width = self.width
+        ));
     }
 
     fn set_value_and_notify(&self, value: u32) {
@@ -125,7 +129,7 @@ impl HexEntryData {
 type HexEntry = Rc<HexEntryData>;
 
 fn sig_hex_digits(mut max_value: u32) -> usize {
-    let mut width:usize = 0;
+    let mut width: usize = 0;
     while max_value != 0 {
         width += 1;
         max_value /= 16
@@ -147,10 +151,19 @@ impl HexEntryInterface for HexEntry {
         let callbacks: RefCell<Vec<Box<Fn(u32)>>> = RefCell::new(Vec::new());
         entry.set_width_chars(width as i32 + 2);
         entry.set_text(&format!("0x{:0width$X}", value.get(), width = width));
-        let hex_entry = Rc::new(HexEntryData{entry, value, max_value, width, current_step, max_step, callbacks});
+        let hex_entry = Rc::new(HexEntryData {
+            entry,
+            value,
+            max_value,
+            width,
+            current_step,
+            max_step,
+            callbacks,
+        });
         let hec = hex_entry.clone();
-        hex_entry.entry.connect_key_press_event(
-            move |widget, event_key| {
+        hex_entry
+            .entry
+            .connect_key_press_event(move |widget, event_key| {
                 let key = event_key.get_keyval();
                 match key {
                     gdk::enums::key::Return | gdk::enums::key::Tab => {
@@ -162,38 +175,36 @@ impl HexEntryInterface for HexEntry {
                         // NB: this will nobble the "activate" signal
                         // but let the Tab key move the focus
                         Inhibit(key == gdk::enums::key::Return)
-                    },
+                    }
                     gdk::enums::key::Up => {
                         if hec.incr_value(hec.current_step.get()) {
                             hec.bump_current_step()
                         }
                         Inhibit(true)
-                    },
+                    }
                     gdk::enums::key::Down => {
                         if hec.decr_value(hec.current_step.get()) {
                             hec.bump_current_step()
                         }
                         Inhibit(true)
-                    },
-                    _ => Inhibit(false)
+                    }
+                    _ => Inhibit(false),
                 }
-            }
-        );
+            });
         let hec = hex_entry.clone();
-        hex_entry.entry.connect_key_release_event(
-            move |_, event_key| {
+        hex_entry
+            .entry
+            .connect_key_release_event(move |_, event_key| {
                 if [gdk::enums::key::Up, gdk::enums::key::Down].contains(&event_key.get_keyval()) {
                     hec.reset_current_step();
                     Inhibit(true)
                 } else {
                     Inhibit(false)
                 }
-            }
-        );
+            });
         hex_entry
     }
 }
-
 
 pub trait RGBEntryInterface {
     fn create() -> Self;
@@ -204,7 +215,7 @@ pub struct RGBHexEntryBoxData {
     red_entry: HexEntry,
     green_entry: HexEntry,
     blue_entry: HexEntry,
-    callbacks: RefCell<Vec<Box<Fn(RGB)>>>
+    callbacks: RefCell<Vec<Box<Fn(RGB)>>>,
 }
 
 impl_widget_wrapper!(hbox: gtk::Box, RGBHexEntryBoxData);
@@ -262,19 +273,25 @@ impl RGBEntryInterface for RGBHexEntryBox {
         hbox.pack_start(&blue_label, true, true, 0);
         hbox.pack_start(&blue_entry.pwo(), true, true, 0);
         let callbacks: RefCell<Vec<Box<Fn(RGB)>>> = RefCell::new(Vec::new());
-        let rgb_entry_box = Rc::new(RGBHexEntryBoxData{hbox, red_entry, green_entry, blue_entry, callbacks});
+        let rgb_entry_box = Rc::new(RGBHexEntryBoxData {
+            hbox,
+            red_entry,
+            green_entry,
+            blue_entry,
+            callbacks,
+        });
         let reb = rgb_entry_box.clone();
-        rgb_entry_box.red_entry.connect_value_changed(
-            move |_| {reb.inform_value_changed();}
-        );
+        rgb_entry_box.red_entry.connect_value_changed(move |_| {
+            reb.inform_value_changed();
+        });
         let reb = rgb_entry_box.clone();
-        rgb_entry_box.green_entry.connect_value_changed(
-            move |_| {reb.inform_value_changed();}
-        );
+        rgb_entry_box.green_entry.connect_value_changed(move |_| {
+            reb.inform_value_changed();
+        });
         let reb = rgb_entry_box.clone();
-        rgb_entry_box.blue_entry.connect_value_changed(
-            move |_| {reb.inform_value_changed();}
-        );
+        rgb_entry_box.blue_entry.connect_value_changed(move |_| {
+            reb.inform_value_changed();
+        });
         rgb_entry_box
     }
 }
@@ -293,38 +310,36 @@ pub trait PathCompletion: gtk::EntryExt + gtk::EditableSignals {
         entry_completion.set_model(Some(&list_store.clone()));
 
         self.set_completion(&entry_completion);
-        self.connect_changed(
-            move |editable| {
-                let dir_path_txt = match editable.get_text() {
-                    Some(text) => pw_pathux::dir_path_text(&text).to_string(),
-                    None => "".to_string()
-                };
-                list_store.clear();
-                let dir_path = pw_pathux::expand_home_dir_or_mine(&PathBuf::from(&dir_path_txt));
-                let abs_dir_path = pw_pathux::absolute_path_buf(&dir_path);
-                if let Ok(entries) = pw_pathux::usable_dir_entries(&abs_dir_path) {
-                    if dirs_only {
-                        for entry in entries.iter() {
-                            if !entry.is_dir() {
-                                continue
-                            };
-                            let text = dir_path_txt.clone() + &entry.file_name();
-                            list_store.append_row(&vec![text.to_value()]);
-                        }
-                    } else {
-                        let msep = format!("{}", MAIN_SEPARATOR);
-                        for entry in entries.iter() {
-                            let text = if entry.is_dir() {
-                                dir_path_txt.clone() + &entry.file_name() + &msep
-                            } else {
-                                dir_path_txt.clone() + &entry.file_name()
-                            };
-                            list_store.append_row(&vec![text.to_value()]);
-                        }
+        self.connect_changed(move |editable| {
+            let dir_path_txt = match editable.get_text() {
+                Some(text) => pw_pathux::dir_path_text(&text).to_string(),
+                None => "".to_string(),
+            };
+            list_store.clear();
+            let dir_path = pw_pathux::expand_home_dir_or_mine(&PathBuf::from(&dir_path_txt));
+            let abs_dir_path = pw_pathux::absolute_path_buf(&dir_path);
+            if let Ok(entries) = pw_pathux::usable_dir_entries(&abs_dir_path) {
+                if dirs_only {
+                    for entry in entries.iter() {
+                        if !entry.is_dir() {
+                            continue;
+                        };
+                        let text = dir_path_txt.clone() + &entry.file_name();
+                        list_store.append_row(&vec![text.to_value()]);
                     }
-                };
-            }
-        );
+                } else {
+                    let msep = format!("{}", MAIN_SEPARATOR);
+                    for entry in entries.iter() {
+                        let text = if entry.is_dir() {
+                            dir_path_txt.clone() + &entry.file_name() + &msep
+                        } else {
+                            dir_path_txt.clone() + &entry.file_name()
+                        };
+                        list_store.append_row(&vec![text.to_value()]);
+                    }
+                }
+            };
+        });
     }
 
     fn enable_dir_path_completion(&self) {

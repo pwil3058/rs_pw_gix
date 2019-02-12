@@ -54,7 +54,7 @@ pub fn editable_text_column<F: Fn(&gtk::CellRendererText, gtk::TreePath, &str) +
     fg_id: i32,
     fixed_width: i32,
     resizable: bool,
-    callback: F
+    callback: F,
 ) -> gtk::TreeViewColumn {
     let col = gtk::TreeViewColumn::new();
     col.set_title(title);
@@ -84,7 +84,5 @@ mod tests {
     //use super::*;
 
     #[test]
-    fn it_works() {
-
-    }
+    fn it_works() {}
 }

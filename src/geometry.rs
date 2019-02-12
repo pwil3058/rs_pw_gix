@@ -24,7 +24,7 @@ use rgb_math::angle::Angle;
 
 // POINT
 #[derive(Debug, PartialEq, Clone, Copy)]
-pub struct Point (pub f64, pub f64);
+pub struct Point(pub f64, pub f64);
 
 const SQRT_2: f64 = 1.4142_13562_37309_50488;
 pub const SIN_45_DEG: f64 = 1.0 / SQRT_2;
@@ -59,7 +59,7 @@ impl From<Point> for [f64; 2] {
 }
 
 impl From<(f64, f64)> for Point {
-    fn from(tuple: (f64,f64)) -> Point {
+    fn from(tuple: (f64, f64)) -> Point {
         Point(tuple.0, tuple.1)
     }
 }
@@ -226,7 +226,7 @@ impl Mul<f64> for Size<i32> {
 
 impl Size<f64> {
     pub fn scales_versus(&self, other: Size<f64>) -> Size<f64> {
-        Size::<f64>{
+        Size::<f64> {
             width: self.width / other.width,
             height: self.height / other.height,
         }
@@ -244,7 +244,7 @@ impl Size<f64> {
 
 impl Size<i32> {
     pub fn scales_versus(&self, other: Size<f64>) -> Size<f64> {
-        Size::<f64>{
+        Size::<f64> {
             width: self.width as f64 / other.width,
             height: self.height as f64 / other.height,
         }
@@ -279,18 +279,18 @@ pub trait SizeExt {
 
 impl SizeExt for gdk_pixbuf::Pixbuf {
     fn size(&self) -> Size<i32> {
-        Size::<i32>{
+        Size::<i32> {
             width: self.get_width(),
-            height: self.get_height()
+            height: self.get_height(),
         }
     }
 }
 
 impl SizeExt for gtk::Rectangle {
     fn size(&self) -> Size<i32> {
-        Size::<i32>{
+        Size::<i32> {
             width: self.width,
-            height: self.height
+            height: self.height,
         }
     }
 }
@@ -391,9 +391,9 @@ impl From<Rectangle<f64>> for gtk::Rectangle {
 
 impl<T: Num + PartialOrd + Copy> Rectangle<T> {
     pub fn size(&self) -> Size<T> {
-        Size::<T>{
+        Size::<T> {
             width: self.width,
-            height: self.height
+            height: self.height,
         }
     }
 }
@@ -403,7 +403,5 @@ mod tests {
     //use super::*;
 
     #[test]
-    fn it_works() {
-
-    }
+    fn it_works() {}
 }

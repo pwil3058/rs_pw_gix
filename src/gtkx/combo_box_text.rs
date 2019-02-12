@@ -39,7 +39,7 @@ pub trait SortedUnique {
 
 impl SortedUnique for gtk::ComboBoxText {
     fn get_item_index(&self, item: &str) -> (bool, i32) {
-        if let Some(model) = self.get_model(){
+        if let Some(model) = self.get_model() {
             if let Some(ref iter) = model.get_iter_first() {
                 for index in 0.. {
                     if let Some(ref text) = model.get_value(iter, 0).get::<String>() {
@@ -60,7 +60,7 @@ impl SortedUnique for gtk::ComboBoxText {
 
     fn get_text_items(&self) -> Vec<String> {
         let mut text_items = Vec::new();
-        if let Some(model) = self.get_model(){
+        if let Some(model) = self.get_model() {
             if let Some(ref iter) = model.get_iter_first() {
                 loop {
                     if let Some(ref text) = model.get_value(iter, 0).get::<String>() {
@@ -88,7 +88,12 @@ impl SortedUnique for gtk::ComboBoxText {
         if !found {
             self.insert_text(index, item);
         } else {
-            panic!("{:?}: line {:?}: {}: items must be unique", file!(), line!(), item)
+            panic!(
+                "{:?}: line {:?}: {}: items must be unique",
+                file!(),
+                line!(),
+                item
+            )
         };
         index
     }
@@ -127,19 +132,27 @@ mod tests {
         assert!(!cbt.remove_text_item("two"));
         assert!(cbt.remove_text_item("four"));
         assert!(!cbt.remove_text_item("four"));
-        assert_eq!(cbt.get_text_items(), vec![
-            "five", "one", "six", "three", "zero"
-        ]);
-        assert_ne!(cbt.get_text_items(), vec![
-            "five", "one", "six", "ten", "three", "zero"
-        ]);
+        assert_eq!(
+            cbt.get_text_items(),
+            vec!["five", "one", "six", "three", "zero"]
+        );
+        assert_ne!(
+            cbt.get_text_items(),
+            vec!["five", "one", "six", "ten", "three", "zero"]
+        );
         cbt.update_with(&vec![
-            "five".to_string(), "one".to_string(), "ten".to_string(),
-            "three".to_string(), "zero".to_string(), "twelve".to_string(),
-            "aa".to_string(), "zz".to_string()
+            "five".to_string(),
+            "one".to_string(),
+            "ten".to_string(),
+            "three".to_string(),
+            "zero".to_string(),
+            "twelve".to_string(),
+            "aa".to_string(),
+            "zz".to_string(),
         ]);
-        assert_eq!(cbt.get_text_items(), vec![
-            "aa", "five", "one", "ten", "three", "twelve", "zero", "zz"
-        ]);
+        assert_eq!(
+            cbt.get_text_items(),
+            vec!["aa", "five", "one", "ten", "three", "twelve", "zero", "zz"]
+        );
     }
 }

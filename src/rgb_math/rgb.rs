@@ -17,7 +17,7 @@ use std::cmp::PartialOrd;
 use std::convert::From;
 use std::fmt;
 use std::hash::*;
-use std::ops::{Index, Div, Mul, Add, Sub, AddAssign};
+use std::ops::{Add, AddAssign, Div, Index, Mul, Sub};
 use std::str::FromStr;
 
 use regex::Regex;
@@ -26,38 +26,44 @@ use gdk;
 
 use num::Num;
 
-use ::rgb_math::angle::*;
+use rgb_math::angle::*;
 
 #[derive(Debug)]
 pub enum RGBError {
-    MalformedText(String)
+    MalformedText(String),
 }
 
 #[macro_export]
 macro_rules! is_proportion {
-    ( $x:expr ) => {
-        {
-            ($x <= 1.0) && ($x >= 0.0)
-        }
-    }
+    ( $x:expr ) => {{
+        ($x <= 1.0) && ($x >= 0.0)
+    }};
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Copy, Default)]
 pub struct GRGB<T: Num + PartialOrd + Copy> {
     pub red: T,
     pub green: T,
-    pub blue: T
+    pub blue: T,
 }
 
 impl<T: Num + PartialOrd + Copy> From<(T, T, T)> for GRGB<T> {
     fn from(rgb: (T, T, T)) -> GRGB<T> {
-        GRGB::<T>{red: rgb.0, green: rgb.1, blue: rgb.2}
+        GRGB::<T> {
+            red: rgb.0,
+            green: rgb.1,
+            blue: rgb.2,
+        }
     }
 }
 
 impl<T: Num + PartialOrd + Copy> From<[T; 3]> for GRGB<T> {
     fn from(rgb: [T; 3]) -> GRGB<T> {
-        GRGB::<T>{red: rgb[0], green: rgb[1], blue: rgb[2]}
+        GRGB::<T> {
+            red: rgb[0],
+            green: rgb[1],
+            blue: rgb[2],
+        }
     }
 }
 
@@ -67,19 +73,19 @@ impl<T: Num + PartialOrd + Copy> GRGB<T> {
             if self.red > self.blue {
                 if self.green > self.blue {
                     (0, 1, 2)
-                }else {
+                } else {
                     (0, 2, 1)
                 }
             } else {
                 (2, 0, 1)
             }
         } else if self.green > self.blue {
-            if self.red > self.blue{
+            if self.red > self.blue {
                 (1, 0, 2)
             } else {
                 (1, 2, 0)
             }
-         } else {
+        } else {
             (2, 1, 0)
         }
     }
@@ -89,20 +95,20 @@ impl<T: Num + PartialOrd + Copy> Add for GRGB<T> {
     type Output = GRGB<T>;
 
     fn add(self, other: GRGB<T>) -> GRGB<T> {
-        GRGB::<T>{
+        GRGB::<T> {
             red: self.red + other.red,
             green: self.green + other.green,
-            blue: self.blue + other.blue
+            blue: self.blue + other.blue,
         }
     }
 }
 
 impl<T: Num + PartialOrd + Copy> AddAssign for GRGB<T> {
     fn add_assign(&mut self, rhs: GRGB<T>) {
-        *self = GRGB::<T>{
+        *self = GRGB::<T> {
             red: self.red + rhs.red,
             green: self.green + rhs.green,
-            blue: self.blue + rhs.blue
+            blue: self.blue + rhs.blue,
         };
     }
 }
@@ -111,10 +117,10 @@ impl<T: Num + PartialOrd + Copy> Sub for GRGB<T> {
     type Output = GRGB<T>;
 
     fn sub(self, other: GRGB<T>) -> GRGB<T> {
-        GRGB::<T>{
+        GRGB::<T> {
             red: self.red - other.red,
             green: self.green - other.green,
-            blue: self.blue - other.blue
+            blue: self.blue - other.blue,
         }
     }
 }
@@ -123,10 +129,10 @@ impl<T: Num + PartialOrd + Copy, Scalar: Into<T> + Copy> Mul<Scalar> for GRGB<T>
     type Output = GRGB<T>;
 
     fn mul(self, rhs: Scalar) -> GRGB<T> {
-        GRGB::<T>{
+        GRGB::<T> {
             red: self.red * rhs.into(),
             green: self.green * rhs.into(),
-            blue: self.blue * rhs.into()
+            blue: self.blue * rhs.into(),
         }
     }
 }
@@ -135,10 +141,10 @@ impl<T: Num + PartialOrd + Copy, Scalar: Into<T> + Copy> Div<Scalar> for GRGB<T>
     type Output = GRGB<T>;
 
     fn div(self, rhs: Scalar) -> GRGB<T> {
-        GRGB::<T>{
+        GRGB::<T> {
             red: self.red / rhs.into(),
             green: self.green / rhs.into(),
-            blue: self.blue / rhs.into()
+            blue: self.blue / rhs.into(),
         }
     }
 }
@@ -151,7 +157,7 @@ impl<T: Num + PartialOrd + Copy> Index<usize> for GRGB<T> {
             0 => &self.red,
             1 => &self.green,
             2 => &self.blue,
-            _ => panic!("{:?}: GRGB index out of range", index)
+            _ => panic!("{:?}: GRGB index out of range", index),
         }
     }
 }
@@ -184,7 +190,7 @@ impl From<RGB> for gdk::RGBA {
             red: rgb.red,
             green: rgb.green,
             blue: rgb.blue,
-            alpha: 1.0
+            alpha: 1.0,
         }
     }
 }
@@ -196,7 +202,7 @@ impl From<RGB> for gdk::Color {
             red: rgb16.red,
             green: rgb16.green,
             blue: rgb16.blue,
-            pixel: 0
+            pixel: 0,
         }
     }
 }
@@ -209,7 +215,7 @@ impl From<RGB8> for RGB {
         RGB {
             red: (rgb8.red as f64) / divisor,
             green: (rgb8.green as f64) / divisor,
-            blue: (rgb8.blue as f64)/ divisor,
+            blue: (rgb8.blue as f64) / divisor,
         }
     }
 }
@@ -220,11 +226,10 @@ impl From<RGB16> for RGB {
         RGB {
             red: (rgb16.red as f64) / divisor,
             green: (rgb16.green as f64) / divisor,
-            blue: (rgb16.blue as f64)/ divisor,
+            blue: (rgb16.blue as f64) / divisor,
         }
     }
 }
-
 
 impl From<RGB> for RGB8 {
     fn from(rgb: RGB) -> RGB8 {
@@ -262,23 +267,35 @@ impl FromStr for RGB16 {
 
     fn from_str(string: &str) -> Result<RGB16, RGBError> {
         if let Some(captures) = RGB16_RE.captures(string) {
-            let red_m = captures.name("red").ok_or(RGBError::MalformedText(string.to_string()))?;
-            let green_m = captures.name("green").ok_or(RGBError::MalformedText(string.to_string()))?;
-            let blue_m = captures.name("blue").ok_or(RGBError::MalformedText(string.to_string()))?;
+            let red_m = captures
+                .name("red")
+                .ok_or(RGBError::MalformedText(string.to_string()))?;
+            let green_m = captures
+                .name("green")
+                .ok_or(RGBError::MalformedText(string.to_string()))?;
+            let blue_m = captures
+                .name("blue")
+                .ok_or(RGBError::MalformedText(string.to_string()))?;
             let err_map = |_| RGBError::MalformedText(string.to_string());
             let red = u16::from_str_radix(red_m.as_str(), 16).map_err(&err_map)?;
             let green = u16::from_str_radix(green_m.as_str(), 16).map_err(&err_map)?;
             let blue = u16::from_str_radix(blue_m.as_str(), 16).map_err(&err_map)?;
-            Ok(RGB16{red, green, blue})
+            Ok(RGB16 { red, green, blue })
         } else if let Some(captures) = RGB16_BASE_10_RE.captures(string) {
-            let red_m = captures.name("red").ok_or(RGBError::MalformedText(string.to_string()))?;
-            let green_m = captures.name("green").ok_or(RGBError::MalformedText(string.to_string()))?;
-            let blue_m = captures.name("blue").ok_or(RGBError::MalformedText(string.to_string()))?;
+            let red_m = captures
+                .name("red")
+                .ok_or(RGBError::MalformedText(string.to_string()))?;
+            let green_m = captures
+                .name("green")
+                .ok_or(RGBError::MalformedText(string.to_string()))?;
+            let blue_m = captures
+                .name("blue")
+                .ok_or(RGBError::MalformedText(string.to_string()))?;
             let err_map = |_| RGBError::MalformedText(string.to_string());
             let red = u16::from_str_radix(red_m.as_str(), 10).map_err(&err_map)?;
             let green = u16::from_str_radix(green_m.as_str(), 10).map_err(&err_map)?;
             let blue = u16::from_str_radix(blue_m.as_str(), 10).map_err(&err_map)?;
-            Ok(RGB16{red, green, blue})
+            Ok(RGB16 { red, green, blue })
         } else {
             Err(RGBError::MalformedText(string.to_string()))
         }
@@ -287,20 +304,56 @@ impl FromStr for RGB16 {
 
 impl fmt::Display for RGB16 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "RGB16(red=0x{:04X}, green=0x{:04X}, blue=0x{:04X})", self.red, self.green, self.blue)
+        write!(
+            f,
+            "RGB16(red=0x{:04X}, green=0x{:04X}, blue=0x{:04X})",
+            self.red, self.green, self.blue
+        )
     }
 }
 
-pub const BLACK: RGB = RGB{red: 0.0, green: 0.0, blue: 0.0};
-pub const WHITE: RGB = RGB{red: 1.0, green: 1.0, blue: 1.0};
+pub const BLACK: RGB = RGB {
+    red: 0.0,
+    green: 0.0,
+    blue: 0.0,
+};
+pub const WHITE: RGB = RGB {
+    red: 1.0,
+    green: 1.0,
+    blue: 1.0,
+};
 
-pub const RED: RGB = RGB{red: 1.0, green: 0.0, blue: 0.0};
-pub const GREEN: RGB = RGB{red: 0.0, green: 1.0, blue: 0.0};
-pub const BLUE: RGB = RGB{red: 0.0, green: 0.0, blue: 1.0};
+pub const RED: RGB = RGB {
+    red: 1.0,
+    green: 0.0,
+    blue: 0.0,
+};
+pub const GREEN: RGB = RGB {
+    red: 0.0,
+    green: 1.0,
+    blue: 0.0,
+};
+pub const BLUE: RGB = RGB {
+    red: 0.0,
+    green: 0.0,
+    blue: 1.0,
+};
 
-pub const CYAN: RGB = RGB{red: 0.0, green: 1.0, blue: 1.0};
-pub const MAGENTA: RGB = RGB{red: 1.0, green: 0.0, blue: 1.0};
-pub const YELLOW: RGB = RGB{red: 1.0, green: 1.0, blue: 0.0};
+pub const CYAN: RGB = RGB {
+    red: 0.0,
+    green: 1.0,
+    blue: 1.0,
+};
+pub const MAGENTA: RGB = RGB {
+    red: 1.0,
+    green: 0.0,
+    blue: 1.0,
+};
+pub const YELLOW: RGB = RGB {
+    red: 1.0,
+    green: 1.0,
+    blue: 0.0,
+};
 
 pub const GREYS: [RGB; 2] = [BLACK, WHITE];
 pub const PRIMARIES: [RGB; 3] = [RED, GREEN, BLUE];
@@ -356,18 +409,34 @@ impl RGB {
         if delta_hue_angle > DEG_0 {
             if delta_hue_angle > DEG_120 {
                 let ks = calc_ks(delta_hue_angle - DEG_120);
-                return RGB{red: self.ff((2, 1), ks), green: self.ff((0, 2), ks), blue: self.ff((1, 0), ks)}
+                return RGB {
+                    red: self.ff((2, 1), ks),
+                    green: self.ff((0, 2), ks),
+                    blue: self.ff((1, 0), ks),
+                };
             } else {
                 let ks = calc_ks(delta_hue_angle);
-                return RGB{red: self.ff((0, 2), ks), green: self.ff((1, 0), ks), blue: self.ff((2, 1), ks)}
+                return RGB {
+                    red: self.ff((0, 2), ks),
+                    green: self.ff((1, 0), ks),
+                    blue: self.ff((2, 1), ks),
+                };
             }
         } else if delta_hue_angle < DEG_0 {
             if delta_hue_angle < -DEG_120 {
                 let ks = calc_ks(delta_hue_angle.abs() - DEG_120);
-                return RGB{red: self.ff((1, 2), ks), green: self.ff((2, 0), ks), blue: self.ff((0, 1), ks)}
+                return RGB {
+                    red: self.ff((1, 2), ks),
+                    green: self.ff((2, 0), ks),
+                    blue: self.ff((0, 1), ks),
+                };
             } else {
                 let ks = calc_ks(delta_hue_angle.abs());
-                return RGB{red: self.ff((0, 1), ks), green: self.ff((1, 2), ks), blue: self.ff((2, 0), ks)}
+                return RGB {
+                    red: self.ff((0, 1), ks),
+                    green: self.ff((1, 2), ks),
+                    blue: self.ff((2, 0), ks),
+                };
             }
         }
         *self
@@ -383,7 +452,7 @@ impl RGB {
 mod tests {
     use super::*;
 
-    fn within_limit_quiet(x1: f64, x2:f64) -> bool {
+    fn within_limit_quiet(x1: f64, x2: f64) -> bool {
         let limit = 0.0000000001;
         if x1 == 0.0 || x2 == 0.0 {
             (x2 + x1).abs() < limit
@@ -396,7 +465,7 @@ mod tests {
         for i in 0..3 {
             if !within_limit_quiet(rgb1[i], rgb2[i]) {
                 println!("{:?} != {:?}", rgb1, rgb2);
-                return false
+                return false;
             }
         }
         true
@@ -430,7 +499,7 @@ mod tests {
         assert_eq!(BLACK.value(), 0.0);
         assert_eq!(WHITE.value(), 1.0);
 
-         for x in [RED, GREEN, BLUE].iter() {
+        for x in [RED, GREEN, BLUE].iter() {
             assert_eq!(x.value(), 1.0 / 3.0);
         }
 
@@ -451,43 +520,106 @@ mod tests {
     fn rgb_math_rgb_rotation() {
         // NB using conversion where necessary to account for the fact
         // that floating point is only an approximation of real numbers
-        assert_eq!(RGB16{red: std::u16::MAX, green: std::u16::MAX, blue:0}, RGB16::from(YELLOW));
-        assert_eq!(RGB16::from((YELLOW).components_rotated(-DEG_60)), RGB16::from((RED + WHITE) / 2));
-        assert_eq!(RGB16::from(RED.components_rotated(DEG_60)), RGB16::from(YELLOW / 2));
-        assert_eq!(RGB16::from(RED.components_rotated(DEG_120)), RGB16::from(GREEN));
+        assert_eq!(
+            RGB16 {
+                red: std::u16::MAX,
+                green: std::u16::MAX,
+                blue: 0
+            },
+            RGB16::from(YELLOW)
+        );
+        assert_eq!(
+            RGB16::from((YELLOW).components_rotated(-DEG_60)),
+            RGB16::from((RED + WHITE) / 2)
+        );
+        assert_eq!(
+            RGB16::from(RED.components_rotated(DEG_60)),
+            RGB16::from(YELLOW / 2)
+        );
+        assert_eq!(
+            RGB16::from(RED.components_rotated(DEG_120)),
+            RGB16::from(GREEN)
+        );
         //assert_eq!(RGB16::from(RED.components_rotated(DEG_180)), RGB16::from(CYAN / 2));
         assert!(within_limits(RED.components_rotated(DEG_180), CYAN / 2));
-        assert_eq!(RGB16::from(RED.components_rotated(-DEG_60)), RGB16::from(MAGENTA / 2));
-        assert_eq!(RGB16::from(RED.components_rotated(-DEG_120)), RGB16::from(BLUE));
+        assert_eq!(
+            RGB16::from(RED.components_rotated(-DEG_60)),
+            RGB16::from(MAGENTA / 2)
+        );
+        assert_eq!(
+            RGB16::from(RED.components_rotated(-DEG_120)),
+            RGB16::from(BLUE)
+        );
         //assert_eq!(RGB16::from(RED.components_rotated(-DEG_180)), RGB16::from(CYAN / 2));
         assert!(within_limits(RED.components_rotated(-DEG_180), CYAN / 2));
 
-        assert_eq!(RGB16::from(YELLOW.components_rotated(DEG_60)), RGB16::from((GREEN + WHITE) * 0.5));
-        assert_eq!(RGB16::from(YELLOW.components_rotated(DEG_120)), RGB16::from(CYAN));
+        assert_eq!(
+            RGB16::from(YELLOW.components_rotated(DEG_60)),
+            RGB16::from((GREEN + WHITE) * 0.5)
+        );
+        assert_eq!(
+            RGB16::from(YELLOW.components_rotated(DEG_120)),
+            RGB16::from(CYAN)
+        );
         //assert_eq!(RGB16::from(YELLOW.components_rotated(DEG_180)), RGB16::from((BLUE + WHITE) * 0.5));
-        assert!(within_limits(YELLOW.components_rotated(DEG_180), (BLUE + WHITE) * 0.5));
-        assert_eq!(RGB16::from(YELLOW.components_rotated(-DEG_60)), RGB16::from((RED + WHITE) / 2));
+        assert!(within_limits(
+            YELLOW.components_rotated(DEG_180),
+            (BLUE + WHITE) * 0.5
+        ));
+        assert_eq!(
+            RGB16::from(YELLOW.components_rotated(-DEG_60)),
+            RGB16::from((RED + WHITE) / 2)
+        );
 
         //assert_eq!(RGB16::from(GREEN.components_rotated(DEG_60)), RGB16::from(CYAN / 2));
         assert!(within_limits(GREEN.components_rotated(DEG_60), CYAN / 2));
-        assert_eq!(RGB16::from(GREEN.components_rotated(DEG_120)), RGB16::from(BLUE));
+        assert_eq!(
+            RGB16::from(GREEN.components_rotated(DEG_120)),
+            RGB16::from(BLUE)
+        );
         //assert_eq!(RGB16::from(GREEN.components_rotated(DEG_180)), RGB16::from(MAGENTA / 2));
-        assert!(within_limits(GREEN.components_rotated(DEG_180), MAGENTA / 2));
-        assert_eq!(RGB16::from(GREEN.components_rotated(-DEG_60)), RGB16::from(YELLOW / 2));
-        assert_eq!(RGB16::from(GREEN.components_rotated(-DEG_120)), RGB16::from(RED));
+        assert!(within_limits(
+            GREEN.components_rotated(DEG_180),
+            MAGENTA / 2
+        ));
+        assert_eq!(
+            RGB16::from(GREEN.components_rotated(-DEG_60)),
+            RGB16::from(YELLOW / 2)
+        );
+        assert_eq!(
+            RGB16::from(GREEN.components_rotated(-DEG_120)),
+            RGB16::from(RED)
+        );
         //assert_eq!(RGB16::from(GREEN.components_rotated(-DEG_180)), RGB16::from(MAGENTA / 2));
-        assert!(within_limits(GREEN.components_rotated(-DEG_180), MAGENTA / 2));
+        assert!(within_limits(
+            GREEN.components_rotated(-DEG_180),
+            MAGENTA / 2
+        ));
     }
 
     #[test]
     fn rgb_math_rgb_from_string() {
         if let Ok(rgb_fm_str) = RGB16::from_str("RGB16(red=0xF800, green=0xFA00, blue=0xF600)") {
-            assert_eq!(rgb_fm_str, RGB16{red:63488, green:64000, blue: 62976});
+            assert_eq!(
+                rgb_fm_str,
+                RGB16 {
+                    red: 63488,
+                    green: 64000,
+                    blue: 62976
+                }
+            );
         } else {
             panic!("File: {:?} Line: {:?}", file!(), line!())
         };
         if let Ok(rgb_fm_str) = RGB16::from_str("RGB16(0xF800, 0xFA00, 0xF600)") {
-            assert_eq!(rgb_fm_str, RGB16{red:63488, green:64000, blue: 62976});
+            assert_eq!(
+                rgb_fm_str,
+                RGB16 {
+                    red: 63488,
+                    green: 64000,
+                    blue: 62976
+                }
+            );
         } else {
             panic!("File: {:?} Line: {:?}", file!(), line!())
         }

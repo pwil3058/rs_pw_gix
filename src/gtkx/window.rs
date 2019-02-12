@@ -35,13 +35,11 @@ pub trait RememberGeometry: gtk::WidgetExt + gtk::GtkWindowExt {
         } else {
             self.set_default_size(default_size.0, default_size.1)
         }
-        self.connect_configure_event(
-            move |_, event| {
-                let text = format_geometry(event);
-                recollections::remember(key.as_str(), text.as_str());
-                false
-            }
-        );
+        self.connect_configure_event(move |_, event| {
+            let text = format_geometry(event);
+            recollections::remember(key.as_str(), text.as_str());
+            false
+        });
     }
 }
 
@@ -81,7 +79,5 @@ mod tests {
     //use super::*;
 
     #[test]
-    fn it_works() {
-
-    }
+    fn it_works() {}
 }

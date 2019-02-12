@@ -17,7 +17,7 @@ use std::convert;
 use std::error::{self, Error};
 use std::fmt;
 use std::io;
-use std::process::{Command};
+use std::process::Command;
 
 use gdk::{self, WindowExtManual};
 use gdk_pixbuf::Pixbuf;
@@ -57,7 +57,7 @@ impl clone::Clone for FailureReason {
                 let description = error.description().clone();
                 let cloned_error = io::Error::new(kind, description);
                 FailureReason::IOError(cloned_error)
-            },
+            }
         }
     }
 }
@@ -83,9 +83,9 @@ impl Failure {
             FailureReason::IOError(ref error) => {
                 let description = error.description().clone();
                 format!("I/O Error: {}", description)
-            },
+            }
         };
-        Failure{reason, message}
+        Failure { reason, message }
     }
 
     pub fn reason(&self) -> FailureReason {
@@ -132,9 +132,11 @@ pub fn take_screen_sample() -> Result<(), Failure> {
             } else {
                 Command::new("gnome-screenshot").arg("-ac").spawn()?;
             }
-        },
-        Err(err) => if !err.user_cancelled() {
-            Command::new("gnome-screenshot").arg("-ac").spawn()?;
+        }
+        Err(err) => {
+            if !err.user_cancelled() {
+                Command::new("gnome-screenshot").arg("-ac").spawn()?;
+            }
         }
     };
     Ok(())
@@ -148,12 +150,14 @@ pub fn get_screen_pixbuf_rectangle(rect: &gdk::Rectangle) -> Option<Pixbuf> {
 pub mod area_selection {
     use super::{Failure, FailureReason};
 
-    use std::cell::{Cell};
+    use std::cell::Cell;
     use std::convert::From;
     use std::rc::Rc;
 
     use cairo;
-    use gdk::{self, DeviceExt, DeviceManagerExt, DisplayExt, ScreenExt, WindowExt, WindowExtManual};
+    use gdk::{
+        self, DeviceExt, DeviceManagerExt, DisplayExt, ScreenExt, WindowExt, WindowExtManual,
+    };
     use gio;
     use gtk::{self, GtkWindowExt, WidgetExt};
 
@@ -165,7 +169,10 @@ pub mod area_selection {
 
     impl From<(f64, f64)> for IntPoint {
         fn from(xy: (f64, f64)) -> IntPoint {
-            IntPoint{x: xy.0 as i32, y: xy.1 as i32}
+            IntPoint {
+                x: xy.0 as i32,
+                y: xy.1 as i32,
+            }
         }
     }
 
@@ -177,7 +184,7 @@ pub mod area_selection {
 
     impl From<(IntPoint, IntPoint)> for IntSize {
         fn from(ipp: (IntPoint, IntPoint)) -> IntSize {
-            IntSize{
+            IntSize {
                 width: (ipp.0.x - ipp.1.x).abs(),
                 height: (ipp.0.y - ipp.1.y).abs(),
             }
@@ -185,7 +192,7 @@ pub mod area_selection {
     }
 
     fn top_left_corner(ipp: (IntPoint, IntPoint)) -> IntPoint {
-        IntPoint{
+        IntPoint {
             x: ipp.0.x.min(ipp.1.x),
             y: ipp.0.y.min(ipp.1.y),
         }
@@ -202,7 +209,7 @@ pub mod area_selection {
 
     impl SelectAreaDataCore {
         fn new() -> SelectAreaDataCore {
-            SelectAreaDataCore{
+            SelectAreaDataCore {
                 start_position: Cell::new(None),
                 current_position: Cell::new(None),
                 end_position: Cell::new(None),
@@ -236,11 +243,11 @@ pub mod area_selection {
             self.window.destroy();
             if let Some(start_position) = self.start_position.get() {
                 if let Some(end_position) = self.end_position.get() {
-                    let i_start : IntPoint = start_position.into();
-                    let i_last : IntPoint = end_position.into();
+                    let i_start: IntPoint = start_position.into();
+                    let i_last: IntPoint = end_position.into();
                     let position = top_left_corner((i_start, i_last));
                     let size = IntSize::from((i_start, i_last));
-                    return Ok(gdk::Rectangle{
+                    return Ok(gdk::Rectangle {
                         x: position.x,
                         y: position.y,
                         width: size.width,
@@ -268,73 +275,70 @@ pub mod area_selection {
                         sad.window.set_visual(visual);
                         sad.window.set_app_paintable(true);
                     } else {
-                        return Err(Failure::new(FailureReason::NoRGBAVisual))
+                        return Err(Failure::new(FailureReason::NoRGBAVisual));
                     }
                 } else {
-                    return Err(Failure::new(FailureReason::NonCompositing))
+                    return Err(Failure::new(FailureReason::NonCompositing));
                 }
             } else {
-                return Err(Failure::new(FailureReason::NoDefaultScreen))
+                return Err(Failure::new(FailureReason::NoDefaultScreen));
             }
-            let events = gdk::EventMask::KEY_PRESS_MASK | gdk::EventMask::BUTTON_PRESS_MASK | gdk::EventMask::BUTTON_RELEASE_MASK | gdk::EventMask::BUTTON_MOTION_MASK;
+            let events = gdk::EventMask::KEY_PRESS_MASK
+                | gdk::EventMask::BUTTON_PRESS_MASK
+                | gdk::EventMask::BUTTON_RELEASE_MASK
+                | gdk::EventMask::BUTTON_MOTION_MASK;
             sad.window.add_events(events.bits() as i32);
 
             let sad_c = sad.clone();
-            sad.window.connect_draw(
-                move |_, cairo_context| {
-                    if let Some(start_position) = sad_c.start_position.get() {
-                        if let Some(current_position) = sad_c.current_position.get() {
-                            // NB. draw OUSIDE the selected area so that we don't have
-                            // an issue with how long it takes the screen to be redrawn
-                            // after we finish and before a sample is taken.
-                            let lw = 2.0;
-                            cairo_context.set_line_width(lw);
-                            let x = start_position.0.min(current_position.0) - lw;
-                            let y = start_position.1.min(current_position.1) - lw;
-                            let width = (start_position.0 - current_position.0).abs() + 2.0 * lw;
-                            let height = (start_position.1 - current_position.1).abs() + 2.0 * lw;
-                            cairo_context.rectangle(x, y, width, height);
-                            cairo_context.set_source_rgb(0.0, 0.0, 0.0);
-                            cairo_context.set_dash(&[3.0], 0.0);
-                            cairo_context.set_operator(cairo::enums::Operator::Xor);
-                            cairo_context.stroke();
-                        }
-                    };
-                    gio::signal::Inhibit(false)
-                }
-            );
-
-            let sad_c = sad.clone();
-            sad.window.connect_key_press_event(
-                move |_, event| {
-                    if event.get_keyval() == gdk::enums::key::Escape {
-                        sad_c.start_position.set(None);
-                        sad_c.current_position.set(None);
-                        sad_c.end_position.set(None);
-                        sad_c.button_num.set(None);
-
-                        gtk::main_quit();
+            sad.window.connect_draw(move |_, cairo_context| {
+                if let Some(start_position) = sad_c.start_position.get() {
+                    if let Some(current_position) = sad_c.current_position.get() {
+                        // NB. draw OUSIDE the selected area so that we don't have
+                        // an issue with how long it takes the screen to be redrawn
+                        // after we finish and before a sample is taken.
+                        let lw = 2.0;
+                        cairo_context.set_line_width(lw);
+                        let x = start_position.0.min(current_position.0) - lw;
+                        let y = start_position.1.min(current_position.1) - lw;
+                        let width = (start_position.0 - current_position.0).abs() + 2.0 * lw;
+                        let height = (start_position.1 - current_position.1).abs() + 2.0 * lw;
+                        cairo_context.rectangle(x, y, width, height);
+                        cairo_context.set_source_rgb(0.0, 0.0, 0.0);
+                        cairo_context.set_dash(&[3.0], 0.0);
+                        cairo_context.set_operator(cairo::enums::Operator::Xor);
+                        cairo_context.stroke();
                     }
-
-                    gio::signal::Inhibit(true)
-                }
-            );
-
-            let sad_c = sad.clone();
-            sad.window.connect_button_press_event(
-                move |_, event| {
-                    if !sad_c.in_progress() {
-                        sad_c.button_num.set(Some(event.get_button()));
-                        sad_c.start_position.set(Some(event.get_position()));
-                    }
-
-                    gio::signal::Inhibit(true)
-                }
-            );
+                };
+                gio::signal::Inhibit(false)
+            });
 
             let sad_c = sad.clone();
-            sad.window.connect_button_release_event(
-                move |window, event| {
+            sad.window.connect_key_press_event(move |_, event| {
+                if event.get_keyval() == gdk::enums::key::Escape {
+                    sad_c.start_position.set(None);
+                    sad_c.current_position.set(None);
+                    sad_c.end_position.set(None);
+                    sad_c.button_num.set(None);
+
+                    gtk::main_quit();
+                }
+
+                gio::signal::Inhibit(true)
+            });
+
+            let sad_c = sad.clone();
+            sad.window.connect_button_press_event(move |_, event| {
+                if !sad_c.in_progress() {
+                    sad_c.button_num.set(Some(event.get_button()));
+                    sad_c.start_position.set(Some(event.get_position()));
+                }
+
+                gio::signal::Inhibit(true)
+            });
+
+            let sad_c = sad.clone();
+            sad.window
+                .connect_button_release_event(move |window, event| {
                     if sad_c.in_progress_for(event.get_button()) {
                         sad_c.end_position.set(Some(event.get_position()));
                         sad_c.current_position.set(None);
@@ -345,25 +349,24 @@ pub mod area_selection {
                     }
 
                     gio::signal::Inhibit(true)
-                }
-            );
+                });
 
             let sad_c = sad.clone();
-            sad.window.connect_motion_notify_event(
-                move |window, event| {
+            sad.window
+                .connect_motion_notify_event(move |window, event| {
                     if sad_c.in_progress() {
                         sad_c.current_position.set(Some(event.get_position()));
                         window.queue_draw();
                     }
 
                     gio::signal::Inhibit(true)
-                }
-            );
+                });
 
             let root_window = gdk::Window::get_default_root_window();
 
             sad.window.move_(0, 0);
-            sad.window.resize(root_window.get_width(), root_window.get_height());
+            sad.window
+                .resize(root_window.get_width(), root_window.get_height());
             sad.window.show();
 
             Ok(sad)
@@ -394,37 +397,44 @@ pub mod area_selection {
                     if let Some(pointer) = manager.get_client_pointer() {
                         if let Some(keyboard) = pointer.get_associated_device() {
                             if let Some(ref window) = w.get_window() {
-                                let cursor = gdk::Cursor::new_for_display(&display, gdk::CursorType::Crosshair);
+                                let cursor = gdk::Cursor::new_for_display(
+                                    &display,
+                                    gdk::CursorType::Crosshair,
+                                );
                                 let status = pointer.grab(
                                     window,
                                     gdk::GrabOwnership::None,
                                     false,
-                                    gdk::EventMask::POINTER_MOTION_MASK|
-                                    gdk::EventMask::BUTTON_PRESS_MASK|
-                                    gdk::EventMask::BUTTON_RELEASE_MASK,
+                                    gdk::EventMask::POINTER_MOTION_MASK
+                                        | gdk::EventMask::BUTTON_PRESS_MASK
+                                        | gdk::EventMask::BUTTON_RELEASE_MASK,
                                     Some(&cursor),
                                     0,
                                 );
                                 if status != gdk::GrabStatus::Success {
-                                    return Err(Failure::new(FailureReason::PointerGrabFailed(status)));
+                                    return Err(Failure::new(FailureReason::PointerGrabFailed(
+                                        status,
+                                    )));
                                 }
                                 let status = keyboard.grab(
                                     window,
                                     gdk::GrabOwnership::None,
                                     false,
-                                    gdk::EventMask::KEY_PRESS_MASK|
-                                    gdk::EventMask::KEY_RELEASE_MASK,
+                                    gdk::EventMask::KEY_PRESS_MASK
+                                        | gdk::EventMask::KEY_RELEASE_MASK,
                                     None,
                                     0,
                                 );
                                 if status != gdk::GrabStatus::Success {
                                     pointer.ungrab(0);
-                                    return Err(Failure::new(FailureReason::KeyboardGrabFailed(status)));
+                                    return Err(Failure::new(FailureReason::KeyboardGrabFailed(
+                                        status,
+                                    )));
                                 }
-                                return Ok(PointerAndKeyboard{
+                                return Ok(PointerAndKeyboard {
                                     pointer: pointer,
                                     keyboard: keyboard,
-                                })
+                                });
                             } else {
                                 panic!("window not realized!!!")
                             }
@@ -473,7 +483,5 @@ mod tests {
     //use super::*;
 
     #[test]
-    fn it_works() {
-
-    }
+    fn it_works() {}
 }

@@ -67,7 +67,12 @@ impl XYSelectionCore {
                 } else {
                     (end.y(), -delta.y())
                 };
-                Some(Rectangle{x, y, width, height})
+                Some(Rectangle {
+                    x,
+                    y,
+                    width,
+                    height,
+                })
             } else {
                 panic!("File: {:?} Line: {:?}: should NOT happen", file!(), line!());
             }
@@ -77,7 +82,9 @@ impl XYSelectionCore {
     }
 
     pub fn connect_selection_made<F: 'static + Fn()>(&self, callback: F) {
-        self.selection_made_callbacks.borrow_mut().push(Box::new(callback))
+        self.selection_made_callbacks
+            .borrow_mut()
+            .push(Box::new(callback))
     }
 }
 
@@ -89,22 +96,24 @@ pub trait XYSelectionInterface {
 
 impl XYSelectionInterface for XYSelection {
     fn create(drawing_area: &gtk::DrawingArea) -> XYSelection {
-        let events = gdk::EventMask::POINTER_MOTION_MASK | gdk::EventMask::BUTTON_PRESS_MASK |
-            gdk::EventMask::BUTTON_RELEASE_MASK | gdk::EventMask::LEAVE_NOTIFY_MASK;
+        let events = gdk::EventMask::POINTER_MOTION_MASK
+            | gdk::EventMask::BUTTON_PRESS_MASK
+            | gdk::EventMask::BUTTON_RELEASE_MASK
+            | gdk::EventMask::LEAVE_NOTIFY_MASK;
         drawing_area.add_events(events.bits() as i32);
-        let xys = Rc::new(
-            XYSelectionCore {
-                drawing_area: drawing_area.clone(),
-                start_xy: Cell::new(None),
-                end_xy: Cell::new(None),
-                selection_made: Cell::new(false),
-                selection_made_callbacks: RefCell::new(Vec::new()),
-            }
-        );
+        let xys = Rc::new(XYSelectionCore {
+            drawing_area: drawing_area.clone(),
+            start_xy: Cell::new(None),
+            end_xy: Cell::new(None),
+            selection_made: Cell::new(false),
+            selection_made_callbacks: RefCell::new(Vec::new()),
+        });
         let xys_c = xys.clone();
-        xys.drawing_area.connect_button_press_event(
-            move |da, event| {
-                if event.get_button() == 1 && !event.get_state().contains(gdk::ModifierType::CONTROL_MASK) {
+        xys.drawing_area
+            .connect_button_press_event(move |da, event| {
+                if event.get_button() == 1
+                    && !event.get_state().contains(gdk::ModifierType::CONTROL_MASK)
+                {
                     let point = Point::from(event.get_position());
                     xys_c.start_xy.set(Some(point));
                     xys_c.end_xy.set(Some(point));
@@ -122,11 +131,10 @@ impl XYSelectionInterface for XYSelection {
                 } else {
                     gtk::Inhibit(false)
                 }
-            }
-        );
+            });
         let xys_c = xys.clone();
-        xys.drawing_area.connect_button_release_event(
-            move |da, event| {
+        xys.drawing_area
+            .connect_button_release_event(move |da, event| {
                 if event.get_button() == 1 && xys_c.in_progress() {
                     xys_c.end_xy.set(Some(Point::from(event.get_position())));
                     xys_c.selection_made.set(true);
@@ -138,11 +146,10 @@ impl XYSelectionInterface for XYSelection {
                 } else {
                     gtk::Inhibit(false)
                 }
-            }
-        );
+            });
         let xys_c = xys.clone();
-        xys.drawing_area.connect_motion_notify_event(
-            move |da,event| {
+        xys.drawing_area
+            .connect_motion_notify_event(move |da, event| {
                 if xys_c.in_progress() {
                     xys_c.end_xy.set(Some(Point::from(event.get_position())));
                     da.queue_draw();
@@ -150,18 +157,15 @@ impl XYSelectionInterface for XYSelection {
                 } else {
                     gtk::Inhibit(false)
                 }
-            }
-        );
+            });
         let xys_c = xys.clone();
-        xys.drawing_area.connect_leave_notify_event(
-            move |da, _| {
-                if xys_c.in_progress() {
-                    xys_c.reset();
-                    da.queue_draw();
-                };
-                gtk::Inhibit(false)
-            }
-        );
+        xys.drawing_area.connect_leave_notify_event(move |da, _| {
+            if xys_c.in_progress() {
+                xys_c.reset();
+                da.queue_draw();
+            };
+            gtk::Inhibit(false)
+        });
 
         xys
     }
@@ -172,7 +176,5 @@ mod tests {
     //use super::*;
 
     #[test]
-    fn it_works() {
-
-    }
+    fn it_works() {}
 }

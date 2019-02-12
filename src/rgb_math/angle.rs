@@ -15,47 +15,43 @@
 use std::cmp::{Ordering, PartialOrd};
 use std::convert::From;
 use std::f64::consts;
-use std::ops::{Div, Mul, Add, Sub, Neg};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[macro_export]
 macro_rules! is_normalised {
-    ( $x:expr ) => {
-        {
-            ($x <= consts::PI) && ($x >= -consts::PI)
-        }
-    }
+    ( $x:expr ) => {{
+        ($x <= consts::PI) && ($x >= -consts::PI)
+    }};
 }
 
 #[macro_export]
 macro_rules! normalise {
-    ( $f:expr ) => {
-        {
-            let mut result = $f;
-            if result > consts::PI {
-                while result > consts::PI {
-                    result -= 2.0 * consts::PI;
-                }
-            } else if result < -consts::PI {
-                while result < -consts::PI {
-                    result += 2.0 * consts::PI;
-                }
+    ( $f:expr ) => {{
+        let mut result = $f;
+        if result > consts::PI {
+            while result > consts::PI {
+                result -= 2.0 * consts::PI;
             }
-            result
+        } else if result < -consts::PI {
+            while result < -consts::PI {
+                result += 2.0 * consts::PI;
+            }
         }
-    }
+        result
+    }};
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Copy)]
-pub struct Angle (f64);
+pub struct Angle(f64);
 
-pub const DEG_0: Angle   = Angle(0.0);
-pub const DEG_1: Angle   = Angle(consts::PI / 180.0);
-pub const DEG_5: Angle   = Angle(consts::PI / 36.0);
-pub const DEG_10: Angle  = Angle(consts::PI / 18.0);
-pub const DEG_30: Angle  = Angle(consts::FRAC_PI_6);
-pub const DEG_45: Angle  = Angle(consts::FRAC_PI_4);
-pub const DEG_60: Angle  = Angle(consts::FRAC_PI_3);
-pub const DEG_90: Angle  = Angle(consts::FRAC_PI_2);
+pub const DEG_0: Angle = Angle(0.0);
+pub const DEG_1: Angle = Angle(consts::PI / 180.0);
+pub const DEG_5: Angle = Angle(consts::PI / 36.0);
+pub const DEG_10: Angle = Angle(consts::PI / 18.0);
+pub const DEG_30: Angle = Angle(consts::FRAC_PI_6);
+pub const DEG_45: Angle = Angle(consts::FRAC_PI_4);
+pub const DEG_60: Angle = Angle(consts::FRAC_PI_3);
+pub const DEG_90: Angle = Angle(consts::FRAC_PI_2);
 pub const DEG_120: Angle = Angle(consts::FRAC_PI_3 * 2.0);
 pub const DEG_150: Angle = Angle(consts::FRAC_PI_6 * 5.0);
 pub const DEG_180: Angle = Angle(consts::PI);
@@ -177,9 +173,11 @@ impl Angle {
 mod tests {
     use super::*;
 
-    const ANGLES: [Angle; 10] = [DEG_0, DEG_5, DEG_10, DEG_30, DEG_45, DEG_60, DEG_90, DEG_120, DEG_150, DEG_180];
+    const ANGLES: [Angle; 10] = [
+        DEG_0, DEG_5, DEG_10, DEG_30, DEG_45, DEG_60, DEG_90, DEG_120, DEG_150, DEG_180,
+    ];
 
-    fn within_limit_quiet(x1: Angle, x2:Angle) -> bool {
+    fn within_limit_quiet(x1: Angle, x2: Angle) -> bool {
         let limit = 0.0000000001;
         if x1.radians() == 0.0 || x2.radians() == 0.0 {
             (x2.radians() + x1.radians()).abs() < limit
@@ -188,7 +186,7 @@ mod tests {
         }
     }
 
-    fn within_limit(x1: Angle, x2:Angle) -> bool {
+    fn within_limit(x1: Angle, x2: Angle) -> bool {
         if within_limit_quiet(x1, x2) {
             true
         } else {

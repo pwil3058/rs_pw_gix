@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::cmp::{PartialEq, Eq, PartialOrd, Ordering};
+use std::cmp::{Eq, Ordering, PartialEq, PartialOrd};
 use std::convert::From;
 use std::rc::Rc;
 
-use ::rgb_math::hue::*;
-use ::rgb_math::rgb::*;
+use rgb_math::hue::*;
+use rgb_math::rgb::*;
 
 pub mod attributes;
 
@@ -102,7 +102,7 @@ pub trait ColourInterface {
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Hash)]
 pub struct ColourInternals {
     rgb: RGB,
-    hue: HueAngle
+    hue: HueAngle,
 }
 
 impl PartialEq for ColourInternals {
@@ -126,7 +126,10 @@ impl PartialOrd for ColourInternals {
         } else if other.hue.is_grey() {
             Some(Ordering::Greater)
         } else {
-            self.hue.angle().radians().partial_cmp(&other.hue.angle().radians())
+            self.hue
+                .angle()
+                .radians()
+                .partial_cmp(&other.hue.angle().radians())
         }
     }
 }
@@ -136,7 +139,7 @@ pub type Colour = Rc<ColourInternals>;
 impl From<RGB> for Colour {
     fn from(rgb: RGB) -> Colour {
         let hue = HueAngle::from(rgb);
-        Rc::new(ColourInternals{rgb, hue})
+        Rc::new(ColourInternals { rgb, hue })
     }
 }
 
@@ -163,9 +166,9 @@ impl ColourInterface for RGB {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ::rgb_math::angle::*;
+    use rgb_math::angle::*;
 
-    fn within_limit_quiet(x1: f64, x2:f64) -> bool {
+    fn within_limit_quiet(x1: f64, x2: f64) -> bool {
         let limit = 0.0000000001;
         if x1 == 0.0 || x2 == 0.0 {
             (x2 + x1).abs() < limit
@@ -174,7 +177,7 @@ mod tests {
         }
     }
 
-    fn within_limit(x1: f64, x2:f64) -> bool {
+    fn within_limit(x1: f64, x2: f64) -> bool {
         if within_limit_quiet(x1, x2) {
             true
         } else {
@@ -202,25 +205,49 @@ mod tests {
             assert_eq!(colour.chroma(), 0.5);
         }
         for factor in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
-            assert_eq!(Colour::from(RED * *factor).warmth(), (1.0 * factor + 1.0) / 2.0);
-            assert_eq!(Colour::from(((RED + WHITE) * 0.5) * *factor).warmth(), (0.5 * factor + 1.0) / 2.0);
+            assert_eq!(
+                Colour::from(RED * *factor).warmth(),
+                (1.0 * factor + 1.0) / 2.0
+            );
+            assert_eq!(
+                Colour::from(((RED + WHITE) * 0.5) * *factor).warmth(),
+                (0.5 * factor + 1.0) / 2.0
+            );
         }
         for factor in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
-            assert_eq!(Colour::from(CYAN * *factor).warmth(), (-1.0 * factor + 1.0) / 2.0);
-            assert_eq!(Colour::from(((CYAN + WHITE) * 0.5) * *factor).warmth(), (-0.5 * factor + 1.0) / 2.0);
+            assert_eq!(
+                Colour::from(CYAN * *factor).warmth(),
+                (-1.0 * factor + 1.0) / 2.0
+            );
+            assert_eq!(
+                Colour::from(((CYAN + WHITE) * 0.5) * *factor).warmth(),
+                (-0.5 * factor + 1.0) / 2.0
+            );
         }
         for rgb in [YELLOW, MAGENTA].iter() {
             for factor in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
-                let tint = (*rgb + WHITE) /2.0;
-                assert!(within_limit(Colour::from(*rgb * *factor).warmth(), (factor * DEG_60.cos() + 1.0) / 2.0));
-                assert!(within_limit(Colour::from(tint * *factor).warmth(), (0.5 * factor * DEG_60.cos() + 1.0) / 2.0));
+                let tint = (*rgb + WHITE) / 2.0;
+                assert!(within_limit(
+                    Colour::from(*rgb * *factor).warmth(),
+                    (factor * DEG_60.cos() + 1.0) / 2.0
+                ));
+                assert!(within_limit(
+                    Colour::from(tint * *factor).warmth(),
+                    (0.5 * factor * DEG_60.cos() + 1.0) / 2.0
+                ));
             }
         }
         for rgb in [GREEN, BLUE].iter() {
             for factor in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
-                let tint = (*rgb + WHITE) /2.0;
-                assert!(within_limit(Colour::from(*rgb * *factor).warmth(), (factor * DEG_120.cos() + 1.0) / 2.0));
-                assert!(within_limit(Colour::from(tint * *factor).warmth(), (0.5 * factor * DEG_120.cos() + 1.0) / 2.0));
+                let tint = (*rgb + WHITE) / 2.0;
+                assert!(within_limit(
+                    Colour::from(*rgb * *factor).warmth(),
+                    (factor * DEG_120.cos() + 1.0) / 2.0
+                ));
+                assert!(within_limit(
+                    Colour::from(tint * *factor).warmth(),
+                    (0.5 * factor * DEG_120.cos() + 1.0) / 2.0
+                ));
             }
         }
     }

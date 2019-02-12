@@ -20,8 +20,8 @@ use gtk;
 use gtk::prelude::*;
 use gtk::WidgetExt;
 
-use colour::*;
 use cairox::*;
+use colour::*;
 use rgb_math::angle::*;
 use wrapper::*;
 
@@ -82,11 +82,7 @@ pub trait ColourAttributeDisplayInterface: WidgetWrapper {
         }
     }
 
-    fn draw_label(
-        &self,
-        drawing_area: &gtk::DrawingArea,
-        cairo_context: &cairo::Context
-    ) {
+    fn draw_label(&self, drawing_area: &gtk::DrawingArea, cairo_context: &cairo::Context) {
         let label = self.label();
         if label.len() > 0 {
             let width = drawing_area.get_allocated_width() as f64;
@@ -105,11 +101,7 @@ pub trait ColourAttributeDisplayInterface: WidgetWrapper {
         vec![[0.0, 0.0, 0.0, 0.0], [1.0, 1.0, 1.0, 1.0]]
     }
 
-    fn draw_background(
-        &self,
-        drawing_area: &gtk::DrawingArea,
-        cairo_context: &cairo::Context
-    ) {
+    fn draw_background(&self, drawing_area: &gtk::DrawingArea, cairo_context: &cairo::Context) {
         let width = drawing_area.get_allocated_width() as f64;
         let height = drawing_area.get_allocated_height() as f64;
         let linear_gradient = cairo::LinearGradient::new(0.0, 0.5 * height, width, 0.5 * height);
@@ -126,11 +118,7 @@ pub trait ColourAttributeDisplayInterface: WidgetWrapper {
         cairo_context.fill()
     }
 
-    fn draw_all(
-        &self,
-        drawing_area: &gtk::DrawingArea,
-        cairo_context: &cairo::Context
-    ) {
+    fn draw_all(&self, drawing_area: &gtk::DrawingArea, cairo_context: &cairo::Context) {
         self.draw_background(drawing_area, cairo_context);
         self.draw_attr_target_value_indicator(drawing_area, cairo_context);
         self.draw_attr_value_indicator(drawing_area, cairo_context);
@@ -156,24 +144,19 @@ impl ColourAttributeDisplayInterface for ValueCAD {
     type CADIType = ValueCAD;
 
     fn create() -> ValueCAD {
-        let value_cad = Rc::new(
-            ValueCADData {
-                drawing_area: gtk::DrawingArea::new(),
-                attr_value: Cell::new(None),
-                attr_target_value: Cell::new(None),
-                attr_value_fg_rgb: Cell::new(BLACK),
-                attr_target_value_fg_rgb: Cell::new(BLACK),
-            }
-        );
+        let value_cad = Rc::new(ValueCADData {
+            drawing_area: gtk::DrawingArea::new(),
+            attr_value: Cell::new(None),
+            attr_target_value: Cell::new(None),
+            attr_value_fg_rgb: Cell::new(BLACK),
+            attr_target_value_fg_rgb: Cell::new(BLACK),
+        });
         value_cad.drawing_area.set_size_request(90, 30);
         let value_cad_c = value_cad.clone();
-        value_cad.drawing_area.connect_draw(
-            move |da, ctxt|
-            {
-                value_cad_c.draw_all(da, ctxt);
-                Inhibit(false)
-            }
-        );
+        value_cad.drawing_area.connect_draw(move |da, ctxt| {
+            value_cad_c.draw_all(da, ctxt);
+            Inhibit(false)
+        });
         value_cad
     }
 
@@ -240,29 +223,28 @@ impl ColourAttributeDisplayInterface for WarmthCAD {
     type CADIType = WarmthCAD;
 
     fn create() -> WarmthCAD {
-        let warmth_cad = Rc::new(
-            WarmthCADData {
-                drawing_area: gtk::DrawingArea::new(),
-                attr_value: Cell::new(None),
-                attr_target_value: Cell::new(None),
-                attr_value_fg_rgb: Cell::new(BLACK),
-                attr_target_value_fg_rgb: Cell::new(BLACK),
-            }
-        );
+        let warmth_cad = Rc::new(WarmthCADData {
+            drawing_area: gtk::DrawingArea::new(),
+            attr_value: Cell::new(None),
+            attr_target_value: Cell::new(None),
+            attr_value_fg_rgb: Cell::new(BLACK),
+            attr_target_value_fg_rgb: Cell::new(BLACK),
+        });
         warmth_cad.drawing_area.set_size_request(90, 30);
         let warmth_cad_c = warmth_cad.clone();
-        warmth_cad.drawing_area.connect_draw(
-            move |da, ctxt|
-            {
-                warmth_cad_c.draw_all(da, ctxt);
-                Inhibit(false)
-            }
-        );
+        warmth_cad.drawing_area.connect_draw(move |da, ctxt| {
+            warmth_cad_c.draw_all(da, ctxt);
+            Inhibit(false)
+        });
         warmth_cad
     }
 
     fn colour_stops(&self) -> ColourStops {
-        vec![[0.0, 0.0, 1.0, 1.0], [0.5, 0.5, 0.5, 0.5], [1.0, 1.0, 0.0, 0.0]]
+        vec![
+            [0.0, 0.0, 1.0, 1.0],
+            [0.5, 0.5, 0.5, 0.5],
+            [1.0, 1.0, 0.0, 0.0],
+        ]
     }
 
     fn set_colour(&self, colour: Option<&Colour>) {
@@ -340,7 +322,8 @@ impl HueCADData {
         if let Some(ref colour) = ocolour {
             if colour.is_grey() {
                 let value = colour.value();
-                *self.colour_stops.borrow_mut() = vec![[0.0, value, value, value], [1.0, value, value, value]]
+                *self.colour_stops.borrow_mut() =
+                    vec![[0.0, value, value, value], [1.0, value, value, value]]
             } else {
                 self.set_colour_stops_for_hue_angle(colour.hue());
             }
@@ -371,7 +354,7 @@ impl HueCADData {
 }
 
 fn calc_hue_value(hue: HueAngle, target_hue: HueAngle) -> f64 {
-    0.5  - (target_hue.angle() - hue.angle()) / DEG_360
+    0.5 - (target_hue.angle() - hue.angle()) / DEG_360
 }
 
 pub type HueCAD = Rc<HueCADData>;
@@ -382,26 +365,21 @@ impl ColourAttributeDisplayInterface for HueCAD {
     type CADIType = HueCAD;
 
     fn create() -> HueCAD {
-        let hue_cad = Rc::new(
-            HueCADData {
-                drawing_area: gtk::DrawingArea::new(),
-                value_angle: Cell::new(None),
-                target_angle: Cell::new(None),
-                attr_value: Cell::new(None),
-                attr_value_fg_rgb: Cell::new(BLACK),
-                attr_target_value_fg_rgb: Cell::new(BLACK),
-                colour_stops: RefCell::new(vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]),
-            }
-        );
+        let hue_cad = Rc::new(HueCADData {
+            drawing_area: gtk::DrawingArea::new(),
+            value_angle: Cell::new(None),
+            target_angle: Cell::new(None),
+            attr_value: Cell::new(None),
+            attr_value_fg_rgb: Cell::new(BLACK),
+            attr_target_value_fg_rgb: Cell::new(BLACK),
+            colour_stops: RefCell::new(vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]),
+        });
         hue_cad.drawing_area.set_size_request(90, 30);
         let hue_cad_c = hue_cad.clone();
-        hue_cad.drawing_area.connect_draw(
-            move |da, ctxt|
-            {
-                hue_cad_c.draw_all(da, ctxt);
-                Inhibit(false)
-            }
-        );
+        hue_cad.drawing_area.connect_draw(move |da, ctxt| {
+            hue_cad_c.draw_all(da, ctxt);
+            Inhibit(false)
+        });
         hue_cad
     }
 
@@ -412,8 +390,7 @@ impl ColourAttributeDisplayInterface for HueCAD {
             } else {
                 let val_angle = colour.hue();
                 self.value_angle.set(Some(val_angle));
-                self.attr_value_fg_rgb
-                    .set(colour.best_foreground_rgb());
+                self.attr_value_fg_rgb.set(colour.best_foreground_rgb());
                 if let Some(target_angle) = self.target_angle.get() {
                     let val = calc_hue_value(target_angle, val_angle);
                     self.attr_value.set(Some(val));
@@ -531,33 +508,27 @@ impl ColourAttributeDisplayInterface for ChromaCAD {
     type CADIType = ChromaCAD;
 
     fn create() -> ChromaCAD {
-        let chroma_cad = Rc::new(
-            ChromaCADData {
-                drawing_area: gtk::DrawingArea::new(),
-                attr_value: Cell::new(None),
-                attr_value_fg_rgb: Cell::new(BLACK),
-                attr_target_value: Cell::new(None),
-                attr_target_value_fg_rgb: Cell::new(BLACK),
-                colour_stops: RefCell::new(vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]),
-            }
-        );
+        let chroma_cad = Rc::new(ChromaCADData {
+            drawing_area: gtk::DrawingArea::new(),
+            attr_value: Cell::new(None),
+            attr_value_fg_rgb: Cell::new(BLACK),
+            attr_target_value: Cell::new(None),
+            attr_target_value_fg_rgb: Cell::new(BLACK),
+            colour_stops: RefCell::new(vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]),
+        });
         chroma_cad.drawing_area.set_size_request(90, 30);
         let chroma_cad_c = chroma_cad.clone();
-        chroma_cad.drawing_area.connect_draw(
-            move |da, ctxt|
-            {
-                chroma_cad_c.draw_all(da, ctxt);
-                Inhibit(false)
-            }
-        );
+        chroma_cad.drawing_area.connect_draw(move |da, ctxt| {
+            chroma_cad_c.draw_all(da, ctxt);
+            Inhibit(false)
+        });
         chroma_cad
     }
 
     fn set_colour(&self, colour: Option<&Colour>) {
         if let Some(colour) = colour {
             self.attr_value.set(Some(colour.chroma()));
-            self.attr_value_fg_rgb
-                .set(colour.best_foreground_rgb());
+            self.attr_value_fg_rgb.set(colour.best_foreground_rgb());
             if let Some(target_value) = self.attr_target_value.get() {
                 if target_value == 0.0 {
                     self.set_colour_stops(Some(&colour));
@@ -671,33 +642,27 @@ impl ColourAttributeDisplayInterface for GreynessCAD {
     type CADIType = GreynessCAD;
 
     fn create() -> GreynessCAD {
-        let greyness_cad = Rc::new(
-            GreynessCADData {
-                drawing_area: gtk::DrawingArea::new(),
-                attr_value: Cell::new(None),
-                attr_value_fg_rgb: Cell::new(BLACK),
-                attr_target_value: Cell::new(None),
-                attr_target_value_fg_rgb: Cell::new(BLACK),
-                colour_stops: RefCell::new(vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]),
-            }
-        );
+        let greyness_cad = Rc::new(GreynessCADData {
+            drawing_area: gtk::DrawingArea::new(),
+            attr_value: Cell::new(None),
+            attr_value_fg_rgb: Cell::new(BLACK),
+            attr_target_value: Cell::new(None),
+            attr_target_value_fg_rgb: Cell::new(BLACK),
+            colour_stops: RefCell::new(vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]),
+        });
         greyness_cad.drawing_area.set_size_request(90, 30);
         let greyness_cad_c = greyness_cad.clone();
-        greyness_cad.drawing_area.connect_draw(
-            move |da, ctxt|
-            {
-                greyness_cad_c.draw_all(da, ctxt);
-                Inhibit(false)
-            }
-        );
+        greyness_cad.drawing_area.connect_draw(move |da, ctxt| {
+            greyness_cad_c.draw_all(da, ctxt);
+            Inhibit(false)
+        });
         greyness_cad
     }
 
     fn set_colour(&self, colour: Option<&Colour>) {
         if let Some(colour) = colour {
             self.attr_value.set(Some(colour.greyness()));
-            self.attr_value_fg_rgb
-                .set(colour.best_foreground_rgb());
+            self.attr_value_fg_rgb.set(colour.best_foreground_rgb());
             if let Some(target_value) = self.attr_target_value.get() {
                 if target_value == 0.0 {
                     self.set_colour_stops(Some(&colour));
@@ -787,14 +752,12 @@ impl ColourAttributeDisplayStackInterface for HueChromaValueCADS {
         vbox.pack_start(&hue_cad.pwo(), true, true, 0);
         vbox.pack_start(&chroma_cad.pwo(), true, true, 0);
         vbox.pack_start(&value_cad.pwo(), true, true, 0);
-        Rc::new(
-            HueChromaValueCADSData {
-                vbox,
-                hue_cad,
-                chroma_cad,
-                value_cad,
-            }
-        )
+        Rc::new(HueChromaValueCADSData {
+            vbox,
+            hue_cad,
+            chroma_cad,
+            value_cad,
+        })
     }
 
     fn set_colour(&self, colour: Option<&Colour>) {
@@ -809,7 +772,6 @@ impl ColourAttributeDisplayStackInterface for HueChromaValueCADS {
         self.value_cad.set_target_colour(target_colour);
     }
 }
-
 
 pub struct HueGreynessValueCADSData {
     vbox: gtk::Box,
@@ -831,14 +793,12 @@ impl ColourAttributeDisplayStackInterface for HueGreynessValueCADS {
         vbox.pack_start(&hue_cad.pwo(), true, true, 0);
         vbox.pack_start(&greyness_cad.pwo(), true, true, 0);
         vbox.pack_start(&value_cad.pwo(), true, true, 0);
-        Rc::new(
-            HueGreynessValueCADSData {
-                vbox,
-                hue_cad,
-                greyness_cad,
-                value_cad,
-            }
-        )
+        Rc::new(HueGreynessValueCADSData {
+            vbox,
+            hue_cad,
+            greyness_cad,
+            value_cad,
+        })
     }
 
     fn set_colour(&self, colour: Option<&Colour>) {
@@ -881,7 +841,7 @@ mod tests {
         ccad.set_colour(Some(&Colour::from(RED)));
         ccad.set_target_colour(Some(&Colour::from(BLUE)));
 
-        let hcv_cads  = HueChromaValueCADS::create();
+        let hcv_cads = HueChromaValueCADS::create();
         hcv_cads.set_colour(Some(&Colour::from(RED)));
     }
 }

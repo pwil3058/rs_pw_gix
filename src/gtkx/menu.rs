@@ -55,7 +55,11 @@ impl WrappedMenu {
     }
 
     pub fn append_menu_item(&self, name: &str, item: &gtk::MenuItem) {
-        if let Some(_) = self.items.borrow_mut().insert(name.to_string(), item.clone()) {
+        if let Some(_) = self
+            .items
+            .borrow_mut()
+            .insert(name.to_string(), item.clone())
+        {
             panic!("Duplicate popup menu item name: {}", name);
         };
         self.menu.append(item);
@@ -63,7 +67,11 @@ impl WrappedMenu {
     }
 
     pub fn insert_menu_item(&self, name: &str, item: &gtk::MenuItem, position: i32) {
-        if let Some(_) = self.items.borrow_mut().insert(name.to_string(), item.clone()) {
+        if let Some(_) = self
+            .items
+            .borrow_mut()
+            .insert(name.to_string(), item.clone())
+        {
             panic!("Duplicate popup menu item name: {}", name);
         };
         self.menu.insert(item, position);
@@ -71,7 +79,11 @@ impl WrappedMenu {
     }
 
     pub fn prepend_menu_item(&self, name: &str, item: &gtk::MenuItem) {
-        if let Some(_) = self.items.borrow_mut().insert(name.to_string(), item.clone()) {
+        if let Some(_) = self
+            .items
+            .borrow_mut()
+            .insert(name.to_string(), item.clone())
+        {
             panic!("Duplicate popup menu item name: {}", name);
         };
         self.menu.prepend(item);
@@ -92,7 +104,13 @@ impl WrappedMenu {
         item
     }
 
-    pub fn insert_item(&self, name: &str, label_text: &str, tooltip_text: &str, position: i32) -> gtk::MenuItem {
+    pub fn insert_item(
+        &self,
+        name: &str,
+        label_text: &str,
+        tooltip_text: &str,
+        position: i32,
+    ) -> gtk::MenuItem {
         let item = self.new_item(label_text, tooltip_text);
         self.insert_menu_item(name, &item, position);
 
@@ -106,7 +124,7 @@ impl WrappedMenu {
         item
     }
 
-    pub fn connect_item_activate<F: Fn(&gtk::MenuItem) + 'static>(&self, name:&str, f: F) {
+    pub fn connect_item_activate<F: Fn(&gtk::MenuItem) + 'static>(&self, name: &str, f: F) {
         if let Some(item) = self.items.borrow().get(name) {
             item.connect_activate(f);
         } else {
@@ -141,13 +159,10 @@ impl WrappedMenu {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     //use super::*;
 
     #[test]
-    fn it_works() {
-
-    }
+    fn it_works() {}
 }
