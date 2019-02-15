@@ -16,53 +16,13 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use gtk;
-use gtk::prelude::*;
 
-pub type Row = Vec<gtk::Value>;
-
-// Macros
-#[macro_export]
-macro_rules! are_equal_rows {
-    ( $r1:expr, $r2:expr ) => {{
-        assert_eq!($r1.len(), $r2.len());
-        let mut result = true;
-        for i in 0..$r1.len() {
-            if !are_eq_values!($r1[i], $r2[i]) {
-                result = false;
-                break;
-            }
-        }
-        result
-    }};
-}
-
-// NB: when done with the returned row it's items need to be unset?
-#[macro_export]
-macro_rules! get_row_values_from {
-    ( $s:expr, $i:expr ) => {{
-        let mut row = Row::new();
-        let n = $s.get_n_columns();
-        for index in 0..n {
-            row.push($s.get_value($i, index))
-        }
-        row
-    }};
-}
-
-// NB: when done with the returned row it's items need to be unset?
-#[macro_export]
-macro_rules! get_row_values_from_at {
-    ( $s:expr, $p:expr ) => {{
-        match $s.iter_nth_child(None, $p) {
-            Some(iter) => Some(get_row_values_from!($s, &iter)),
-            None => None,
-        }
-    }};
-}
+pub use super::tree_model::{self, TreeModelRowOps};
+pub use super::value::Row;
 
 // NB: when done with the returned rows their items need to be unset?
 #[macro_export]
-macro_rules! get_rows_values_from {
+macro_rules! get_rows_values_from_list {
     ( $s:expr ) => {{
         let mut rows: Vec<Row> = Vec::new();
         if let Some(iter) = $s.get_iter_first() {
@@ -76,7 +36,7 @@ macro_rules! get_rows_values_from {
 }
 
 #[macro_export]
-macro_rules! set_row_values {
+macro_rules! set_list_row_values {
     ( $s:expr, $i:expr, $r:expr ) => {{
         assert_eq!($s.get_n_columns(), $r.len() as i32);
         for (index, item) in $r.iter().enumerate() {
@@ -86,169 +46,79 @@ macro_rules! set_row_values {
 }
 
 #[macro_export]
-macro_rules! append_row_to {
+macro_rules! append_row_to_list {
     ( $r:expr, $s:expr ) => {{
         let iter = $s.append();
-        set_row_values!($s, &iter, $r);
+        set_list_row_values!($s, &iter, $r);
         iter
     }};
 }
 
 #[macro_export]
-macro_rules! insert_row_in_at {
+macro_rules! insert_row_in_list_at {
     ( $r:expr, $s:expr, $p:expr ) => {{
         let iter = $s.insert($p);
-        set_row_values!($s, &iter, $r);
+        set_list_row_values!($s, &iter, $r);
         iter
     }};
 }
 
 #[macro_export]
-macro_rules! insert_row_in_after {
+macro_rules! insert_row_in_list_after {
     ( $r:expr, $s:expr, $i:expr ) => {{
         let iter = $s.insert_after($i);
-        set_row_values!($s, &iter, $r);
+        set_list_row_values!($s, &iter, $r);
         iter
     }};
 }
 
 #[macro_export]
-macro_rules! insert_row_in_before {
+macro_rules! insert_row_in_list_before {
     ( $r:expr, $s:expr, $i:expr ) => {{
         let iter = $s.insert_before($i);
-        set_row_values!($s, &iter, $r);
+        set_list_row_values!($s, &iter, $r);
         iter
     }};
 }
 
 #[macro_export]
-macro_rules! prepend_row_to {
+macro_rules! prepend_row_to_list {
     ( $r:expr, $s:expr ) => {{
         let iter = $s.prepend();
-        set_row_values!($s, &iter, $r);
+        set_list_row_values!($s, &iter, $r);
         iter
     }};
 }
 
-#[macro_export]
-macro_rules! matches_list_row {
-    ( $r:expr, $s:expr, $i:expr ) => {{
-        assert_eq!($s.get_n_columns(), $r.len() as i32);
-        let mut result = true;
-        for (index, item) in $r.iter().enumerate() {
-            let value = $s.get_value($i, index as i32);
-            if !are_eq_values!(item, value) {
-                result = false;
-                break;
-            }
-        }
-        result
-    }};
-}
-
-#[macro_export]
-macro_rules! len_of {
-    ( $s:expr ) => {{
-        $s.iter_n_children(None)
-    }};
-}
-
-pub trait SimpleRowOps {
-    fn len(&self) -> i32;
-    fn append_row(&self, row: &Row) -> gtk::TreeIter;
-    fn find_row_where<F>(&self, this_is_the_row: F) -> Option<(i32, gtk::TreeIter)>
-    where
-        F: Fn(&gtk::ListStore, &gtk::TreeIter) -> bool;
-    fn get_row_values(&self, iter: &gtk::TreeIter) -> Row;
-    fn get_row_values_at(&self, position: i32) -> Option<Row>;
-    fn get_rows_values(&self) -> Vec<Row>;
-    fn insert_row(&self, position: i32, row: &Row) -> gtk::TreeIter;
-    fn insert_row_after(&self, iter: &gtk::TreeIter, row: &Row) -> gtk::TreeIter;
-    fn insert_row_before(&self, iter: &gtk::TreeIter, row: &Row) -> gtk::TreeIter;
-    fn prepend_row(&self, row: &Row) -> gtk::TreeIter;
-    fn repopulate_with(&self, rows: &Vec<Row>);
-    fn update_with(&self, rows: &Vec<Row>);
-
-    fn find_row(&self, row: &Row) -> Option<(i32, gtk::TreeIter)> {
-        self.find_row_where(|list_store, iter| matches_list_row!(row, list_store, iter))
-    }
-
-    fn find_row_index(&self, row: &Row) -> Option<i32> {
-        match self.find_row(row) {
-            Some((index, _)) => Some(index),
-            None => None,
-        }
-    }
-
-    fn find_row_iter(&self, row: &Row) -> Option<gtk::TreeIter> {
-        match self.find_row(row) {
-            Some((_, iter)) => Some(iter),
-            None => None,
-        }
-    }
-}
-
-// Traits
-impl SimpleRowOps for gtk::ListStore {
-    fn len(&self) -> i32 {
-        len_of!(&self)
-    }
-
+pub trait SimpleRowOps: TreeModelRowOps + gtk::ListStoreExt + gtk::prelude::ListStoreExtManual {
     fn append_row(&self, row: &Row) -> gtk::TreeIter {
-        append_row_to!(row, self)
-    }
-
-    fn find_row_where<F>(&self, this_is_the_row: F) -> Option<(i32, gtk::TreeIter)>
-    where
-        F: Fn(&gtk::ListStore, &gtk::TreeIter) -> bool,
-    {
-        let mut index: i32 = 0;
-        if let Some(iter) = self.get_iter_first() {
-            loop {
-                if this_is_the_row(self, &iter) {
-                    return Some((index, iter));
-                };
-                index += 1;
-                if !self.iter_next(&iter) {
-                    break;
-                }
-            }
-        };
-        None
-    }
-
-    fn get_row_values(&self, iter: &gtk::TreeIter) -> Row {
-        get_row_values_from!(self, iter)
-    }
-
-    fn get_row_values_at(&self, position: i32) -> Option<Row> {
-        get_row_values_from_at!(self, position)
+        append_row_to_list!(row, self)
     }
 
     fn get_rows_values(&self) -> Vec<Row> {
-        get_rows_values_from!(self)
+        get_rows_values_from_list!(self)
     }
 
     fn insert_row(&self, position: i32, row: &Row) -> gtk::TreeIter {
-        insert_row_in_at!(row, self, position)
+        insert_row_in_list_at!(row, self, position)
     }
 
     fn insert_row_after(&self, iter: &gtk::TreeIter, row: &Row) -> gtk::TreeIter {
-        insert_row_in_after!(row, self, iter)
+        insert_row_in_list_after!(row, self, iter)
     }
 
     fn insert_row_before(&self, iter: &gtk::TreeIter, row: &Row) -> gtk::TreeIter {
-        insert_row_in_before!(row, self, iter)
+        insert_row_in_list_before!(row, self, iter)
     }
 
     fn prepend_row(&self, row: &Row) -> gtk::TreeIter {
-        prepend_row_to!(row, self)
+        prepend_row_to_list!(row, self)
     }
 
     fn repopulate_with(&self, rows: &Vec<Row>) {
         self.clear();
         for row in rows.iter() {
-            append_row_to!(row, self);
+            append_row_to_list!(row, self);
         }
     }
 
@@ -281,6 +151,8 @@ impl SimpleRowOps for gtk::ListStore {
         }
     }
 }
+
+impl SimpleRowOps for gtk::ListStore {}
 
 pub type Digest = Vec<u8>;
 

@@ -16,24 +16,61 @@ use std::path::Path;
 
 use gtk::{self, TreeModelExt};
 
-use super::list_store;
+pub use super::tree_model::{self, TreeModelRowOps};
+pub use super::value::Row;
 
-pub struct FileTreeModel {
-    tree_store: gtk::TreeStore,
+pub trait FileDbIfce {
+    fn dir_contents(&self, dir_path: &Path, show_hidden: bool, hide_clean: bool) -> (Vec<Row>, Vec<Row>);
+
+    fn is_current(&self) -> bool {
+        true
+    }
+
+    fn reset(self) -> Self;
 }
 
-impl FileTreeModel {
-    fn update_dir(&self, dir_path: &Path, parent_iter: Option<&gtk::TreeIter>) {
+// TODO: replace this dumm FSO with proper one
+pub trait FsObjectIfce {
+    fn name(&self) -> String {
+        "name".to_string()
+    }
+
+    fn is_dir(&self) -> bool {
+        true
+    }
+}
+
+impl FsObjectIfce for Row {}
+
+pub struct FileTreeModel<FDB>
+    where
+        FDB: FileDbIfce,
+{
+    tree_store: gtk::TreeStore,
+    file_db: FDB,
+    show_hidden: bool,
+    hide_clean: bool,
+}
+
+impl<FDB> FileTreeModel<FDB>
+    where
+        FDB: FileDbIfce,
+{
+    fn get_dir_contents(&self, dir_path: &Path) -> (Vec<Row>, Vec<Row>) {
+        self.file_db.dir_contents(dir_path, self.show_hidden, self.hide_clean)
+    }
+
+    pub fn update_dir(&self, dir_path: &Path, parent_iter: Option<&gtk::TreeIter>) {
         // TODO: make sure we cater for case where dir becomes file and vice versa in a single update
-        let mut changed = false;
-        let mut place_holder_iter: Option<gtk::TreeIter> = None;
-        let child_iter = if let Some(parent_iter) = parent_iter {
+        let mut _changed = false;
+        let mut _place_holder_iter: Option<gtk::TreeIter> = None;
+        let mut _child_iter: Option<gtk::TreeIter> = if let Some(parent_iter) = parent_iter {
             if let Some(child_iter) = self.tree_store.iter_children(parent_iter) {
                 if self.tree_store.get_value(&child_iter, 0).is::<String>() {
                     //TODO: fix this condition
                     Some(child_iter)
                 } else {
-                    place_holder_iter = Some(child_iter.clone());
+                    _place_holder_iter = Some(child_iter.clone());
                     if self.tree_store.iter_next(&child_iter) {
                         Some(child_iter)
                     } else {
@@ -46,6 +83,15 @@ impl FileTreeModel {
         } else {
             self.tree_store.get_iter_first()
         };
+        let mut _dead_entries: Vec<gtk::TreeIter> = vec![];
+        let (dirs, _files) = self.get_dir_contents(dir_path);
+        for _dir_data in dirs.iter() {
+            loop {
+            //while (child_iter is not None) and self.get_value(child_iter, 0).is_dir and (self.get_value(child_iter, 0).name < dirdata.name):
+            //    dead_entries.append(child_iter)
+            //    child_iter = self.iter_next(child_iter)
+            }
+        }
     }
 }
 

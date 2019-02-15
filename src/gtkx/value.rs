@@ -42,6 +42,8 @@ macro_rules! are_eq_values {
     }};
 }
 
+pub type Row = Vec<gtk::Value>;
+
 #[cfg(test)]
 mod tests {
     //use super::*;
