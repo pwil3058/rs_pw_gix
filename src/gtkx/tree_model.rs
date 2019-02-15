@@ -147,7 +147,7 @@ mod tests {
             };
         }
 
-        use gtkx::list_store::SimpleRowOps;
+        use gtkx::list_store::ListRowOps;
 
         let test_list_store =
             gtk::ListStore::new(&[gtk::Type::String, gtk::Type::String, gtk::Type::String]);

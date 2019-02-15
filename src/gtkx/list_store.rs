@@ -90,7 +90,9 @@ macro_rules! prepend_row_to_list {
     }};
 }
 
-pub trait SimpleRowOps: TreeModelRowOps + gtk::ListStoreExt + gtk::prelude::ListStoreExtManual {
+pub trait ListRowOps:
+    TreeModelRowOps + gtk::ListStoreExt + gtk::prelude::ListStoreExtManual
+{
     fn append_row(&self, row: &Row) -> gtk::TreeIter {
         append_row_to_list!(row, self)
     }
@@ -152,7 +154,7 @@ pub trait SimpleRowOps: TreeModelRowOps + gtk::ListStoreExt + gtk::prelude::List
     }
 }
 
-impl SimpleRowOps for gtk::ListStore {}
+impl ListRowOps for gtk::ListStore {}
 
 pub type Digest = Vec<u8>;
 
@@ -229,7 +231,7 @@ pub trait RowBuffer<RawData: Default> {
     }
 }
 
-pub trait BufferedUpdate<RawData: Default, L: SimpleRowOps> {
+pub trait BufferedUpdate<RawData: Default, L: ListRowOps> {
     fn get_list_store(&self) -> L;
     fn get_row_buffer(&self) -> Rc<RefCell<RowBuffer<RawData>>>;
 
@@ -342,7 +344,7 @@ mod tests {
             };
         }
 
-        use gtkx::list_store::SimpleRowOps;
+        use gtkx::list_store::ListRowOps;
 
         let test_list_store =
             gtk::ListStore::new(&[gtk::Type::String, gtk::Type::String, gtk::Type::String]);

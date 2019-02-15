@@ -19,8 +19,111 @@ use gtk::{self, TreeModelExt};
 pub use super::tree_model::{self, TreeModelRowOps};
 pub use super::value::Row;
 
+#[macro_export]
+macro_rules! set_tree_row_values {
+    ( $s:expr, $i:expr, $r:expr ) => {{
+        assert_eq!($s.get_n_columns(), $r.len() as i32);
+        for (index, item) in $r.iter().enumerate() {
+            $s.set_value($i, index as u32, &item);
+        }
+    }};
+}
+
+#[macro_export]
+macro_rules! append_row_to_tree {
+    ( $r:expr, $s:expr, $i:expr ) => {{
+        let iter = $s.append($i);
+        set_tree_row_values!($s, &iter, $r);
+        iter
+    }};
+}
+
+#[macro_export]
+macro_rules! insert_row_in_tree_at {
+    ( $r:expr, $s:expr, $p:expr, $i:expr ) => {{
+        let iter = $s.insert($p, $i);
+        set_list_row_values!($s, &iter, $r);
+        iter
+    }};
+}
+
+#[macro_export]
+macro_rules! insert_row_in_tree_after {
+    ( $r:expr, $s:expr, $p:expr, $q:expr ) => {{
+        let iter = $s.insert_after($p, $q);
+        set_list_row_values!($s, &iter, $r);
+        iter
+    }};
+}
+
+#[macro_export]
+macro_rules! insert_row_in_tree_before {
+    ( $r:expr, $s:expr, $p:expr, $q:expr ) => {{
+        let iter = $s.insert_before($p, $q);
+        set_list_row_values!($s, &iter, $r);
+        iter
+    }};
+}
+
+#[macro_export]
+macro_rules! prepend_row_to_tree {
+    ( $r:expr, $s:expr, $i:expr ) => {{
+        let iter = $s.prepend($i);
+        set_tree_row_values!($s, &iter, $r);
+        iter
+    }};
+}
+
+pub trait TreeRowOps:
+    TreeModelRowOps + gtk::TreeStoreExt + gtk::prelude::TreeStoreExtManual
+{
+    fn append_row<'a, P>(&self, row: &Row, parent: P) -> gtk::TreeIter
+    where
+        P: Into<Option<&'a gtk::TreeIter>>,
+    {
+        append_row_to_tree!(row, self, parent)
+    }
+
+    fn insert_row<'a, P>(&self, row: &Row, parent: P, position: i32) -> gtk::TreeIter
+    where
+        P: Into<Option<&'a gtk::TreeIter>>,
+    {
+        insert_row_in_tree_at!(row, self, parent, position)
+    }
+
+    fn insert_row_after<'a, 'b, P, Q>(&self, row: &Row, parent: P, sibling: Q) -> gtk::TreeIter
+    where
+        P: Into<Option<&'a gtk::TreeIter>>,
+        Q: Into<Option<&'b gtk::TreeIter>>,
+    {
+        insert_row_in_tree_after!(row, self, parent, sibling)
+    }
+
+    fn insert_row_before<'a, 'b, P, Q>(&self, row: &Row, parent: P, sibling: Q) -> gtk::TreeIter
+    where
+        P: Into<Option<&'a gtk::TreeIter>>,
+        Q: Into<Option<&'b gtk::TreeIter>>,
+    {
+        insert_row_in_tree_before!(row, self, parent, sibling)
+    }
+
+    fn prepend_row<'a, P>(&self, row: &Row, parent: P) -> gtk::TreeIter
+    where
+        P: Into<Option<&'a gtk::TreeIter>>,
+    {
+        prepend_row_to_tree!(row, self, parent)
+    }
+}
+
+impl TreeRowOps for gtk::TreeStore {}
+
 pub trait FileDbIfce {
-    fn dir_contents(&self, dir_path: &Path, show_hidden: bool, hide_clean: bool) -> (Vec<Row>, Vec<Row>);
+    fn dir_contents(
+        &self,
+        dir_path: &Path,
+        show_hidden: bool,
+        hide_clean: bool,
+    ) -> (Vec<Row>, Vec<Row>);
 
     fn is_current(&self) -> bool {
         true
@@ -43,8 +146,8 @@ pub trait FsObjectIfce {
 impl FsObjectIfce for Row {}
 
 pub struct FileTreeModel<FDB>
-    where
-        FDB: FileDbIfce,
+where
+    FDB: FileDbIfce,
 {
     tree_store: gtk::TreeStore,
     file_db: FDB,
@@ -53,11 +156,12 @@ pub struct FileTreeModel<FDB>
 }
 
 impl<FDB> FileTreeModel<FDB>
-    where
-        FDB: FileDbIfce,
+where
+    FDB: FileDbIfce,
 {
     fn get_dir_contents(&self, dir_path: &Path) -> (Vec<Row>, Vec<Row>) {
-        self.file_db.dir_contents(dir_path, self.show_hidden, self.hide_clean)
+        self.file_db
+            .dir_contents(dir_path, self.show_hidden, self.hide_clean)
     }
 
     pub fn update_dir(&self, dir_path: &Path, parent_iter: Option<&gtk::TreeIter>) {
@@ -87,9 +191,9 @@ impl<FDB> FileTreeModel<FDB>
         let (dirs, _files) = self.get_dir_contents(dir_path);
         for _dir_data in dirs.iter() {
             loop {
-            //while (child_iter is not None) and self.get_value(child_iter, 0).is_dir and (self.get_value(child_iter, 0).name < dirdata.name):
-            //    dead_entries.append(child_iter)
-            //    child_iter = self.iter_next(child_iter)
+                //while (child_iter is not None) and self.get_value(child_iter, 0).is_dir and (self.get_value(child_iter, 0).name < dirdata.name):
+                //    dead_entries.append(child_iter)
+                //    child_iter = self.iter_next(child_iter)
             }
         }
     }
