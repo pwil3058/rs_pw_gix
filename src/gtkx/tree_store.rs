@@ -305,7 +305,7 @@ where
         for dir_data in dirs.iter() {
             o_child_iter = self.remove_dead_rows(
                 o_child_iter,
-                |r| !FOI::row_is_a_dir(r) || FOI::get_name_from_row(r) < dir_data.name(),
+                |r| !FOI::row_is_a_dir(r) || FOI::get_name_from_row(r) >= dir_data.name(),
                 &mut changed,
             );
             if let Some(child_iter) = o_child_iter {
@@ -355,7 +355,7 @@ where
         for file_data in files {
             o_child_iter = self.remove_dead_rows(
                 o_child_iter,
-                |r| FOI::get_name_from_row(r) < file_data.name(),
+                |r| FOI::get_name_from_row(r) >= file_data.name(),
                 &mut changed,
             );
             if let Some(child_iter) = o_child_iter {
