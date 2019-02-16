@@ -129,6 +129,14 @@ pub trait TreeModelRowOps: TreeModelExt {
             None => None,
         }
     }
+
+    fn get_iter_next<'a>(&self, iter: &'a gtk::TreeIter) -> Option<&'a gtk::TreeIter> {
+        if self.iter_next(&iter) {
+            Some(iter)
+        } else {
+            None
+        }
+    }
 }
 
 impl TreeModelRowOps for gtk::ListStore {}
