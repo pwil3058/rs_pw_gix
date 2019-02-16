@@ -197,18 +197,18 @@ where
         self.tree_store.append(dir_iter);
     }
 
-    fn _recursive_remove(self, iter: &gtk::TreeIter) -> bool {
-        //        if let Some(ref child_iter) = self.tree_store.iter_children(iter) {
-        //            while self.recursive_remove(child_iter) {}
-        //        }
-        return self.tree_store.remove(iter);
+    fn recursive_remove(&self, iter: &gtk::TreeIter) -> bool {
+        if let Some(child_iter) = self.tree_store.iter_children(iter) {
+            while self.recursive_remove(&child_iter) {}
+        }
+        self.tree_store.remove(iter)
     }
 
-    fn depopulate(&self, _iter: &gtk::TreeIter) {
-        //        if let Some(ref child_iter) = self.tree_store.iter_children(iter) {
-        //            while self.recursive_remove(child_iter) {}
-        //        }
-        //        self.insert_place_holder(iter)
+    fn depopulate(&self, iter: &gtk::TreeIter) {
+        if let Some(ref child_iter) = self.tree_store.iter_children(iter) {
+            while self.recursive_remove(child_iter) {}
+        }
+        self.insert_place_holder(iter)
     }
 
     pub fn update_dir(&self, dir_path: &Path, parent_iter: Option<&gtk::TreeIter>) -> bool {
