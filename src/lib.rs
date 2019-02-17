@@ -54,6 +54,17 @@ pub mod rgb_math;
 pub mod sample;
 pub mod sav_state;
 
+#[macro_export]
+macro_rules! init_gtk_if_needed {
+    () => {{
+        if !gtk::is_initialized() {
+            if let Err(err) = gtk::init() {
+                panic!("File: {:?} Line: {:?}: {:?}", file!(), line!(), err)
+            };
+        }
+    }};
+}
+
 mod recollect {
     use std::collections::HashMap;
     use std::fs;
@@ -185,6 +196,7 @@ pub mod recollections {
     ///
     /// ```no_run
     /// fn main() {
+    ///     use std::env;
     ///     use pw_gix::recollections;
     ///
     ///     let home_dir = env::home_dir().expect("badly designed OS");

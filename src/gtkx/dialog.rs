@@ -478,11 +478,3 @@ impl RememberDialogSize for gtk::FileChooserDialog {}
 impl RememberDialogSize for gtk::FontChooserDialog {}
 impl RememberDialogSize for gtk::MessageDialog {}
 impl RememberDialogSize for gtk::RecentChooserDialog {}
-
-#[cfg(test)]
-mod tests {
-    //use super::*;
-
-    #[test]
-    fn it_works() {}
-}

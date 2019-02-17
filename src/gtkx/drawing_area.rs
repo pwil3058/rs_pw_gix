@@ -170,11 +170,3 @@ impl XYSelectionInterface for XYSelection {
         xys
     }
 }
-
-#[cfg(test)]
-mod tests {
-    //use super::*;
-
-    #[test]
-    fn it_works() {}
-}

@@ -368,11 +368,3 @@ pub fn print_text<P: IsA<gtk::Window>>(text: &str, parent: Option<&P>) -> PrintR
     let text_printer = TextPrinter::create(text);
     do_print_operation(&text_printer.print_operation, parent)
 }
-
-#[cfg(test)]
-mod tests {
-    //use super::*;
-
-    #[test]
-    fn it_works() {}
-}

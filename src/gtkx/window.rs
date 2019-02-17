@@ -73,11 +73,3 @@ pub trait DerivedTransientFor: gtk::GtkWindowExt {
 
 impl DerivedTransientFor for gtk::ApplicationWindow {}
 impl DerivedTransientFor for gtk::Window {}
-
-#[cfg(test)]
-mod tests {
-    //use super::*;
-
-    #[test]
-    fn it_works() {}
-}

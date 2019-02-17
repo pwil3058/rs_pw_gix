@@ -46,11 +46,3 @@ pub trait RememberPosition: gtk::WidgetExt + gtk::PanedExt {
 }
 
 impl RememberPosition for gtk::Paned {}
-
-#[cfg(test)]
-mod tests {
-    //use super::*;
-
-    #[test]
-    fn it_works() {}
-}

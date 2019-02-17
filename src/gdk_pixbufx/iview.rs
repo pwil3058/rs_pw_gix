@@ -578,11 +578,3 @@ impl PixbufViewInterface for PixbufView {
         pbv
     }
 }
-
-#[cfg(test)]
-mod tests {
-    //use super::*;
-
-    #[test]
-    fn it_works() {}
-}

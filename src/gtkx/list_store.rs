@@ -259,6 +259,7 @@ pub trait BufferedUpdate<RawData: Default, L: ListRowOps> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::*;
     use std::cell::RefCell;
 
     use gtk::prelude::*;
@@ -340,11 +341,7 @@ mod tests {
 
     #[test]
     fn list_store_simple_row_ops() {
-        if !gtk::is_initialized() {
-            if let Err(err) = gtk::init() {
-                panic!("File: {:?} Line: {:?}: {:?}", file!(), line!(), err)
-            };
-        }
+        init_gtk_if_needed!();
 
         use gtkx::list_store::ListRowOps;
 

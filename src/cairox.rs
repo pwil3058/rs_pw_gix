@@ -163,11 +163,3 @@ impl Draw for cairo::Context {
         self.set_source_pixbuf(pixbuf, position.0, position.1);
     }
 }
-
-#[cfg(test)]
-mod tests {
-    //use super::*;
-
-    #[test]
-    fn it_works() {}
-}

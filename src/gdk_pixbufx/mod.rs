@@ -19,11 +19,3 @@ pub const PIXOPS_INTERP_NEAREST: i32 = 0;
 pub const PIXOPS_INTERP_TILES: i32 = 1;
 pub const PIXOPS_INTERP_BILINEAR: i32 = 2;
 pub const PIXOPS_INTERP_HYPER: i32 = 3;
-
-#[cfg(test)]
-mod tests {
-    //use super::*;
-
-    #[test]
-    fn it_works() {}
-}

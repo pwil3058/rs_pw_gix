@@ -52,11 +52,3 @@ pub fn parse_geometry_position(text: &str) -> Result<(i32, i32), ParseIntError> 
     let y = v[1].parse::<i32>()?;
     Ok((x, y))
 }
-
-#[cfg(test)]
-mod tests {
-    //use super::*;
-
-    #[test]
-    fn it_works() {}
-}

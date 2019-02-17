@@ -111,14 +111,12 @@ impl SortedUnique for gtk::ComboBoxText {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::*;
 
     #[test]
     fn combo_box_text_sorted_unique() {
-        if !gtk::is_initialized() {
-            if let Err(err) = gtk::init() {
-                panic!("File: {:?} Line: {:?}: {:?}", file!(), line!(), err)
-            };
-        }
+        init_gtk_if_needed!();
+
         let cbt = gtk::ComboBoxText::new();
         assert!(!cbt.remove_text_item("one"));
         assert_eq!(cbt.insert_text_item("one"), -1);

@@ -397,11 +397,3 @@ impl<T: Num + PartialOrd + Copy> Rectangle<T> {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    //use super::*;
-
-    #[test]
-    fn it_works() {}
-}

@@ -817,14 +817,11 @@ impl ColourAttributeDisplayStackInterface for HueGreynessValueCADS {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::*;
 
     #[test]
     fn colour_attributes() {
-        if !gtk::is_initialized() {
-            if let Err(err) = gtk::init() {
-                panic!("File: {:?} Line: {:?}: {:?}", file!(), line!(), err)
-            };
-        }
+        init_gtk_if_needed!();
 
         let vcad = ValueCAD::create();
 

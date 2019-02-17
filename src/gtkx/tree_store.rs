@@ -120,8 +120,8 @@ pub trait TreeRowOps:
 impl TreeRowOps for gtk::TreeStore {}
 
 // File Tree Store
-use std::marker::PhantomData;
 use crate::fs_db::{FsDbIfce, FsObjectIfce};
+use std::marker::PhantomData;
 
 pub struct FileTreeStore<FDB, DOI, FOI>
 where
@@ -386,13 +386,5 @@ where
             self.file_db = FDB::new();
         };
         self.update_dir("", None)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
     }
 }

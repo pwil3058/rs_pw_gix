@@ -477,11 +477,3 @@ pub mod area_selection {
         sad.finish()
     }
 }
-
-#[cfg(test)]
-mod tests {
-    //use super::*;
-
-    #[test]
-    fn it_works() {}
-}

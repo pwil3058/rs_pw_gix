@@ -31,9 +31,3 @@ pub mod notebook;
 pub mod paned;
 pub mod tree_view_column;
 pub mod window;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {}
-}

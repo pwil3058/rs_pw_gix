@@ -356,14 +356,11 @@ impl PathCompletion for gtk::Entry {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::*;
 
     #[test]
     fn gtkx_entry_rgb_entry_box() {
-        if !gtk::is_initialized() {
-            if let Err(err) = gtk::init() {
-                panic!("File: {:?} Line: {:?}: {:?}", file!(), line!(), err)
-            };
-        }
+        init_gtk_if_needed!();
 
         let rgb_entry_box = RGBHexEntryBox::create();
         let rgb = rgb_entry_box.get_rgb();

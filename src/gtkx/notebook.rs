@@ -72,11 +72,3 @@ impl TabRemoveLabelInterface for TabRemoveLabel {
         trl
     }
 }
-
-#[cfg(test)]
-mod tests {
-    //use super::*;
-
-    #[test]
-    fn it_works() {}
-}

@@ -69,11 +69,3 @@ impl Colourable for gtk::ToggleButton {}
 impl Colourable for gtk::ToolButton {}
 impl Colourable for gtk::Toolbar {}
 impl Colourable for gtk::Widget {}
-
-#[cfg(test)]
-mod tests {
-    //use super::*;
-
-    #[test]
-    fn it_works() {}
-}

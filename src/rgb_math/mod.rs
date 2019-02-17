@@ -20,9 +20,3 @@ pub mod rgb_manipulator;
 pub mod angle;
 #[macro_use]
 pub mod hue;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {}
-}
