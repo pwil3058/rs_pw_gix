@@ -121,39 +121,7 @@ impl TreeRowOps for gtk::TreeStore {}
 
 // File Tree Store
 use std::marker::PhantomData;
-
-pub trait FsObjectIfce {
-    fn row_is_a_dir(row: &Row) -> bool;
-    fn get_name_from_row(row: &Row) -> &str;
-    fn get_path_from_row(row: &Row) -> &str;
-
-    fn row_is_the_same(&self, row: &Row) -> bool;
-    fn name(&self) -> &str;
-    fn path(&self) -> &str;
-    fn is_dir(&self) -> bool;
-    fn row(&self) -> &Row;
-}
-
-pub trait FsDbIfce<DOI, FOI>
-where
-    DOI: FsObjectIfce,
-    FOI: FsObjectIfce,
-{
-    fn new() -> Self;
-
-    fn dir_contents(
-        &self,
-        dir_path: &str,
-        show_hidden: bool,
-        hide_clean: bool,
-    ) -> (Vec<DOI>, Vec<FOI>);
-
-    fn is_current(&self) -> bool {
-        true
-    }
-
-    fn reset(&mut self);
-}
+use crate::fs_db::{FsDbIfce, FsObjectIfce};
 
 pub struct FileTreeStore<FDB, DOI, FOI>
 where
