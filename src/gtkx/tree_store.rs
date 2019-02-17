@@ -12,8 +12,6 @@
 //See the License for the specific language governing permissions and
 //limitations under the License.
 
-use std::path::Path;
-
 use gtk::{self, TreeModelExt, TreeStoreExt, TreeViewExt};
 
 pub use super::tree_model::{self, TreeModelRowOps};
@@ -127,11 +125,11 @@ use std::marker::PhantomData;
 pub trait FsObjectIfce {
     fn row_is_a_dir(row: &Row) -> bool;
     fn get_name_from_row(row: &Row) -> &str;
-    fn get_path_from_row(row: &Row) -> &Path;
+    fn get_path_from_row(row: &Row) -> &str;
 
     fn row_is_the_same(&self, row: &Row) -> bool;
     fn name(&self) -> &str;
-    fn path(&self) -> &Path;
+    fn path(&self) -> &str;
     fn is_dir(&self) -> bool;
     fn row(&self) -> &Row;
 }
@@ -145,7 +143,7 @@ where
 
     fn dir_contents(
         &self,
-        dir_path: &Path,
+        dir_path: &str,
         show_hidden: bool,
         hide_clean: bool,
     ) -> (Vec<DOI>, Vec<FOI>);
@@ -178,7 +176,7 @@ where
     DOI: FsObjectIfce,
     FOI: FsObjectIfce,
 {
-    fn get_dir_contents(&self, dir_path: &Path) -> (Vec<DOI>, Vec<FOI>) {
+    fn get_dir_contents(&self, dir_path: &str) -> (Vec<DOI>, Vec<FOI>) {
         self.file_db
             .dir_contents(dir_path, self.show_hidden, self.hide_clean)
     }
@@ -249,7 +247,7 @@ where
         o_iter
     }
 
-    fn populate_dir(&self, dir_path: &Path, o_parent_iter: Option<&gtk::TreeIter>) {
+    fn populate_dir(&self, dir_path: &str, o_parent_iter: Option<&gtk::TreeIter>) {
         let (dirs, files) = self.get_dir_contents(dir_path);
         for dir_data in dirs.iter() {
             let dir_iter = self.tree_store.append_row(&dir_data.row(), o_parent_iter);
@@ -274,13 +272,13 @@ where
         self.file_db = FDB::new();
         self.tree_store.clear();
         if let Some(iter) = self.tree_store.get_iter_first() {
-            self.populate_dir(&Path::new(""), Some(&iter))
+            self.populate_dir("", Some(&iter))
         } else {
-            self.populate_dir(&Path::new(""), None)
+            self.populate_dir("", None)
         }
     }
 
-    fn update_dir(&self, dir_path: &Path, o_parent_iter: Option<&gtk::TreeIter>) -> bool {
+    fn update_dir(&self, dir_path: &str, o_parent_iter: Option<&gtk::TreeIter>) -> bool {
         // TODO: make sure we cater for case where dir becomes file and vice versa in a single update
         let mut changed = false;
         let mut o_place_holder_iter: Option<gtk::TreeIter> = None;
@@ -403,7 +401,7 @@ where
         } else {
             self.file_db = FDB::new();
         };
-        self.update_dir(&Path::new(""), None)
+        self.update_dir("", None)
     }
 }
 
