@@ -261,6 +261,8 @@ mod tests {
     use super::*;
     use std::cell::RefCell;
 
+    use gtk::prelude::*;
+
     #[test]
     fn list_store_row_buffer() {
         struct TestBuffer {

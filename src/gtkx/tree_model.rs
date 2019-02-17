@@ -145,7 +145,6 @@ impl TreeModelRowOps for gtk::TreeStore {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
 
     #[test]
     fn list_store_simple_row_ops() {
