@@ -134,7 +134,7 @@ where
     show_hidden: bool,
     hide_clean: bool,
     auto_expand: bool,
-    view: Option<gtk::TreeView>,
+    o_view: Option<gtk::TreeView>,
     phantom: PhantomData<(DOI, FOI)>,
 }
 
@@ -144,13 +144,29 @@ where
     DOI: FsObjectIfce,
     FOI: FsObjectIfce,
 {
+    pub fn new(o_view: Option<gtk::TreeView>, auto_expand: bool) -> Self {
+        let fspec: Vec<gtk::Type> = FOI::tree_store_spec();
+        let dspec: Vec<gtk::Type> = DOI::tree_store_spec();
+        assert_eq!(fspec, dspec);
+
+        FileTreeStore::<FDB, DOI, FOI> {
+            tree_store: gtk::TreeStore::new(&fspec),
+            file_db: FDB::new(),
+            show_hidden: false,
+            hide_clean: false,
+            auto_expand: auto_expand,
+            o_view: o_view,
+            phantom: PhantomData,
+        }
+    }
+
     fn get_dir_contents(&self, dir_path: &str) -> (Vec<DOI>, Vec<FOI>) {
         self.file_db
             .dir_contents(dir_path, self.show_hidden, self.hide_clean)
     }
 
     fn view_expand_row(&self, dir_iter: &gtk::TreeIter) {
-        if let Some(ref view) = self.view {
+        if let Some(ref view) = self.o_view {
             if let Some(ref path) = self.tree_store.get_path(&dir_iter) {
                 view.expand_row(path, true);
             }
@@ -158,7 +174,7 @@ where
     }
 
     fn view_row_expanded(&self, iter: &gtk::TreeIter) -> bool {
-        if let Some(ref view) = self.view {
+        if let Some(ref view) = self.o_view {
             if let Some(ref path) = self.tree_store.get_path(&iter) {
                 return view.row_expanded(path);
             }

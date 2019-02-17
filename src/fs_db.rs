@@ -17,6 +17,7 @@
 pub use crate::gtkx::value::Row;
 
 pub trait FsObjectIfce {
+    fn tree_store_spec() -> Vec<gtk::Type>;
     fn row_is_a_dir(row: &Row) -> bool;
     fn get_name_from_row(row: &Row) -> &str;
     fn get_path_from_row(row: &Row) -> &str;
