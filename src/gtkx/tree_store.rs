@@ -136,8 +136,9 @@ pub trait FsObjectIfce {
     fn row(&self) -> &Row;
 }
 
-pub trait FileDbIfce<FOI>
+pub trait FsDbIfce<DOI, FOI>
 where
+    DOI: FsObjectIfce,
     FOI: FsObjectIfce,
 {
     fn new() -> Self;
@@ -147,7 +148,7 @@ where
         dir_path: &Path,
         show_hidden: bool,
         hide_clean: bool,
-    ) -> (Vec<FOI>, Vec<FOI>);
+    ) -> (Vec<DOI>, Vec<FOI>);
 
     fn is_current(&self) -> bool {
         true
@@ -156,9 +157,10 @@ where
     fn reset(&mut self);
 }
 
-pub struct FileTreeStore<FDB, FOI>
+pub struct FileTreeStore<FDB, DOI, FOI>
 where
-    FDB: FileDbIfce<FOI>,
+    FDB: FsDbIfce<DOI, FOI>,
+    DOI: FsObjectIfce,
     FOI: FsObjectIfce,
 {
     tree_store: gtk::TreeStore,
@@ -167,15 +169,16 @@ where
     hide_clean: bool,
     auto_expand: bool,
     view: Option<gtk::TreeView>,
-    phantom: PhantomData<FOI>,
+    phantom: PhantomData<(DOI, FOI)>,
 }
 
-impl<FDB, FOI> FileTreeStore<FDB, FOI>
+impl<FDB, DOI, FOI> FileTreeStore<FDB, DOI, FOI>
 where
-    FDB: FileDbIfce<FOI>,
+    FDB: FsDbIfce<DOI, FOI>,
+    DOI: FsObjectIfce,
     FOI: FsObjectIfce,
 {
-    fn get_dir_contents(&self, dir_path: &Path) -> (Vec<FOI>, Vec<FOI>) {
+    fn get_dir_contents(&self, dir_path: &Path) -> (Vec<DOI>, Vec<FOI>) {
         self.file_db
             .dir_contents(dir_path, self.show_hidden, self.hide_clean)
     }
