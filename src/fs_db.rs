@@ -14,6 +14,8 @@
 
 //! File system database to feed file tree stores/views
 
+use gtk::StaticType;
+
 pub use crate::gtkx::value::Row;
 
 pub trait FsObjectIfce {
@@ -48,4 +50,24 @@ where
     }
 
     fn reset(&mut self);
+}
+
+// Plain OS FS Database
+
+lazy_static! {
+    pub static ref OS_FS_DB_ROW_SPEC: [gtk::Type; 5] =
+        [
+            gtk::Type::String,          // 0 Path
+            gtk::Type::String,          // 1 Status
+            gtk::Type::String,          // 2 Related file data
+            gtk::Type::String,          // 3 icon
+            bool::static_type(),        // 4 is a directory?
+        ];
+}
+
+pub struct OsFileData {
+    path: String,
+    status: String,
+    related_file_data: String,
+    icon: String,
 }
