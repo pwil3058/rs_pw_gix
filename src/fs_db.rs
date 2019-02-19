@@ -29,6 +29,7 @@ use pw_pathux::UsableDirEntry;
 pub use crate::gtkx::value::Row;
 
 pub trait FsObjectIfce {
+    fn new(dir_entry: &UsableDirEntry) -> Self;
     fn tree_store_spec() -> Vec<gtk::Type>;
     fn row_is_a_dir(row: &Row) -> bool;
     fn get_name_from_row(row: &Row) -> &str;
@@ -81,6 +82,16 @@ where
     DOI: FsObjectIfce,
     FOI: FsObjectIfce,
 {
+    fn new(dir_entry: &UsableDirEntry) -> Self {
+        OsFsDbDir::<DOI, FOI> {
+            data: DOI::new(dir_entry),
+            dirs_data: vec![],
+            files_data: vec![],
+            hash_digest: None,
+            sub_dirs: HashMap::new(),
+        }
+    }
+
     fn current_hash_digest(&self) -> Vec<u8> {
         let mut hasher = Hasher::new(Algorithm::SHA256);
         if let Ok(dir_entries) = UsableDirEntry::get_entries(&self.data.path()) {
@@ -115,8 +126,16 @@ where
         if let Ok(dir_entries) = UsableDirEntry::get_entries(&self.data.path()) {
             for dir_entry in dir_entries {
                 let path = dir_entry.path().to_string_lossy().into_owned();
-                hasher.write_all(&path.clone().into_bytes()).unwrap();
-                let name = str_path_file_name!(&path);
+                hasher.write_all(&path.into_bytes()).unwrap();
+                if dir_entry.is_dir() {
+                    self.dirs_data.push(DOI::new(&dir_entry));
+                    self.sub_dirs.insert(
+                        dir_entry.file_name(),
+                        OsFsDbDir::<DOI, FOI>::new(&dir_entry),
+                    );
+                } else {
+                    self.files_data.push(FOI::new(&dir_entry));
+                }
             }
         }
         self.hash_digest = Some(hasher.finish());
