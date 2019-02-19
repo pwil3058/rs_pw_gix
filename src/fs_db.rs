@@ -14,7 +14,17 @@
 
 //! File system database to feed file tree stores/views
 
+use std::collections::HashMap;
+use std::error::Error;
+use std::fs;
+use std::io::{ErrorKind, Write};
+
 use gtk::StaticType;
+
+use crypto_hash::{Algorithm, Hasher};
+
+use pw_pathux::str_path::*;
+use pw_pathux::UsableDirEntry;
 
 pub use crate::gtkx::value::Row;
 
@@ -54,20 +64,79 @@ where
 
 // Plain OS FS Database
 
-lazy_static! {
-    pub static ref OS_FS_DB_ROW_SPEC: [gtk::Type; 5] =
-        [
-            gtk::Type::String,          // 0 Path
-            gtk::Type::String,          // 1 Status
-            gtk::Type::String,          // 2 Related file data
-            gtk::Type::String,          // 3 icon
-            bool::static_type(),        // 4 is a directory?
-        ];
+pub struct OsFsDbDir<DOI, FOI>
+where
+    DOI: FsObjectIfce,
+    FOI: FsObjectIfce,
+{
+    data: DOI,
+    dirs_data: Vec<DOI>,
+    files_data: Vec<FOI>,
+    hash_digest: Option<Vec<u8>>,
+    sub_dirs: HashMap<String, OsFsDbDir<DOI, FOI>>,
 }
 
-pub struct OsFileData {
-    path: String,
-    status: String,
-    related_file_data: String,
-    icon: String,
+impl<DOI, FOI> OsFsDbDir<DOI, FOI>
+where
+    DOI: FsObjectIfce,
+    FOI: FsObjectIfce,
+{
+    fn current_hash_digest(&self) -> Vec<u8> {
+        let mut hasher = Hasher::new(Algorithm::SHA256);
+        if let Ok(dir_entries) = UsableDirEntry::get_entries(&self.data.path()) {
+            for dir_entry in dir_entries {
+                let path = dir_entry.path().to_string_lossy().into_owned();
+                hasher.write_all(&path.into_bytes()).unwrap()
+            }
+        }
+        hasher.finish()
+    }
+
+    fn is_current(&self) -> bool {
+        match self.hash_digest {
+            None => return true,
+            Some(ref hash_digest) => {
+                if *hash_digest != self.current_hash_digest() {
+                    return false;
+                } else {
+                    for sub_dir in self.sub_dirs.values() {
+                        if !sub_dir.is_current() {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        true
+    }
+
+    fn populate(&mut self) {
+        let mut hasher = Hasher::new(Algorithm::SHA256);
+        if let Ok(dir_entries) = UsableDirEntry::get_entries(&self.data.path()) {
+            for dir_entry in dir_entries {
+                let path = dir_entry.path().to_string_lossy().into_owned();
+                hasher.write_all(&path.clone().into_bytes()).unwrap();
+                let name = str_path_file_name!(&path);
+            }
+        }
+        self.hash_digest = Some(hasher.finish());
+    }
 }
+
+//lazy_static! {
+//    pub static ref OS_FS_DB_ROW_SPEC: [gtk::Type; 5] =
+//        [
+//            gtk::Type::String,          // 0 Path
+//            gtk::Type::String,          // 1 Status
+//            gtk::Type::String,          // 2 Related file data
+//            gtk::Type::String,          // 3 icon
+//            bool::static_type(),        // 4 is a directory?
+//        ];
+//}
+
+//pub struct OsFileData {
+//    path: String,
+//    status: String,
+//    related_file_data: String,
+//    icon: String,
+//}

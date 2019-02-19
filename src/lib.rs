@@ -17,6 +17,7 @@
 //! mechanisms to do common operations.
 
 extern crate cairo;
+extern crate crypto_hash;
 extern crate gdk;
 extern crate gdk_pixbuf;
 extern crate gio;
@@ -37,6 +38,7 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate which;
 
+#[macro_use]
 extern crate pw_pathux;
 
 #[macro_use]
