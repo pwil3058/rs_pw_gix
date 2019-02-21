@@ -21,7 +21,7 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::rc::Rc;
 
-use gtk::StaticType;
+use gtk::{StaticType, ToValue};
 
 use crypto_hash::{Algorithm, Hasher};
 
@@ -149,6 +149,8 @@ where
                     files.push(FOI::new(&dir_entry));
                 }
             }
+            dirs.sort_unstable_by(|a, b| a.name().partial_cmp(b.name()).unwrap());
+            files.sort_unstable_by(|a, b| a.name().partial_cmp(b.name()).unwrap());
             self.dirs_data = Rc::new(dirs);
             self.files_data = Rc::new(files);
         }
@@ -306,6 +308,10 @@ impl FsObjectIfce for OsFileData {
     }
 
     fn row(&self) -> Row {
-        vec![]
+        vec![
+            self.name.to_value(),
+            self.path.to_value(),
+            self.is_dir.to_value(),
+        ]
     }
 }
