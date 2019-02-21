@@ -12,6 +12,8 @@
 //See the License for the specific language governing permissions and
 //limitations under the License.
 
+use std::rc::Rc;
+
 use gtk::{self, TreeModelExt, TreeStoreExt, TreeViewExt};
 
 pub use super::tree_model::{self, TreeModelRowOps};
@@ -160,7 +162,7 @@ where
         }
     }
 
-    fn get_dir_contents(&self, dir_path: &str) -> (Vec<DOI>, Vec<FOI>) {
+    fn get_dir_contents(&self, dir_path: &str) -> (Rc<Vec<DOI>>, Rc<Vec<FOI>>) {
         self.file_db
             .dir_contents(dir_path, self.show_hidden, self.hide_clean)
     }
@@ -337,7 +339,7 @@ where
             }
         }
         o_child_iter = self.remove_dead_rows(o_child_iter, |r| !FOI::row_is_a_dir(r), &mut changed);
-        for file_data in files {
+        for file_data in files.iter() {
             o_child_iter = self.remove_dead_rows(
                 o_child_iter,
                 |r| FOI::get_name_from_row(r) >= file_data.name(),
