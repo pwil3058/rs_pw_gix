@@ -292,15 +292,15 @@ where
         for dir_data in dirs.iter() {
             o_child_iter = self.remove_dead_rows(
                 o_child_iter,
-                |r| !FOI::row_is_a_dir(r) || FOI::get_name_from_row(r) >= dir_data.name(),
+                |r| !FOI::row_is_a_dir(r) || FOI::get_name_from_row(r).as_str() >= dir_data.name(),
                 &mut changed,
             );
             if let Some(child_iter) = o_child_iter {
                 let values = self.tree_store.get_row_values(&child_iter);
                 let name = FOI::get_name_from_row(&values);
-                if !FOI::row_is_a_dir(&values) || name > dir_data.name() {
+                if !FOI::row_is_a_dir(&values) || name.as_str() > dir_data.name() {
                     let dir_iter = self.tree_store.insert_row_before(
-                        dir_data.row(),
+                        &dir_data.row(),
                         o_parent_iter,
                         o_child_iter,
                     );
@@ -316,7 +316,7 @@ where
                 if !dir_data.row_is_the_same(&values) {
                     changed = true;
                     self.tree_store
-                        .set_row_values(dir_data.row(), o_child_iter.unwrap());
+                        .set_row_values(&dir_data.row(), o_child_iter.unwrap());
                 }
                 // This is an update so ignore auto_expand for existing directories
                 // BUT update them if they"re already expanded
@@ -328,7 +328,7 @@ where
                 }
                 o_child_iter = self.tree_store.get_iter_next(child_iter);
             } else {
-                let dir_iter = self.tree_store.append_row(dir_data.row(), o_parent_iter);
+                let dir_iter = self.tree_store.append_row(&dir_data.row(), o_parent_iter);
                 changed = true;
                 if self.auto_expand {
                     self.populate_dir(dir_data.path(), Some(&dir_iter));
@@ -342,25 +342,25 @@ where
         for file_data in files.iter() {
             o_child_iter = self.remove_dead_rows(
                 o_child_iter,
-                |r| FOI::get_name_from_row(r) >= file_data.name(),
+                |r| FOI::get_name_from_row(r).as_str() >= file_data.name(),
                 &mut changed,
             );
             if let Some(child_iter) = o_child_iter {
                 let values = self.tree_store.get_row_values(&child_iter);
-                if FOI::get_name_from_row(&values) > file_data.name() {
+                if FOI::get_name_from_row(&values).as_str() > file_data.name() {
                     changed = true;
                     self.tree_store
-                        .insert_row_before(file_data.row(), o_parent_iter, o_child_iter);
+                        .insert_row_before(&file_data.row(), o_parent_iter, o_child_iter);
                 } else if !file_data.row_is_the_same(&values) {
                     changed = true;
                     self.tree_store
-                        .set_row_values(file_data.row(), o_child_iter.unwrap());
+                        .set_row_values(&file_data.row(), o_child_iter.unwrap());
                     o_child_iter = self.tree_store.get_iter_next(child_iter);
                 } else {
                     o_child_iter = self.tree_store.get_iter_next(child_iter);
                 }
             } else {
-                self.tree_store.append_row(file_data.row(), o_parent_iter);
+                self.tree_store.append_row(&file_data.row(), o_parent_iter);
                 changed = true;
             }
         }

@@ -38,7 +38,6 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate which;
 
-#[macro_use]
 extern crate pw_pathux;
 
 #[macro_use]

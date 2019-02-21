@@ -19,10 +19,9 @@ use std::cell::RefCell;
 use std::clone::Clone;
 use std::collections::HashMap;
 use std::io::Write;
-use std::iter::Iterator;
 use std::rc::Rc;
 
-//use gtk::StaticType;
+use gtk::StaticType;
 
 use crypto_hash::{Algorithm, Hasher};
 
@@ -35,14 +34,14 @@ pub trait FsObjectIfce {
     fn new(dir_entry: &UsableDirEntry) -> Self;
     fn tree_store_spec() -> Vec<gtk::Type>;
     fn row_is_a_dir(row: &Row) -> bool;
-    fn get_name_from_row(row: &Row) -> &str;
-    fn get_path_from_row(row: &Row) -> &str;
+    fn get_name_from_row(row: &Row) -> String;
+    fn get_path_from_row(row: &Row) -> String;
 
     fn row_is_the_same(&self, row: &Row) -> bool;
     fn name(&self) -> &str;
     fn path(&self) -> &str;
     fn is_dir(&self) -> bool;
-    fn row(&self) -> &Row;
+    fn row(&self) -> Row;
 }
 
 pub trait FsDbIfce<DOI, FOI>
@@ -206,7 +205,7 @@ where
         show_hidden: bool,
         hide_clean: bool,
     ) -> (Rc<Vec<DOI>>, Rc<Vec<FOI>>) {
-        assert!(str_path_is_relative!(dir_path));
+        assert!(dir_path.path_is_relative());
         self.check_visibility(show_hidden, hide_clean);
         let components = dir_path.to_string().path_components();
         if let Some(ref mut dir) = self.base_dir.borrow_mut().find_dir(&components) {
@@ -243,20 +242,70 @@ where
     }
 }
 
-//lazy_static! {
-//    pub static ref OS_FS_DB_ROW_SPEC: [gtk::Type; 5] =
-//        [
-//            gtk::Type::String,          // 0 Path
-//            gtk::Type::String,          // 1 Status
-//            gtk::Type::String,          // 2 Related file data
-//            gtk::Type::String,          // 3 icon
-//            bool::static_type(),        // 4 is a directory?
-//        ];
-//}
+lazy_static! {
+    pub static ref OS_FS_DB_ROW_SPEC: [gtk::Type; 3] =
+        [
+            gtk::Type::String,          // 0 Name
+            gtk::Type::String,          // 1 Path
+            bool::static_type(),        // 4 is a directory?
+        ];
+}
 
-//pub struct OsFileData {
-//    path: String,
-//    status: String,
-//    related_file_data: String,
-//    icon: String,
-//}
+pub struct OsFileData {
+    name: String,
+    path: String,
+    is_dir: bool,
+}
+
+impl FsObjectIfce for OsFileData {
+    fn new(dir_entry: &UsableDirEntry) -> Self {
+        OsFileData {
+            name: dir_entry.file_name(),
+            path: dir_entry.path().to_string_lossy().into_owned(),
+            is_dir: dir_entry.is_dir(),
+        }
+    }
+    fn tree_store_spec() -> Vec<gtk::Type> {
+        OS_FS_DB_ROW_SPEC.to_vec()
+    }
+
+    fn row_is_a_dir(row: &Row) -> bool {
+        row[2].get::<bool>().unwrap()
+    }
+
+    fn get_name_from_row(row: &Row) -> String {
+        row[0].get::<String>().unwrap()
+    }
+
+    fn get_path_from_row(row: &Row) -> String {
+        row[1].get::<String>().unwrap()
+    }
+
+    fn row_is_the_same(&self, row: &Row) -> bool {
+        if self.name != row[0].get::<String>().unwrap() {
+            false
+        } else if self.path != row[1].get::<String>().unwrap() {
+            false
+        } else if self.is_dir != row[2].get::<bool>().unwrap() {
+            false
+        } else {
+            true
+        }
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn path(&self) -> &str {
+        &self.path
+    }
+
+    fn is_dir(&self) -> bool {
+        self.is_dir
+    }
+
+    fn row(&self) -> Row {
+        vec![]
+    }
+}
