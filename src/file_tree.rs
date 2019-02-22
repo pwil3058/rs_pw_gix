@@ -169,12 +169,16 @@ where
         for dir_data in dirs.iter() {
             o_child_iter = self.store().remove_dead_rows(
                 o_child_iter,
-                |s, i| !FOI::row_is_a_dir(s, i) || FOI::get_name_from_row(s, i).as_str() >= dir_data.name(),
+                |s, i| {
+                    !FOI::row_is_a_dir(s, i)
+                        || FOI::get_name_from_row(s, i).as_str() >= dir_data.name()
+                },
                 &mut changed,
             );
             if let Some(child_iter) = o_child_iter {
                 let name = FOI::get_name_from_row(self.store(), &child_iter);
-                if !FOI::row_is_a_dir(self.store(), &child_iter) || name.as_str() > dir_data.name() {
+                if !FOI::row_is_a_dir(self.store(), &child_iter) || name.as_str() > dir_data.name()
+                {
                     let dir_iter = self.store().insert_before(o_parent_iter, o_child_iter);
                     dir_data.set_row_values(self.store(), &dir_iter);
                     changed = true;
@@ -198,7 +202,11 @@ where
                 self.auto_expand_dir_or_insert_place_holder(&dir_data.path(), &dir_iter);
             }
         }
-        o_child_iter = self.store().remove_dead_rows(o_child_iter, |s, i| !FOI::row_is_a_dir(s, i), &mut changed);
+        o_child_iter = self.store().remove_dead_rows(
+            o_child_iter,
+            |s, i| !FOI::row_is_a_dir(s, i),
+            &mut changed,
+        );
         for file_data in files.iter() {
             o_child_iter = self.store().remove_dead_rows(
                 o_child_iter,
@@ -220,7 +228,8 @@ where
                 changed = true;
             }
         }
-        self.store().remove_dead_rows(o_child_iter, |_,_| false, &mut changed);
+        self.store()
+            .remove_dead_rows(o_child_iter, |_, _| false, &mut changed);
 
         if let Some(parent_iter) = o_parent_iter {
             let n_children = self.store().iter_n_children(parent_iter);

@@ -28,8 +28,8 @@ use crypto_hash::{Algorithm, Hasher};
 use pw_pathux::str_path::*;
 use pw_pathux::UsableDirEntry;
 
-pub use crate::gtkx::value::Row;
 pub use crate::gtkx::tree_store::TreeRowOps;
+pub use crate::gtkx::value::Row;
 
 pub trait FsObjectIfce {
     fn new(dir_entry: &UsableDirEntry) -> Self;
@@ -291,7 +291,10 @@ impl FsObjectIfce for OsFileData {
     }
 
     fn update_row_if_required<S: TreeRowOps>(&self, store: &S, iter: &TreeIter) -> bool {
-        assert_eq!(self.name, store.get_value(iter, PATH).get::<String>().unwrap());
+        assert_eq!(
+            self.name,
+            store.get_value(iter, PATH).get::<String>().unwrap()
+        );
         let mut changed = false;
         if self.path != store.get_value(iter, PATH).get::<String>().unwrap() {
             store.set_value(iter, PATH as u32, &self.path.to_value());
