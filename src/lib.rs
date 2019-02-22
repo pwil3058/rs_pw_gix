@@ -45,6 +45,7 @@ pub mod wrapper;
 
 pub mod cairox;
 pub mod colour;
+pub mod file_tree;
 pub mod fs_db;
 pub mod gdk_pixbufx;
 pub mod gdkx;

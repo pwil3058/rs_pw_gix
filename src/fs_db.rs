@@ -21,7 +21,7 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::rc::Rc;
 
-use gtk::{StaticType, ToValue};
+use gtk::{StaticType, ToValue, Value};
 
 use crypto_hash::{Algorithm, Hasher};
 
@@ -33,11 +33,11 @@ pub use crate::gtkx::value::Row;
 pub trait FsObjectIfce {
     fn new(dir_entry: &UsableDirEntry) -> Self;
     fn tree_store_spec() -> Vec<gtk::Type>;
-    fn row_is_a_dir(row: &Row) -> bool;
-    fn get_name_from_row(row: &Row) -> String;
-    fn get_path_from_row(row: &Row) -> String;
+    fn row_is_a_dir(row: &[Value]) -> bool;
+    fn get_name_from_row(row: &[Value]) -> String;
+    fn get_path_from_row(row: &[Value]) -> String;
 
-    fn row_is_the_same(&self, row: &Row) -> bool;
+    fn row_is_the_same(&self, row: &[Value]) -> bool;
     fn name(&self) -> &str;
     fn path(&self) -> &str;
     fn is_dir(&self) -> bool;
@@ -62,7 +62,7 @@ where
         true
     }
 
-    fn reset(&mut self);
+    fn reset(&self);
 }
 
 // Plain OS FS Database
@@ -221,7 +221,7 @@ where
         self.curr_dir_unchanged() && self.base_dir.borrow_mut().is_current()
     }
 
-    fn reset(&mut self) {
+    fn reset(&self) {
         *self.curr_dir.borrow_mut() = str_path_current_dir_or_panic();
         *self.base_dir.borrow_mut() = OsFsDbDir::new("", false, false);
     }
@@ -267,23 +267,24 @@ impl FsObjectIfce for OsFileData {
             is_dir: dir_entry.is_dir(),
         }
     }
+
     fn tree_store_spec() -> Vec<gtk::Type> {
         OS_FS_DB_ROW_SPEC.to_vec()
     }
 
-    fn row_is_a_dir(row: &Row) -> bool {
+    fn row_is_a_dir(row: &[Value]) -> bool {
         row[2].get::<bool>().unwrap()
     }
 
-    fn get_name_from_row(row: &Row) -> String {
+    fn get_name_from_row(row: &[Value]) -> String {
         row[0].get::<String>().unwrap()
     }
 
-    fn get_path_from_row(row: &Row) -> String {
+    fn get_path_from_row(row: &[Value]) -> String {
         row[1].get::<String>().unwrap()
     }
 
-    fn row_is_the_same(&self, row: &Row) -> bool {
+    fn row_is_the_same(&self, row: &[Value]) -> bool {
         if self.name != row[0].get::<String>().unwrap() {
             false
         } else if self.path != row[1].get::<String>().unwrap() {
