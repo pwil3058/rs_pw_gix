@@ -21,7 +21,7 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::rc::Rc;
 
-use gtk::{StaticType, ToValue, Value};
+use gtk::{StaticType, ToValue, TreeIter};
 
 use crypto_hash::{Algorithm, Hasher};
 
@@ -29,19 +29,21 @@ use pw_pathux::str_path::*;
 use pw_pathux::UsableDirEntry;
 
 pub use crate::gtkx::value::Row;
+pub use crate::gtkx::tree_store::TreeRowOps;
 
 pub trait FsObjectIfce {
     fn new(dir_entry: &UsableDirEntry) -> Self;
     fn tree_store_spec() -> Vec<gtk::Type>;
-    fn row_is_a_dir(row: &[Value]) -> bool;
-    fn get_name_from_row(row: &[Value]) -> String;
-    fn get_path_from_row(row: &[Value]) -> String;
+    fn row_is_a_dir<S: TreeRowOps>(store: &S, iter: &TreeIter) -> bool;
+    fn get_name_from_row<S: TreeRowOps>(store: &S, iter: &TreeIter) -> String;
+    fn get_path_from_row<S: TreeRowOps>(store: &S, iter: &TreeIter) -> String;
 
-    fn row_is_the_same(&self, row: &[Value]) -> bool;
+    fn update_row_if_required<S: TreeRowOps>(&self, store: &S, iter: &TreeIter) -> bool;
+    fn set_row_values<S: TreeRowOps>(&self, store: &S, iter: &TreeIter);
+
     fn name(&self) -> &str;
     fn path(&self) -> &str;
     fn is_dir(&self) -> bool;
-    fn row(&self) -> Row;
 }
 
 pub trait FsDbIfce<DOI, FOI>
@@ -249,9 +251,13 @@ lazy_static! {
         [
             gtk::Type::String,          // 0 Name
             gtk::Type::String,          // 1 Path
-            bool::static_type(),        // 4 is a directory?
+            bool::static_type(),        // 2 is a directory?
         ];
 }
+
+const NAME: i32 = 0;
+const PATH: i32 = 1;
+const IS_DIR: i32 = 2;
 
 pub struct OsFileData {
     name: String,
@@ -272,28 +278,36 @@ impl FsObjectIfce for OsFileData {
         OS_FS_DB_ROW_SPEC.to_vec()
     }
 
-    fn row_is_a_dir(row: &[Value]) -> bool {
-        row[2].get::<bool>().unwrap()
+    fn row_is_a_dir<S: TreeRowOps>(store: &S, iter: &TreeIter) -> bool {
+        store.get_value(iter, IS_DIR).get::<bool>().unwrap()
     }
 
-    fn get_name_from_row(row: &[Value]) -> String {
-        row[0].get::<String>().unwrap()
+    fn get_name_from_row<S: TreeRowOps>(store: &S, iter: &TreeIter) -> String {
+        store.get_value(iter, NAME).get::<String>().unwrap()
     }
 
-    fn get_path_from_row(row: &[Value]) -> String {
-        row[1].get::<String>().unwrap()
+    fn get_path_from_row<S: TreeRowOps>(store: &S, iter: &TreeIter) -> String {
+        store.get_value(iter, PATH).get::<String>().unwrap()
     }
 
-    fn row_is_the_same(&self, row: &[Value]) -> bool {
-        if self.name != row[0].get::<String>().unwrap() {
-            false
-        } else if self.path != row[1].get::<String>().unwrap() {
-            false
-        } else if self.is_dir != row[2].get::<bool>().unwrap() {
-            false
-        } else {
-            true
+    fn update_row_if_required<S: TreeRowOps>(&self, store: &S, iter: &TreeIter) -> bool {
+        assert_eq!(self.name, store.get_value(iter, PATH).get::<String>().unwrap());
+        let mut changed = false;
+        if self.path != store.get_value(iter, PATH).get::<String>().unwrap() {
+            store.set_value(iter, PATH as u32, &self.path.to_value());
+            changed = true;
         }
+        if self.is_dir != store.get_value(iter, IS_DIR).get::<bool>().unwrap() {
+            store.set_value(iter, IS_DIR as u32, &self.is_dir.to_value());
+            changed = true;
+        }
+        changed
+    }
+
+    fn set_row_values<S: TreeRowOps>(&self, store: &S, iter: &TreeIter) {
+        store.set_value(iter, NAME as u32, &self.name.to_value());
+        store.set_value(iter, PATH as u32, &self.path.to_value());
+        store.set_value(iter, IS_DIR as u32, &self.is_dir.to_value());
     }
 
     fn name(&self) -> &str {
@@ -306,13 +320,5 @@ impl FsObjectIfce for OsFileData {
 
     fn is_dir(&self) -> bool {
         self.is_dir
-    }
-
-    fn row(&self) -> Row {
-        vec![
-            self.name.to_value(),
-            self.path.to_value(),
-            self.is_dir.to_value(),
-        ]
     }
 }
