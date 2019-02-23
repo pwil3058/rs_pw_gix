@@ -56,11 +56,10 @@ trait FileTreeStoreExt: TreeRowOps {
 
 impl FileTreeStoreExt for gtk::TreeStore {}
 
-pub trait FileTreeIfce<FSDB, DOI, FOI>
+pub trait FileTreeIfce<FSDB, FSOI>
 where
-    FSDB: FsDbIfce<DOI, FOI>,
-    DOI: FsObjectIfce,
-    FOI: FsObjectIfce,
+    FSDB: FsDbIfce<FSOI>,
+    FSOI: FsObjectIfce,
 {
     fn new(auto_expand: bool) -> Rc<Self>;
     fn view(&self) -> &gtk::TreeView;
@@ -72,7 +71,7 @@ where
 
     fn insert_place_holder(&self, dir_iter: &gtk::TreeIter) {
         let iter = self.store().append(dir_iter);
-        DOI::set_place_holder_values(self.store(), &iter);
+        FSOI::set_place_holder_values(self.store(), &iter);
     }
 
     fn insert_place_holder_if_needed(&self, dir_iter: &gtk::TreeIter) {
@@ -83,7 +82,7 @@ where
 
     fn remove_place_holder(&self, dir_iter: &gtk::TreeIter) {
         if let Some(child_iter) = self.store().iter_children(Some(dir_iter)) {
-            if DOI::row_is_place_holder(self.store(), &child_iter) {
+            if FSOI::row_is_place_holder(self.store(), &child_iter) {
                 self.store().remove(&child_iter);
             }
         }
@@ -92,7 +91,7 @@ where
     fn not_yet_populated(&self, dir_iter: &gtk::TreeIter) -> bool {
         if self.store().iter_n_children(dir_iter) < 2 {
             if let Some(child_iter) = self.store().iter_children(Some(dir_iter)) {
-                DOI::row_is_place_holder(self.store(), &child_iter)
+                FSOI::row_is_place_holder(self.store(), &child_iter)
             } else {
                 true
             }
@@ -103,7 +102,7 @@ where
 
     fn expand_row(&self, dir_iter: &gtk::TreeIter) {
         if self.not_yet_populated(dir_iter) {
-            let path = DOI::get_path_from_row(self.store(), dir_iter);
+            let path = FSOI::get_path_from_row(self.store(), dir_iter);
             self.populate_dir(&path, Some(dir_iter));
             if self.store().iter_n_children(dir_iter) > 1 {
                 self.remove_place_holder(dir_iter)
@@ -118,7 +117,7 @@ where
         self.insert_place_holder(iter)
     }
 
-    fn get_dir_contents(&self, dir_path: &str) -> (Rc<Vec<DOI>>, Rc<Vec<FOI>>) {
+    fn get_dir_contents(&self, dir_path: &str) -> (Rc<Vec<FSOI>>, Rc<Vec<FSOI>>) {
         self.fs_db()
             .dir_contents(dir_path, self.show_hidden(), self.hide_clean())
     }
@@ -180,7 +179,7 @@ where
         let mut o_child_iter: Option<&gtk::TreeIter> = if let Some(parent_iter) = o_parent_iter {
             if let Some(iter) = self.store().iter_children(parent_iter) {
                 child_iter = iter;
-                if DOI::row_is_place_holder(self.store(), &child_iter) {
+                if FSOI::row_is_place_holder(self.store(), &child_iter) {
                     o_place_holder_iter = Some(child_iter.clone());
                     self.store().get_iter_next(&child_iter)
                 } else {
@@ -200,14 +199,14 @@ where
             o_child_iter = self.store().remove_dead_rows(
                 o_child_iter,
                 |s, i| {
-                    !FOI::row_is_a_dir(s, i)
-                        || FOI::get_name_from_row(s, i).as_str() >= dir_data.name()
+                    !FSOI::row_is_a_dir(s, i)
+                        || FSOI::get_name_from_row(s, i).as_str() >= dir_data.name()
                 },
                 &mut changed,
             );
             if let Some(child_iter) = o_child_iter {
-                let name = FOI::get_name_from_row(self.store(), &child_iter);
-                if !FOI::row_is_a_dir(self.store(), &child_iter) || name.as_str() > dir_data.name()
+                let name = FSOI::get_name_from_row(self.store(), &child_iter);
+                if !FSOI::row_is_a_dir(self.store(), &child_iter) || name.as_str() > dir_data.name()
                 {
                     let dir_iter = self.store().insert_before(o_parent_iter, o_child_iter);
                     dir_data.set_row_values(self.store(), &dir_iter);
@@ -234,17 +233,17 @@ where
         }
         o_child_iter = self.store().remove_dead_rows(
             o_child_iter,
-            |s, i| !FOI::row_is_a_dir(s, i),
+            |s, i| !FSOI::row_is_a_dir(s, i),
             &mut changed,
         );
         for file_data in files.iter() {
             o_child_iter = self.store().remove_dead_rows(
                 o_child_iter,
-                |s, i| FOI::get_name_from_row(s, i).as_str() >= file_data.name(),
+                |s, i| FSOI::get_name_from_row(s, i).as_str() >= file_data.name(),
                 &mut changed,
             );
             if let Some(child_iter) = o_child_iter {
-                if FOI::get_name_from_row(self.store(), child_iter).as_str() > file_data.name() {
+                if FSOI::get_name_from_row(self.store(), child_iter).as_str() > file_data.name() {
                     changed = true;
                     let file_iter = self.store().insert_before(o_parent_iter, o_child_iter);
                     file_data.set_row_values(self.store(), &file_iter);

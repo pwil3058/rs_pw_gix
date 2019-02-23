@@ -51,10 +51,9 @@ pub trait FsObjectIfce {
     fn is_dir(&self) -> bool;
 }
 
-pub trait FsDbIfce<DOI, FOI>
+pub trait FsDbIfce<FSOI>
 where
-    DOI: FsObjectIfce,
-    FOI: FsObjectIfce,
+    FSOI: FsObjectIfce,
 {
     fn new() -> Self;
 
@@ -63,7 +62,7 @@ where
         dir_path: &str,
         show_hidden: bool,
         hide_clean: bool,
-    ) -> (Rc<Vec<DOI>>, Rc<Vec<FOI>>);
+    ) -> (Rc<Vec<FSOI>>, Rc<Vec<FSOI>>);
 
     fn is_current(&self) -> bool {
         true
@@ -78,24 +77,22 @@ where
 macro_rules! impl_os_fs_db {
     ( $db:ident, $db_dir:ident ) => {
         #[derive(Debug)]
-        struct $db_dir<DOI, FOI>
+        struct $db_dir<FSOI>
         where
-            DOI: FsObjectIfce,
-            FOI: FsObjectIfce,
+            FSOI: FsObjectIfce,
         {
             path: String,
             show_hidden: bool,
             hide_clean: bool,
-            dirs_data: Rc<Vec<DOI>>,
-            files_data: Rc<Vec<FOI>>,
+            dirs_data: Rc<Vec<FSOI>>,
+            files_data: Rc<Vec<FSOI>>,
             hash_digest: Option<Vec<u8>>,
-            sub_dirs: HashMap<String, $db_dir<DOI, FOI>>,
+            sub_dirs: HashMap<String, $db_dir<FSOI>>,
         }
 
-        impl<DOI, FOI> $db_dir<DOI, FOI>
+        impl<FSOI> $db_dir<FSOI>
         where
-            DOI: FsObjectIfce,
-            FOI: FsObjectIfce,
+            FSOI: FsObjectIfce,
         {
             fn new(dir_path: &str, show_hidden: bool, hide_clean: bool) -> Self {
                 Self {
@@ -151,13 +148,13 @@ macro_rules! impl_os_fs_db {
                         }
                         if dir_entry.is_dir() {
                             let path = dir_entry.path().to_string_lossy().into_owned();
-                            dirs.push(DOI::new(&dir_entry));
+                            dirs.push(FSOI::new(&dir_entry));
                             self.sub_dirs.insert(
                                 dir_entry.file_name(),
-                                $db_dir::<DOI, FOI>::new(&path, self.show_hidden, self.hide_clean),
+                                $db_dir::<FSOI>::new(&path, self.show_hidden, self.hide_clean),
                             );
                         } else {
-                            files.push(FOI::new(&dir_entry));
+                            files.push(FSOI::new(&dir_entry));
                         }
                     }
                     dirs.sort_unstable_by(|a, b| a.name().partial_cmp(b.name()).unwrap());
@@ -171,7 +168,7 @@ macro_rules! impl_os_fs_db {
             fn find_dir(
                 &mut self,
                 components: &[StrPathComponent],
-            ) -> Option<&mut $db_dir<DOI, FOI>> {
+            ) -> Option<&mut $db_dir<FSOI>> {
                 if self.hash_digest.is_none() {
                     self.populate();
                 }
@@ -187,28 +184,26 @@ macro_rules! impl_os_fs_db {
                 }
             }
 
-            fn dirs_and_files<'a>(&'a mut self) -> (Rc<Vec<DOI>>, Rc<Vec<FOI>>) {
+            fn dirs_and_files<'a>(&'a mut self) -> (Rc<Vec<FSOI>>, Rc<Vec<FSOI>>) {
                 (Rc::clone(&self.dirs_data), Rc::clone(&self.files_data))
             }
         }
 
-        pub struct $db<DOI, FOI>
+        pub struct $db<FSOI>
         where
-            DOI: FsObjectIfce,
-            FOI: FsObjectIfce,
+            FSOI: FsObjectIfce,
         {
-            base_dir: RefCell<$db_dir<DOI, FOI>>,
+            base_dir: RefCell<$db_dir<FSOI>>,
             curr_dir: RefCell<String>, // so we can tell if there's a change of current directory
         }
 
-        impl<DOI, FOI> FsDbIfce<DOI, FOI> for $db<DOI, FOI>
+        impl<FSOI> FsDbIfce<FSOI> for $db<FSOI>
         where
-            DOI: FsObjectIfce,
-            FOI: FsObjectIfce,
+            FSOI: FsObjectIfce,
         {
             fn new() -> Self {
                 let curr_dir = str_path_current_dir_or_panic();
-                let base_dir = $db_dir::<DOI, FOI>::new("./", false, false); // paths are relative
+                let base_dir = $db_dir::<FSOI>::new("./", false, false); // paths are relative
                 Self {
                     base_dir: RefCell::new(base_dir),
                     curr_dir: RefCell::new(curr_dir),
@@ -220,7 +215,7 @@ macro_rules! impl_os_fs_db {
                 dir_path: &str,
                 show_hidden: bool,
                 hide_clean: bool,
-            ) -> (Rc<Vec<DOI>>, Rc<Vec<FOI>>) {
+            ) -> (Rc<Vec<FSOI>>, Rc<Vec<FSOI>>) {
                 assert!(dir_path.path_is_relative());
                 self.check_visibility(show_hidden, hide_clean);
                 let components = dir_path.to_string().path_components();
@@ -242,10 +237,9 @@ macro_rules! impl_os_fs_db {
             }
         }
 
-        impl<DOI, FOI> $db<DOI, FOI>
+        impl<FSOI> $db<FSOI>
         where
-            DOI: FsObjectIfce,
-            FOI: FsObjectIfce,
+            FSOI: FsObjectIfce,
         {
             fn curr_dir_unchanged(&self) -> bool {
                 *self.curr_dir.borrow() == str_path_current_dir_or_panic()
