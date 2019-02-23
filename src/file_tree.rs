@@ -22,28 +22,11 @@ pub use crate::gtkx::tree_model::TreeModelRowOps;
 pub use crate::gtkx::tree_store::TreeRowOps;
 
 trait FileTreeStoreExt: TreeRowOps {
-    fn insert_place_holder(&self, dir_iter: &gtk::TreeIter) {
-        self.append(dir_iter);
-    }
-
-    fn insert_place_holder_if_needed(&self, dir_iter: &gtk::TreeIter) {
-        if self.iter_n_children(dir_iter) == 0 {
-            self.insert_place_holder(dir_iter)
-        }
-    }
-
     fn recursive_remove(&self, iter: &gtk::TreeIter) -> bool {
         if let Some(child_iter) = self.iter_children(iter) {
             while self.recursive_remove(&child_iter) {}
         }
         self.remove(iter)
-    }
-
-    fn depopulate(&self, iter: &gtk::TreeIter) {
-        if let Some(ref child_iter) = self.iter_children(iter) {
-            while self.recursive_remove(child_iter) {}
-        }
-        self.insert_place_holder(iter)
     }
 
     fn remove_dead_rows<'a, F: Fn(&Self, &gtk::TreeIter) -> bool>(
@@ -73,7 +56,7 @@ trait FileTreeStoreExt: TreeRowOps {
 
 impl FileTreeStoreExt for gtk::TreeStore {}
 
-trait FileTreeIfce<FSDB, DOI, FOI>
+pub trait FileTreeIfce<FSDB, DOI, FOI>
 where
     FSDB: FsDbIfce<DOI, FOI>,
     DOI: FsObjectIfce,
@@ -86,6 +69,24 @@ where
     fn auto_expand(&self) -> bool;
     fn show_hidden(&self) -> bool;
     fn hide_clean(&self) -> bool;
+
+    fn insert_place_holder(&self, dir_iter: &gtk::TreeIter) {
+        let iter = self.store().append(dir_iter);
+        DOI::set_place_holder_values(self.store(), &iter);
+    }
+
+    fn insert_place_holder_if_needed(&self, dir_iter: &gtk::TreeIter) {
+        if self.store().iter_n_children(dir_iter) == 0 {
+            self.insert_place_holder(dir_iter)
+        }
+    }
+
+    fn depopulate(&self, iter: &gtk::TreeIter) {
+        if let Some(ref child_iter) = self.store().iter_children(iter) {
+            while self.store().recursive_remove(child_iter) {}
+        }
+        self.insert_place_holder(iter)
+    }
 
     fn get_dir_contents(&self, dir_path: &str) -> (Rc<Vec<DOI>>, Rc<Vec<FOI>>) {
         self.fs_db()
@@ -110,7 +111,7 @@ where
             self.populate_dir(dir_path, Some(dir_iter));
             self.view_expand_row(dir_iter);
         } else {
-            self.store().insert_place_holder(dir_iter);
+            self.insert_place_holder(dir_iter);
         }
     }
 
@@ -126,7 +127,7 @@ where
             file_data.set_row_values(self.store(), &file_iter);
         }
         if let Some(parent_iter) = o_parent_iter {
-            self.store().insert_place_holder_if_needed(parent_iter)
+            self.insert_place_holder_if_needed(parent_iter)
         }
     }
 
@@ -149,12 +150,11 @@ where
         let mut o_child_iter: Option<&gtk::TreeIter> = if let Some(parent_iter) = o_parent_iter {
             if let Some(iter) = self.store().iter_children(parent_iter) {
                 child_iter = iter;
-                if self.store().get_value(&child_iter, 0).is::<String>() {
-                    //TODO: fix this condition
-                    Some(&child_iter)
-                } else {
+                if DOI::row_is_place_holder(self.store(), &child_iter) {
                     o_place_holder_iter = Some(child_iter.clone());
                     self.store().get_iter_next(&child_iter)
+                } else {
+                    Some(&child_iter)
                 }
             } else {
                 None
@@ -191,7 +191,7 @@ where
                         changed |= self.update_dir(dir_data.path(), o_child_iter);
                     } else {
                         // make sure we don"t leave bad data in children that were previously expanded
-                        self.store().depopulate(child_iter);
+                        self.depopulate(child_iter);
                     }
                     o_child_iter = self.store().get_iter_next(child_iter);
                 }
@@ -234,7 +234,7 @@ where
         if let Some(parent_iter) = o_parent_iter {
             let n_children = self.store().iter_n_children(parent_iter);
             if n_children == 0 {
-                self.store().insert_place_holder(parent_iter)
+                self.insert_place_holder(parent_iter)
             } else if n_children > 1 {
                 if let Some(place_holder_iter) = o_place_holder_iter {
                     //assert_eq!(self.get_value(iter, 0), None);

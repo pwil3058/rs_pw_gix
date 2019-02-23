@@ -41,12 +41,13 @@ extern crate which;
 extern crate pw_pathux;
 
 #[macro_use]
+pub mod fs_db;
+#[macro_use]
 pub mod wrapper;
 
 pub mod cairox;
 pub mod colour;
 pub mod file_tree;
-pub mod fs_db;
 pub mod gdk_pixbufx;
 pub mod gdkx;
 pub mod geometry;
