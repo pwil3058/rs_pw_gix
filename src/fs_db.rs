@@ -33,7 +33,10 @@ pub use crate::gtkx::value::Row;
 
 pub trait FsObjectIfce {
     fn new(dir_entry: &UsableDirEntry) -> Self;
+
     fn tree_store_spec() -> Vec<gtk::Type>;
+    fn tree_view_columns() -> Vec<gtk::TreeViewColumn>;
+
     fn row_is_a_dir<S: TreeRowOps>(store: &S, iter: &TreeIter) -> bool;
     fn row_is_place_holder<S: TreeRowOps>(store: &S, iter: &TreeIter) -> bool;
     fn get_name_from_row<S: TreeRowOps>(store: &S, iter: &TreeIter) -> String;
@@ -175,7 +178,7 @@ macro_rules! impl_os_fs_db {
                 if components.len() == 0 {
                     Some(self)
                 } else {
-                    //assert!(components[0].is_normal());
+                    assert!(components[0].is_normal());
                     let name = components[0].to_string();
                     match self.sub_dirs.get_mut(&name) {
                         Some(subdir) => subdir.find_dir(&components[1..]),
@@ -205,7 +208,7 @@ macro_rules! impl_os_fs_db {
         {
             fn new() -> Self {
                 let curr_dir = str_path_current_dir_or_panic();
-                let base_dir = $db_dir::<DOI, FOI>::new("", false, false); // paths are relative
+                let base_dir = $db_dir::<DOI, FOI>::new("./", false, false); // paths are relative
                 Self {
                     base_dir: RefCell::new(base_dir),
                     curr_dir: RefCell::new(curr_dir),
@@ -221,7 +224,8 @@ macro_rules! impl_os_fs_db {
                 assert!(dir_path.path_is_relative());
                 self.check_visibility(show_hidden, hide_clean);
                 let components = dir_path.to_string().path_components();
-                if let Some(ref mut dir) = self.base_dir.borrow_mut().find_dir(&components) {
+                assert!(components[0].is_cur_dir());
+                if let Some(ref mut dir) = self.base_dir.borrow_mut().find_dir(&components[1..]) {
                     dir.dirs_and_files()
                 } else {
                     (Rc::new(vec![]), Rc::new(vec![]))
@@ -234,7 +238,7 @@ macro_rules! impl_os_fs_db {
 
             fn reset(&self) {
                 *self.curr_dir.borrow_mut() = str_path_current_dir_or_panic();
-                *self.base_dir.borrow_mut() = $db_dir::new("", false, false);
+                *self.base_dir.borrow_mut() = $db_dir::new("./", false, false);
             }
         }
 
@@ -250,7 +254,7 @@ macro_rules! impl_os_fs_db {
             fn check_visibility(&self, show_hidden: bool, hide_clean: bool) {
                 let mut base_dir = self.base_dir.borrow_mut();
                 if base_dir.show_hidden != show_hidden && base_dir.hide_clean != hide_clean {
-                    *base_dir = $db_dir::new("", show_hidden, hide_clean);
+                    *base_dir = $db_dir::new("./", show_hidden, hide_clean);
                 }
             }
         }
@@ -263,17 +267,19 @@ macro_rules! impl_os_fs_db {
 macro_rules! impl_simple_fs_object {
     ( $sfso:ident ) => {
         lazy_static! {
-            pub static ref OS_FS_DB_ROW_SPEC: [gtk::Type; 3] =
+            pub static ref OS_FS_DB_ROW_SPEC: [gtk::Type; 4] =
                 [
                     gtk::Type::String,          // 0 Name
                     gtk::Type::String,          // 1 Path
-                    bool::static_type(),        // 2 is a directory?
+                    gtk::Type::String,          // 2 Path
+                    bool::static_type(),        // 3 is a directory?
                 ];
         }
 
         const NAME: i32 = 0;
         const PATH: i32 = 1;
-        const IS_DIR: i32 = 2;
+        const ICON: i32 = 2;
+        const IS_DIR: i32 = 3;
 
         #[derive(Debug)]
         pub struct $sfso {
@@ -293,6 +299,18 @@ macro_rules! impl_simple_fs_object {
 
             fn tree_store_spec() -> Vec<gtk::Type> {
                 OS_FS_DB_ROW_SPEC.to_vec()
+            }
+
+            fn tree_view_columns() -> Vec<gtk::TreeViewColumn> {
+                let col = gtk::TreeViewColumn::new();
+                let cell = gtk::CellRendererPixbuf::new();
+                col.pack_start(&cell, false);
+                col.add_attribute(&cell, "icon-name", ICON);
+                let cell = gtk::CellRendererText::new();
+                cell.set_property_editable(false);
+                col.pack_start(&cell, false);
+                col.add_attribute(&cell, "text", NAME);
+                vec![col]
             }
 
             fn row_is_a_dir<S: TreeRowOps>(store: &S, iter: &TreeIter) -> bool {
@@ -328,6 +346,11 @@ macro_rules! impl_simple_fs_object {
                 }
                 if self.is_dir != store.get_value(iter, IS_DIR).get::<bool>().unwrap() {
                     store.set_value(iter, IS_DIR as u32, &self.is_dir.to_value());
+                    if self.is_dir {
+                        store.set_value(iter, ICON as u32, &"stock_directory".to_value());
+                    } else {
+                        store.set_value(iter, ICON as u32, &"stock_file".to_value());
+                    }
                     changed = true;
                 }
                 changed
@@ -336,6 +359,11 @@ macro_rules! impl_simple_fs_object {
             fn set_row_values<S: TreeRowOps>(&self, store: &S, iter: &TreeIter) {
                 store.set_value(iter, NAME as u32, &self.name.to_value());
                 store.set_value(iter, PATH as u32, &self.path.to_value());
+                if self.is_dir {
+                    store.set_value(iter, ICON as u32, &"gtk-directory".to_value());
+                } else {
+                    store.set_value(iter, ICON as u32, &"gtk-file".to_value());
+                }
                 store.set_value(iter, IS_DIR as u32, &self.is_dir.to_value());
             }
 

@@ -62,7 +62,7 @@ where
     DOI: FsObjectIfce,
     FOI: FsObjectIfce,
 {
-    fn new(auto_expand: bool) -> Self;
+    fn new(auto_expand: bool) -> Rc<Self>;
     fn view(&self) -> &gtk::TreeView;
     fn store(&self) -> &gtk::TreeStore;
     fn fs_db(&self) -> &FSDB;
@@ -78,6 +78,36 @@ where
     fn insert_place_holder_if_needed(&self, dir_iter: &gtk::TreeIter) {
         if self.store().iter_n_children(dir_iter) == 0 {
             self.insert_place_holder(dir_iter)
+        }
+    }
+
+    fn remove_place_holder(&self, dir_iter: &gtk::TreeIter) {
+        if let Some(child_iter) = self.store().iter_children(Some(dir_iter)) {
+            if DOI::row_is_place_holder(self.store(), &child_iter) {
+                self.store().remove(&child_iter);
+            }
+        }
+    }
+
+    fn not_yet_populated(&self, dir_iter: &gtk::TreeIter) -> bool {
+        if self.store().iter_n_children(dir_iter) < 2 {
+            if let Some(child_iter) = self.store().iter_children(Some(dir_iter)) {
+                DOI::row_is_place_holder(self.store(), &child_iter)
+            } else {
+                true
+            }
+        } else {
+            false
+        }
+    }
+
+    fn expand_row(&self, dir_iter: &gtk::TreeIter) {
+        if self.not_yet_populated(dir_iter) {
+            let path = DOI::get_path_from_row(self.store(), dir_iter);
+            self.populate_dir(&path, Some(dir_iter));
+            if self.store().iter_n_children(dir_iter) > 1 {
+                self.remove_place_holder(dir_iter)
+            }
         }
     }
 
@@ -131,14 +161,14 @@ where
         }
     }
 
-    fn repopulate(&mut self) {
+    fn repopulate(&self) {
         // TODO: add show_busy() mechanism here
         self.fs_db().reset();
         self.store().clear();
         if let Some(iter) = self.store().get_iter_first() {
-            self.populate_dir("", Some(&iter))
+            self.populate_dir("./", Some(&iter))
         } else {
-            self.populate_dir("", None)
+            self.populate_dir("./", None)
         }
     }
 
@@ -245,13 +275,13 @@ where
         changed
     }
 
-    fn update(&mut self) -> bool {
+    fn update(&self) -> bool {
         // TODO: add show_busy() mechanism here
         if self.fs_db().is_current() {
             false
         } else {
             self.fs_db().reset();
-            self.update_dir("", None)
+            self.update_dir("./", None)
         }
     }
 }
