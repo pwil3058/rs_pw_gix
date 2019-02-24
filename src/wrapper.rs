@@ -279,4 +279,28 @@ mod tests {
                     C: PartialEq,
         );
     }
+
+    #[test]
+    fn widget_wrapper_complex_generic_constrained() {
+        trait Alpha<B>
+        where
+            B: PartialEq,
+        {
+        }
+        struct _TestWrapper<A, B>
+        where
+            A: Alpha<B>,
+            B: PartialEq,
+        {
+            vbox: gtk::Box,
+            a: A,
+            b: B,
+        }
+
+        impl_widget_wrapper!(vbox: gtk::Box, _TestWrapper<A, B>
+            where
+                A: Alpha<B>,
+                B: PartialEq,
+        );
+    }
 }
