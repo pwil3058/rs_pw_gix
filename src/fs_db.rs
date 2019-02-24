@@ -167,10 +167,7 @@ macro_rules! impl_os_fs_db {
                 self.hash_digest = Some(hasher.finish());
             }
 
-            fn find_dir(
-                &mut self,
-                components: &[StrPathComponent],
-            ) -> Option<&mut $db_dir<FSOI>> {
+            fn find_dir(&mut self, components: &[StrPathComponent]) -> Option<&mut $db_dir<FSOI>> {
                 if self.hash_digest.is_none() {
                     self.populate();
                 }

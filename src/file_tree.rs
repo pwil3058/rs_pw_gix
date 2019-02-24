@@ -20,6 +20,7 @@ use gtk::prelude::*;
 use crate::fs_db::{FsDbIfce, FsObjectIfce};
 pub use crate::gtkx::tree_model::TreeModelRowOps;
 pub use crate::gtkx::tree_store::TreeRowOps;
+use crate::wrapper::WidgetWrapper;
 
 trait FileTreeStoreExt: TreeRowOps {
     fn recursive_remove(&self, iter: &gtk::TreeIter) -> bool {
@@ -56,7 +57,7 @@ trait FileTreeStoreExt: TreeRowOps {
 
 impl FileTreeStoreExt for gtk::TreeStore {}
 
-pub trait FileTreeIfce<FSDB, FSOI>
+pub trait FileTreeIfce<FSDB, FSOI>: WidgetWrapper
 where
     FSDB: FsDbIfce<FSOI>,
     FSOI: FsObjectIfce,
@@ -161,14 +162,15 @@ where
     }
 
     fn repopulate(&self) {
-        // TODO: add show_busy() mechanism here
-        self.fs_db().reset();
-        self.store().clear();
-        if let Some(iter) = self.store().get_iter_first() {
-            self.populate_dir("./", Some(&iter))
-        } else {
-            self.populate_dir("./", None)
-        }
+        self.do_showing_busy(|self_| {
+            self_.fs_db().reset();
+            self_.store().clear();
+            if let Some(iter) = self_.store().get_iter_first() {
+                self_.populate_dir("./", Some(&iter))
+            } else {
+                self_.populate_dir("./", None)
+            }
+        })
     }
 
     fn update_dir(&self, dir_path: &str, o_parent_iter: Option<&gtk::TreeIter>) -> bool {
@@ -275,12 +277,14 @@ where
     }
 
     fn update(&self, force: bool) -> bool {
-        // TODO: add show_busy() mechanism here
         if !force && self.fs_db().is_current() {
             false
         } else {
-            self.fs_db().reset();
-            self.update_dir("./", None)
+            self.do_showing_busy(|self_| {
+                self_.fs_db().reset();
+                self_.update_dir("./", None);
+            });
+            true
         }
     }
 }
