@@ -55,7 +55,8 @@ pub trait FsDbIfce<FSOI>
 where
     FSOI: FsObjectIfce,
 {
-    fn hide_clean_is_ignored() -> bool;
+    fn honours_hide_clean() -> bool;
+    fn honours_show_hidden() -> bool;
 
     fn new() -> Self;
 
@@ -200,7 +201,11 @@ macro_rules! impl_os_fs_db {
         where
             FSOI: FsObjectIfce,
         {
-            fn hide_clean_is_ignored() -> bool {
+            fn honours_hide_clean() -> bool {
+                false
+            }
+
+            fn honours_show_hidden() -> bool {
                 true
             }
 
