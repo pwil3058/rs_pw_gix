@@ -274,9 +274,9 @@ where
         changed
     }
 
-    fn update(&self) -> bool {
+    fn update(&self, force: bool) -> bool {
         // TODO: add show_busy() mechanism here
-        if self.fs_db().is_current() {
+        if !force && self.fs_db().is_current() {
             false
         } else {
             self.fs_db().reset();

@@ -15,17 +15,17 @@
 //! File system database of the current directory to feed file tree
 //! stores/views
 
-use std::cell::RefCell;
-use std::clone::Clone;
-use std::collections::HashMap;
-use std::io::Write;
+//use std::cell::RefCell;
+//use std::clone::Clone;
+//use std::collections::HashMap;
+//use std::io::Write;
 use std::rc::Rc;
 
-use gtk::{StaticType, ToValue, TreeIter};
+use gtk::TreeIter; //{StaticType, ToValue, TreeIter};
 
-use crypto_hash::{Algorithm, Hasher};
+//use crypto_hash::{Algorithm, Hasher};
 
-use pw_pathux::str_path::*;
+//use pw_pathux::str_path::*;
 use pw_pathux::UsableDirEntry;
 
 pub use crate::gtkx::tree_store::TreeRowOps;
@@ -55,6 +55,8 @@ pub trait FsDbIfce<FSOI>
 where
     FSOI: FsObjectIfce,
 {
+    fn hide_clean_is_ignored() -> bool;
+
     fn new() -> Self;
 
     fn dir_contents(
@@ -201,6 +203,10 @@ macro_rules! impl_os_fs_db {
         where
             FSOI: FsObjectIfce,
         {
+            fn hide_clean_is_ignored() -> bool {
+                true
+            }
+
             fn new() -> Self {
                 let curr_dir = str_path_current_dir_or_panic();
                 let base_dir = $db_dir::<FSOI>::new("./", false, false); // paths are relative
@@ -247,7 +253,7 @@ macro_rules! impl_os_fs_db {
 
             fn check_visibility(&self, show_hidden: bool, hide_clean: bool) {
                 let mut base_dir = self.base_dir.borrow_mut();
-                if base_dir.show_hidden != show_hidden && base_dir.hide_clean != hide_clean {
+                if base_dir.show_hidden != show_hidden || base_dir.hide_clean != hide_clean {
                     *base_dir = $db_dir::new("./", show_hidden, hide_clean);
                 }
             }
@@ -331,7 +337,7 @@ macro_rules! impl_simple_fs_object {
             fn update_row_if_required<S: TreeRowOps>(&self, store: &S, iter: &TreeIter) -> bool {
                 assert_eq!(
                     self.name,
-                    store.get_value(iter, PATH).get::<String>().unwrap()
+                    store.get_value(iter, NAME).get::<String>().unwrap()
                 );
                 let mut changed = false;
                 if self.path != store.get_value(iter, PATH).get::<String>().unwrap() {
