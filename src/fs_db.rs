@@ -32,6 +32,7 @@ pub use crate::gtkx::tree_store::TreeRowOps;
 pub use crate::gtkx::value::Row;
 
 pub trait FsObjectIfce {
+    fn new(name: &str, path: &str, is_dir: bool) -> Self;
     fn from_dir_entry(dir_entry: &UsableDirEntry) -> Self;
 
     fn tree_store_spec() -> Vec<gtk::Type>;
@@ -291,6 +292,14 @@ macro_rules! impl_simple_fs_object {
         }
 
         impl FsObjectIfce for $sfso {
+            fn new(name: &str, path: &str, is_dir: bool) -> Self {
+                ScmFsoData {
+                    name: name.to_string(),
+                    path: path.to_string(),
+                    is_dir: is_dir,
+                }
+            }
+
             fn from_dir_entry(dir_entry: &UsableDirEntry) -> Self {
                 $sfso {
                     name: dir_entry.file_name(),
