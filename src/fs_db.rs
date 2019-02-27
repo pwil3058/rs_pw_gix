@@ -32,7 +32,7 @@ pub use crate::gtkx::tree_store::TreeRowOps;
 pub use crate::gtkx::value::Row;
 
 pub trait FsObjectIfce {
-    fn new(dir_entry: &UsableDirEntry) -> Self;
+    fn from_dir_entry(dir_entry: &UsableDirEntry) -> Self;
 
     fn tree_store_spec() -> Vec<gtk::Type>;
     fn tree_view_columns() -> Vec<gtk::TreeViewColumn>;
@@ -151,13 +151,13 @@ macro_rules! impl_os_fs_db {
                         }
                         if dir_entry.is_dir() {
                             let path = dir_entry.path().to_string_lossy().into_owned();
-                            dirs.push(FSOI::new(&dir_entry));
+                            dirs.push(FSOI::from_dir_entry(&dir_entry));
                             self.sub_dirs.insert(
                                 dir_entry.file_name(),
                                 $db_dir::<FSOI>::new(&path, self.show_hidden, self.hide_clean),
                             );
                         } else {
-                            files.push(FSOI::new(&dir_entry));
+                            files.push(FSOI::from_dir_entry(&dir_entry));
                         }
                     }
                     dirs.sort_unstable_by(|a, b| a.name().partial_cmp(b.name()).unwrap());
@@ -291,7 +291,7 @@ macro_rules! impl_simple_fs_object {
         }
 
         impl FsObjectIfce for $sfso {
-            fn new(dir_entry: &UsableDirEntry) -> Self {
+            fn from_dir_entry(dir_entry: &UsableDirEntry) -> Self {
                 $sfso {
                     name: dir_entry.file_name(),
                     path: dir_entry.path().to_string_lossy().into_owned(),
