@@ -166,9 +166,9 @@ where
             self_.fs_db().reset();
             self_.store().clear();
             if let Some(iter) = self_.store().get_iter_first() {
-                self_.populate_dir("./", Some(&iter))
+                self_.populate_dir(".", Some(&iter))
             } else {
-                self_.populate_dir("./", None)
+                self_.populate_dir(".", None)
             }
         })
     }
@@ -278,11 +278,14 @@ where
 
     fn update(&self, force: bool) -> bool {
         if !force && self.fs_db().is_current() {
+            self.do_showing_busy(|self_| {
+                self_.update_dir(".", None);
+            });
             false
         } else {
             self.do_showing_busy(|self_| {
                 self_.fs_db().reset();
-                self_.update_dir("./", None);
+                self_.update_dir(".", None);
             });
             true
         }
