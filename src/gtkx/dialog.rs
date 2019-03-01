@@ -208,7 +208,7 @@ pub mod dialog_user {
             question: &str,
             o_expln: Option<&str>,
             buttons: &[(&str, gtk::ResponseType)],
-        ) -> i32 {
+        ) -> gtk::ResponseType {
             let dialog = self.new_message_dialog(
                 gtk::DialogFlags::empty(),
                 gtk::MessageType::Question,
@@ -219,11 +219,11 @@ pub mod dialog_user {
                 dialog.set_property_secondary_text(Some(expln));
             };
             dialog.enable_auto_close();
-            dialog.run()
+            gtk::ResponseType::from(dialog.run())
         }
 
         fn ask_confirm_action(&self, msg: &str, expln: Option<&str>) -> bool {
-            self.ask_question(msg, expln, CANCEL_OK_BUTTONS) == 1
+            self.ask_question(msg, expln, CANCEL_OK_BUTTONS) == gtk::ResponseType::Ok
         }
 
         fn new_file_chooser_dialog(
