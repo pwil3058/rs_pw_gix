@@ -6,8 +6,7 @@ authors = ["Peter Williams <pwil3058@gmail.com>"]
 [dependencies]
 # TODO: change pw_pathux dependency when it goes public
 #pw_pathux = { git = "https://github.com/pwil3058/rs_pw_pathux.git" }
-pw_pathux = { path = "/home/peter/SRC/GITHUB/rs_pw_pathux.git" }
-#pw_pathux = { path = "../pw_pathux" }
+pw_pathux = { path = "../rs_pw_pathux.git" }
 
 pango = "0.6.0"
 cairo-rs = "0.6.0"
