@@ -21,7 +21,7 @@ use std::process::Command;
 
 use gdk::{self, WindowExtManual};
 use gdk_pixbuf::Pixbuf;
-use gtk::{self, ClipboardExt};
+use gtk;
 
 use which::which;
 
@@ -156,10 +156,10 @@ pub mod area_selection {
 
     use cairo;
     use gdk::{
-        self, DeviceExt, DeviceManagerExt, DisplayExt, ScreenExt, WindowExt, WindowExtManual,
+        self, WindowExt, WindowExtManual,
     };
     use gio;
-    use gtk::{self, GtkWindowExt, WidgetExt};
+    use gtk::{self, GtkWindowExt, WidgetExt, WidgetExtManual};
 
     #[derive(Debug, PartialEq, Clone, Copy)]
     struct IntPoint {
@@ -287,7 +287,7 @@ pub mod area_selection {
                 | gdk::EventMask::BUTTON_PRESS_MASK
                 | gdk::EventMask::BUTTON_RELEASE_MASK
                 | gdk::EventMask::BUTTON_MOTION_MASK;
-            sad.window.add_events(events.bits() as i32);
+            sad.window.add_events(events);
 
             let sad_c = sad.clone();
             sad.window.connect_draw(move |_, cairo_context| {
@@ -305,7 +305,7 @@ pub mod area_selection {
                         cairo_context.rectangle(x, y, width, height);
                         cairo_context.set_source_rgb(0.0, 0.0, 0.0);
                         cairo_context.set_dash(&[3.0], 0.0);
-                        cairo_context.set_operator(cairo::enums::Operator::Xor);
+                        cairo_context.set_operator(cairo::Operator::Xor);
                         cairo_context.stroke();
                     }
                 };

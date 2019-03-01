@@ -100,7 +100,7 @@ impl XYSelectionInterface for XYSelection {
             | gdk::EventMask::BUTTON_PRESS_MASK
             | gdk::EventMask::BUTTON_RELEASE_MASK
             | gdk::EventMask::LEAVE_NOTIFY_MASK;
-        drawing_area.add_events(events.bits() as i32);
+        drawing_area.add_events(events);
         let xys = Rc::new(XYSelectionCore {
             drawing_area: drawing_area.clone(),
             start_xy: Cell::new(None),

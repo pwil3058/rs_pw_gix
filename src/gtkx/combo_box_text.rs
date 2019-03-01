@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use gtk;
-use gtk::prelude::{ComboBoxExt, ComboBoxTextExt, TreeModelExt};
+use gtk::prelude::{ComboBoxExt, ComboBoxExtManual, ComboBoxTextExt, TreeModelExt};
 
 pub trait SortedUnique {
     fn get_item_index(&self, item: &str) -> (bool, i32);
@@ -45,7 +45,7 @@ impl SortedUnique for gtk::ComboBoxText {
                     if let Some(ref text) = model.get_value(iter, 0).get::<String>() {
                         if text == item {
                             return (true, index);
-                        } else if item < text {
+                        } else if item < text.as_str() {
                             return (false, index);
                         }
                     };
@@ -101,7 +101,7 @@ impl SortedUnique for gtk::ComboBoxText {
     fn set_active_text(&self, item: &str) {
         let (found, index) = self.get_item_index(item);
         if found {
-            self.set_active(index);
+            self.set_active(Some(index as u32));
         } else {
             panic!("{:?}: line {:?}: {}: unknown item", file!(), line!(), item)
         };

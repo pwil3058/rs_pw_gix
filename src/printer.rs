@@ -23,10 +23,10 @@ use std::result;
 use mut_static::*;
 
 use gdk::ContextExt;
-use gdk_pixbuf::{self, PixbufExt};
+use gdk_pixbuf;
 use glib;
 use gtk;
-use gtk::prelude::{IsA, PrintContextExt, PrintOperationExt, PrintSettingsExt};
+use gtk::prelude::{IsA, PrintOperationExt};
 use pango;
 use pango::LayoutExt;
 use pangocairo;

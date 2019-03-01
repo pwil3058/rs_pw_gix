@@ -114,7 +114,7 @@ pub trait ColourAttributeDisplayInterface: WidgetWrapper {
             );
         }
         cairo_context.rectangle(0.0, 0.0, width, height);
-        cairo_context.set_source(&linear_gradient);
+        cairo_context.set_source(&cairo::Pattern::LinearGradient(linear_gradient));
         cairo_context.fill()
     }
 

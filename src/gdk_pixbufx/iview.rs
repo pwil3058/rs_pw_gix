@@ -20,7 +20,7 @@ use std::rc::Rc;
 
 use gdk;
 use gdk::prelude::ContextExt;
-use gdk_pixbuf::{self, PixbufExt};
+use gdk_pixbuf;
 use gtk;
 use gtk::prelude::*;
 
@@ -274,13 +274,14 @@ impl PixbufViewCore {
 
 impl PixbufViewInterface for PixbufView {
     fn create() -> PixbufView {
-        let scrolled_window = gtk::ScrolledWindow::new(None, None);
+        let adj: Option<&gtk::Adjustment> = None;
+        let scrolled_window = gtk::ScrolledWindow::new(adj, adj);
         scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
         let events = gdk::EventMask::POINTER_MOTION_MASK
             | gdk::EventMask::BUTTON_PRESS_MASK
             | gdk::EventMask::BUTTON_RELEASE_MASK
             | gdk::EventMask::LEAVE_NOTIFY_MASK;
-        scrolled_window.add_events(events.bits() as i32);
+        scrolled_window.add_events(events);
         let drawing_area = gtk::DrawingArea::new();
         scrolled_window.add(&drawing_area);
         let xy_selection = XYSelection::create(&drawing_area);

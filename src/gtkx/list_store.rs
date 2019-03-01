@@ -91,7 +91,7 @@ macro_rules! prepend_row_to_list {
 }
 
 pub trait ListRowOps:
-    TreeModelRowOps + gtk::ListStoreExt + gtk::prelude::ListStoreExtManual
+    TreeModelRowOps + gtk::GtkListStoreExt + gtk::GtkListStoreExtManual
 {
     fn append_row(&self, row: &Row) -> gtk::TreeIter {
         append_row_to_list!(row, self)

@@ -162,7 +162,7 @@ pub trait WidgetWrapper: PackableWidgetObject + DialogUser {
 
     fn new_cursor_from_name(&self, name: &str) -> Option<gdk::Cursor> {
         if let Some(ref display) = self.pwo().get_display() {
-            Some(gdk::Cursor::new_from_name(display, name))
+            gdk::Cursor::new_from_name(display, name)
         } else {
             None
         }

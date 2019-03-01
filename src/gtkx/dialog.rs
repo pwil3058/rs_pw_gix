@@ -84,7 +84,7 @@ pub mod dialog_user {
         none
     }
 
-    pub static CANCEL_OK_BUTTONS: &[(&str, i32)] = &[("Cancel", 0), ("Ok", 1)];
+    pub static CANCEL_OK_BUTTONS: &[(&str, gtk::ResponseType)] = &[("Cancel", gtk::ResponseType::Cancel), ("Ok", gtk::ResponseType::Ok)];
 
     fn browse_path<P: IsA<gtk::Window> + gtk::GtkWindowExt>(
         dialog_parent: Option<&P>,
@@ -102,12 +102,11 @@ pub mod dialog_user {
         for button in CANCEL_OK_BUTTONS {
             dialog.add_button(button.0, button.1);
         }
-        let ok = CANCEL_OK_BUTTONS[1].1;
-        dialog.set_default_response(ok);
+        dialog.set_default_response(gtk::ResponseType::Ok);
         if let Some(suggestion) = o_suggestion {
             dialog.set_filename(suggestion);
         };
-        if dialog.run() == ok {
+        if gtk::ResponseType::from(dialog.run()) == gtk::ResponseType::Ok {
             if let Some(file_path) = dialog.get_filename() {
                 dialog.destroy();
                 if absolute {
@@ -141,7 +140,7 @@ pub mod dialog_user {
             &self,
             title: Option<&str>,
             flags: gtk::DialogFlags,
-            buttons: &[(&str, i32)],
+            buttons: &[(&str, gtk::ResponseType)],
         ) -> gtk::Dialog {
             let dialog = gtk::Dialog::new_with_buttons(title, parent_none(), flags, buttons);
             self.set_transient_for_and_icon_on(&dialog);
@@ -152,7 +151,7 @@ pub mod dialog_user {
             &self,
             flags: gtk::DialogFlags,
             type_: gtk::MessageType,
-            buttons: &[(&str, i32)],
+            buttons: &[(&str, gtk::ResponseType)],
             message: &str,
         ) -> gtk::MessageDialog {
             let dialog = gtk::MessageDialog::new(
@@ -175,7 +174,7 @@ pub mod dialog_user {
             o_expln: Option<&str>,
             problem_type: gtk::MessageType,
         ) -> gtk::MessageDialog {
-            let buttons = &[("Close", 0)];
+            let buttons = &[("Close", gtk::ResponseType::Close)];
             let dialog =
                 self.new_message_dialog(gtk::DialogFlags::empty(), problem_type, buttons, msg);
             if let Some(expln) = o_expln {
@@ -208,7 +207,7 @@ pub mod dialog_user {
             &self,
             question: &str,
             o_expln: Option<&str>,
-            buttons: &[(&str, i32)],
+            buttons: &[(&str, gtk::ResponseType)],
         ) -> i32 {
             let dialog = self.new_message_dialog(
                 gtk::DialogFlags::empty(),
@@ -302,8 +301,15 @@ pub mod dialog_user {
             let dialog_c = dialog.clone();
             button.connect_clicked(move |_| {
                 // NB: following gymnastics need to satisfy lifetime  checks
-                let text = &entry_c.get_text().unwrap_or("".to_string());
-                let suggestion: Option<&str> = if text.len() > 0 { Some(text) } else { None };
+                //let text = &entry_c.get_text().unwrap_or("".to_string());
+                //let suggestion: Option<&str> = if text.len() > 0 { Some(text) } else { None };
+                let suggestion_str: String;
+                let suggestion: Option<&str> = if let Some(gtext) = entry_c.get_text() {
+                    suggestion_str = String::from(gtext);
+                    Some(&suggestion_str)
+                } else {
+                    None
+                };
                 if let Some(path) =
                     browse_path(Some(&dialog_c), Some(&b_prompt), suggestion, action, false)
                 {
@@ -312,13 +318,12 @@ pub mod dialog_user {
                 }
             });
 
-            let ok = CANCEL_OK_BUTTONS[1].1;
-            dialog.set_default_response(ok);
-            if dialog.run() == ok {
+            dialog.set_default_response(gtk::ResponseType::Ok);
+            if gtk::ResponseType::from(dialog.run()) == gtk::ResponseType::Ok {
                 let o_text = entry.get_text();
                 dialog.destroy();
                 if let Some(text) = o_text {
-                    Some(PathBuf::from(text))
+                    Some(PathBuf::from(&String::from(text)))
                 } else {
                     Some(PathBuf::new())
                 }

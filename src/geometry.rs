@@ -15,7 +15,7 @@
 use std::convert::From;
 use std::ops::*;
 
-use gdk_pixbuf::{self, PixbufExt};
+use gdk_pixbuf;
 use gtk;
 
 use num::Num;
