@@ -56,6 +56,7 @@ pub mod printer;
 pub mod rgb_math;
 pub mod sample;
 pub mod sav_state;
+pub mod timeout;
 
 #[macro_export]
 macro_rules! init_gtk_if_needed {
