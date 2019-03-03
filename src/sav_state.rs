@@ -145,7 +145,7 @@ where
     W: WidgetExt + Clone + PartialEq,
 {
     widget_states_controlled: WidgetStatesControlled,
-    widgets: Vec<W>,
+    widgets: HashMap<String, W>,
     is_on: bool,
 }
 
@@ -156,16 +156,25 @@ where
     fn new(wsc: WidgetStatesControlled) -> ConditionalWidgetGroup<W> {
         ConditionalWidgetGroup::<W> {
             widget_states_controlled: wsc,
-            widgets: Vec::new(),
+            widgets: HashMap::new(),
             is_on: false,
         }
     }
 
-    fn contains_widget(&self, widget: &W) -> bool {
-        self.widgets.contains(widget)
+    fn contains_name(&self, name: &str) -> bool {
+        self.widgets.contains_key(name)
     }
 
-    fn add_widget(&mut self, widget: W) {
+    fn contains_widget(&self, widget: &W) -> bool {
+        for value in self.widgets.values() {
+            if value == widget {
+                return true
+            }
+        }
+        false
+    }
+
+    fn add_widget(&mut self, name: &str, widget: W) {
         match self.widget_states_controlled {
             Sensitivity => widget.set_sensitive(self.is_on),
             Visibility => widget.set_visible(self.is_on),
@@ -174,23 +183,23 @@ where
                 widget.set_visible(self.is_on);
             }
         }
-        self.widgets.push(widget.clone());
+        self.widgets.insert(name.to_string(), widget.clone());
     }
 
     fn set_state(&mut self, on: bool) {
         match self.widget_states_controlled {
             Sensitivity => {
-                for widget in self.widgets.iter() {
+                for widget in self.widgets.values() {
                     widget.set_sensitive(on);
                 }
             }
             Visibility => {
-                for widget in self.widgets.iter() {
+                for widget in self.widgets.values() {
                     widget.set_visible(on);
                 }
             }
             Both => {
-                for widget in self.widgets.iter() {
+                for widget in self.widgets.values() {
                     widget.set_sensitive(on);
                     widget.set_visible(on);
                 }
@@ -248,6 +257,15 @@ where
         &self.change_notifier
     }
 
+    fn contains_name(&self, name: &str) -> bool {
+        for group in self.groups.borrow().values() {
+            if group.contains_name(name) {
+                return true;
+            }
+        }
+        false
+    }
+
     fn contains_widget(&self, widget: &W) -> bool {
         for group in self.groups.borrow().values() {
             if group.contains_widget(widget) {
@@ -257,17 +275,28 @@ where
         false
     }
 
-    pub fn add_widget(&self, widget: W, condns: u64) {
+    pub fn add_widget(&self, name: &str, widget: W, condns: u64) {
         assert!(!self.contains_widget(&widget));
+        assert!(!self.contains_name(&name));
         let mut groups = self.groups.borrow_mut();
         if let Some(group) = groups.get_mut(&condns) {
-            group.add_widget(widget);
+            group.add_widget(name, widget);
             return;
         }
         let mut group = ConditionalWidgetGroup::<W>::new(self.widget_states_controlled);
         group.set_state((condns & self.current_condns.get()) == condns);
-        group.add_widget(widget);
+        group.add_widget(name, widget);
         groups.insert(condns, group);
+    }
+
+    pub fn get_widget(&self, name: &str) -> Option<W> {
+        let groups = self.groups.borrow();
+        for group in groups.values() {
+            if let Some(widget) = group.widgets.get(name) {
+                return Some(widget.clone());
+            }
+        }
+        None
     }
 
     pub fn update_condns(&self, changed_condns: MaskedCondns) {
