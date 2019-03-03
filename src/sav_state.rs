@@ -233,9 +233,8 @@ where
             change_notifier: change_notifier,
         });
         let cwg_clone = Rc::clone(&cwg);
-        cwg.change_notifier.register_callback(
-            Box::new(move |condns| cwg_clone.update_condns(condns))
-        );
+        cwg.change_notifier
+            .register_callback(Box::new(move |condns| cwg_clone.update_condns(condns)));
         cwg
     }
 

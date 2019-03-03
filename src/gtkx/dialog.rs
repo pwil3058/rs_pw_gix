@@ -84,7 +84,10 @@ pub mod dialog_user {
         none
     }
 
-    pub static CANCEL_OK_BUTTONS: &[(&str, gtk::ResponseType)] = &[("Cancel", gtk::ResponseType::Cancel), ("Ok", gtk::ResponseType::Ok)];
+    pub static CANCEL_OK_BUTTONS: &[(&str, gtk::ResponseType)] = &[
+        ("Cancel", gtk::ResponseType::Cancel),
+        ("Ok", gtk::ResponseType::Ok),
+    ];
 
     fn browse_path<P: IsA<gtk::Window> + gtk::GtkWindowExt>(
         dialog_parent: Option<&P>,

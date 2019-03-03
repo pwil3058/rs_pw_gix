@@ -155,9 +155,7 @@ pub mod area_selection {
     use std::rc::Rc;
 
     use cairo;
-    use gdk::{
-        self, WindowExt, WindowExtManual,
-    };
+    use gdk::{self, WindowExt, WindowExtManual};
     use gio;
     use gtk::{self, GtkWindowExt, WidgetExt, WidgetExtManual};
 

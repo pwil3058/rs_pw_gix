@@ -27,33 +27,31 @@ pub struct ControlledTimeoutCycle {
 
 impl ControlledTimeoutCycle {
     pub fn new(label: &str, active: bool, interval_secs: u32) -> Rc<Self> {
-        let ct = Rc::new(
-            Self {
-                interval_secs: Cell::new(interval_secs),
-                stopped: Cell::new(true),
-                check_menu_item: gtk::CheckMenuItem::new_with_label(label),
-                callbacks: RefCell::new(Vec::new()),
-                next_cb_id: Cell::new(0),
-            }
-        );
+        let ct = Rc::new(Self {
+            interval_secs: Cell::new(interval_secs),
+            stopped: Cell::new(true),
+            check_menu_item: gtk::CheckMenuItem::new_with_label(label),
+            callbacks: RefCell::new(Vec::new()),
+            next_cb_id: Cell::new(0),
+        });
 
         let ct_clone = Rc::clone(&ct);
-        ct.check_menu_item.connect_toggled(
-            move |t| if t.get_active() && ct_clone.stopped.get() {
+        ct.check_menu_item.connect_toggled(move |t| {
+            if t.get_active() && ct_clone.stopped.get() {
                 let interval_secs = ct_clone.interval_secs.get();
                 let ct_clone_clone = Rc::clone(&ct_clone);
-                gtk::timeout_add_seconds(interval_secs,
-                    move || {
-                        for (_, callback) in ct_clone_clone.callbacks.borrow().iter() {
-                            callback()
-                        }
-                        ct_clone_clone.stopped.set(ct_clone_clone.check_menu_item.get_active());
-                        gtk::Continue(ct_clone_clone.stopped.get())
+                gtk::timeout_add_seconds(interval_secs, move || {
+                    for (_, callback) in ct_clone_clone.callbacks.borrow().iter() {
+                        callback()
                     }
-                );
+                    ct_clone_clone
+                        .stopped
+                        .set(ct_clone_clone.check_menu_item.get_active());
+                    gtk::Continue(ct_clone_clone.stopped.get())
+                });
                 ct_clone.stopped.set(false);
             }
-        );
+        });
 
         // NB: do this last so that call back is active
         ct.check_menu_item.set_active(active);
