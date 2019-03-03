@@ -161,6 +161,10 @@ where
         }
     }
 
+    fn len(&self) -> usize {
+        self.widgets.len()
+    }
+
     fn contains_name(&self, name: &str) -> bool {
         self.widgets.contains_key(name)
     }
@@ -228,7 +232,7 @@ where
 {
     pub fn new(
         wsc: WidgetStatesControlled,
-        selection: Option<gtk::TreeSelection>,
+        selection: Option<&gtk::TreeSelection>,
         change_notifier: Option<&Rc<ChangedCondnsNotifier>>,
     ) -> Rc<ConditionalWidgetGroups<W>> {
         let change_notifier = if let Some(change_notifier) = change_notifier {
@@ -253,6 +257,14 @@ where
         cwg
     }
 
+    pub fn len(&self) -> usize {
+        let mut len = 0;
+        for group in self.groups.borrow().values() {
+            len += group.len()
+        }
+        len
+    }
+
     pub fn change_notifier(&self) -> &Rc<ChangedCondnsNotifier> {
         &self.change_notifier
     }
@@ -275,17 +287,17 @@ where
         false
     }
 
-    pub fn add_widget(&self, name: &str, widget: W, condns: u64) {
+    pub fn add_widget(&self, name: &str, widget: &W, condns: u64) {
         assert!(!self.contains_widget(&widget));
         assert!(!self.contains_name(&name));
         let mut groups = self.groups.borrow_mut();
         if let Some(group) = groups.get_mut(&condns) {
-            group.add_widget(name, widget);
+            group.add_widget(name, widget.clone());
             return;
         }
         let mut group = ConditionalWidgetGroup::<W>::new(self.widget_states_controlled);
         group.set_state((condns & self.current_condns.get()) == condns);
-        group.add_widget(name, widget);
+        group.add_widget(name, widget.clone());
         groups.insert(condns, group);
     }
 
