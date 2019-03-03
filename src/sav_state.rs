@@ -17,9 +17,12 @@
 //! current state.
 //! Up to 64 conditions can be used to describe a state.
 
+use std::cell::{Cell, RefCell};
 use std::clone::Clone;
 use std::collections::HashMap;
 use std::ops::BitOr;
+use std::rc::Rc;
+use std::sync::Mutex;
 
 use gtk::{TreeSelection, TreeSelectionExt, WidgetExt};
 
@@ -83,6 +86,46 @@ impl MaskedCondnProvider for TreeSelection {
                 condns: SAV_SELN_MADE,
                 mask: SAV_SELN_MASK,
             },
+        }
+    }
+}
+
+pub struct ChangedCondnsNotifier {
+    callbacks: Mutex<RefCell<Vec<(u64, Box<Fn(MaskedCondns)>)>>>,
+    next_token: Mutex<Cell<u64>>,
+}
+
+impl ChangedCondnsNotifier {
+    pub fn new() -> Rc<Self> {
+        Rc::new(Self {
+            callbacks: Mutex::new(RefCell::new(Vec::new())),
+            next_token: Mutex::new(Cell::new(0)),
+        })
+    }
+
+    pub fn register_callback(&self, callback: Box<Fn(MaskedCondns)>) -> u64 {
+        let next_token = self.next_token.lock().unwrap();
+        let token = next_token.get();
+        next_token.set(token + 1);
+
+        let callbacks = self.callbacks.lock().unwrap();
+        callbacks.borrow_mut().push((token, callback));
+
+        token
+    }
+
+    pub fn deregister_callback(&self, token: u64) {
+        let callbacks = self.callbacks.lock().unwrap();
+        let position = callbacks.borrow().iter().position(|x| x.0 == token);
+        if let Some(position) = position {
+            callbacks.borrow_mut().remove(position);
+        }
+    }
+
+    pub fn notify_changed_condns(&self, condns: MaskedCondns) {
+        let callbacks = self.callbacks.lock().unwrap();
+        for (_, callback) in callbacks.borrow().iter() {
+            callback(condns)
         }
     }
 }
@@ -160,30 +203,48 @@ where
 /// Groups of widgets whose sensitivity and/or visibility is determined
 /// by the current conditions
 // TODO: get a better name than ConditionalWidgetGroups
-#[derive(Debug)]
 pub struct ConditionalWidgetGroups<W>
 where
     W: WidgetExt + Clone + PartialEq,
 {
     widget_states_controlled: WidgetStatesControlled,
-    groups: HashMap<u64, ConditionalWidgetGroup<W>>,
-    current_condns: u64,
+    groups: RefCell<HashMap<u64, ConditionalWidgetGroup<W>>>,
+    current_condns: Cell<u64>,
+    change_notifier: Rc<ChangedCondnsNotifier>,
 }
 
 impl<W> ConditionalWidgetGroups<W>
 where
     W: WidgetExt + Clone + PartialEq,
 {
-    pub fn new(wsc: WidgetStatesControlled) -> ConditionalWidgetGroups<W> {
-        ConditionalWidgetGroups::<W> {
+    pub fn new(
+        wsc: WidgetStatesControlled,
+        change_notifier: Option<&Rc<ChangedCondnsNotifier>>,
+    ) -> Rc<ConditionalWidgetGroups<W>> {
+        let change_notifier = if let Some(change_notifier) = change_notifier {
+            Rc::clone(&change_notifier)
+        } else {
+            ChangedCondnsNotifier::new()
+        };
+        let cwg = Rc::new(ConditionalWidgetGroups::<W> {
             widget_states_controlled: wsc,
-            groups: HashMap::new(),
-            current_condns: 0,
-        }
+            groups: RefCell::new(HashMap::new()),
+            current_condns: Cell::new(0),
+            change_notifier: change_notifier,
+        });
+        let cwg_clone = Rc::clone(&cwg);
+        cwg.change_notifier.register_callback(
+            Box::new(move |condns| cwg_clone.update_condns(condns))
+        );
+        cwg
+    }
+
+    pub fn change_notifier(&self) -> &Rc<ChangedCondnsNotifier> {
+        &self.change_notifier
     }
 
     fn contains_widget(&self, widget: &W) -> bool {
-        for group in self.groups.values() {
+        for group in self.groups.borrow().values() {
             if group.contains_widget(widget) {
                 return true;
             }
@@ -191,26 +252,27 @@ where
         false
     }
 
-    pub fn add_widget(&mut self, widget: W, condns: u64) {
+    pub fn add_widget(&self, widget: W, condns: u64) {
         assert!(!self.contains_widget(&widget));
-        if let Some(group) = self.groups.get_mut(&condns) {
+        let mut groups = self.groups.borrow_mut();
+        if let Some(group) = groups.get_mut(&condns) {
             group.add_widget(widget);
             return;
         }
         let mut group = ConditionalWidgetGroup::<W>::new(self.widget_states_controlled);
-        group.set_state((condns & self.current_condns) == condns);
+        group.set_state((condns & self.current_condns.get()) == condns);
         group.add_widget(widget);
-        self.groups.insert(condns, group);
+        groups.insert(condns, group);
     }
 
-    pub fn update_condns(&mut self, changed_condns: MaskedCondns) {
+    pub fn update_condns(&self, changed_condns: MaskedCondns) {
         assert!(changed_condns.is_consistent());
-        let new_condns = changed_condns.condns | (self.current_condns & !changed_condns.mask);
-        for (key_condns, group) in self.groups.iter_mut() {
+        let new_condns = changed_condns.condns | (self.current_condns.get() & !changed_condns.mask);
+        for (key_condns, group) in self.groups.borrow_mut().iter_mut() {
             if changed_condns.mask & key_condns != 0 {
                 group.set_state((key_condns & new_condns) == *key_condns);
             };
         }
-        self.current_condns = new_condns
+        self.current_condns.set(new_condns)
     }
 }
