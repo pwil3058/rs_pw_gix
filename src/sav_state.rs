@@ -219,6 +219,7 @@ where
 {
     pub fn new(
         wsc: WidgetStatesControlled,
+        selection: Option<gtk::TreeSelection>,
         change_notifier: Option<&Rc<ChangedCondnsNotifier>>,
     ) -> Rc<ConditionalWidgetGroups<W>> {
         let change_notifier = if let Some(change_notifier) = change_notifier {
@@ -232,6 +233,11 @@ where
             current_condns: Cell::new(0),
             change_notifier: change_notifier,
         });
+        if let Some(selection) = selection {
+            let cwg_clone = Rc::clone(&cwg);
+            selection
+                .connect_changed(move |seln| cwg_clone.update_condns(seln.get_masked_conditions()));
+        }
         let cwg_clone = Rc::clone(&cwg);
         cwg.change_notifier
             .register_callback(Box::new(move |condns| cwg_clone.update_condns(condns)));
