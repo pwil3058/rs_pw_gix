@@ -70,6 +70,21 @@ where
     fn show_hidden(&self) -> bool;
     fn hide_clean(&self) -> bool;
 
+    fn get_fso_data_at(&self, posn: (f64, f64)) -> Option<(String, bool)> {
+        let x = posn.0 as i32;
+        let y = posn.1 as i32;
+        if let Some(location) = self.view().get_path_at_pos(x, y) {
+            if let Some(path) = location.0 {
+                if let Some(iter) = self.store().get_iter(&path) {
+                    let name = FSOI::get_path_from_row(self.store(), &iter);
+                    let is_dir = FSOI::row_is_a_dir(self.store(), &iter);
+                    return Some((name, is_dir));
+                }
+            }
+        }
+        None
+    }
+
     fn insert_place_holder(&self, dir_iter: &gtk::TreeIter) {
         let iter = self.store().append(dir_iter);
         FSOI::set_place_holder_values(self.store(), &iter);
