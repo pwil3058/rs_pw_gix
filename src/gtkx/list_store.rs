@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::rc::Rc;
 
 use gtk;
@@ -252,6 +252,65 @@ pub trait BufferedUpdate<RawData: Default, L: ListRowOps> {
             self.get_list_store().update_with(&row_buffer.get_rows());
         };
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum RequiredMapAction {
+    Repopulate,
+    Update,
+    Nothing,
+}
+
+pub trait MapManagedUpdate<Buffer, RawData, List>
+    where
+        Buffer: BufferedUpdate<RawData, List>,
+        RawData: Default,
+        List: ListRowOps,
+{
+    fn buffered_update(&self) -> Ref<Buffer>;
+    fn is_mapped(&self) -> bool;
+    fn get_required_map_action(&self) -> RequiredMapAction;
+    fn set_required_map_action(&self, action: RequiredMapAction);
+
+    fn auto_update(&self) {
+        match self.get_required_map_action() {
+            RequiredMapAction::Nothing => self.update(),
+            _ => (),
+        }
+    }
+
+    fn on_map_action(&self) {
+        match self.get_required_map_action() {
+            RequiredMapAction::Repopulate => {
+                self.repopulate();
+                self.set_required_map_action(RequiredMapAction::Nothing);
+            }
+            RequiredMapAction::Update => {
+                self.update();
+                self.set_required_map_action(RequiredMapAction::Nothing);
+            }
+            RequiredMapAction::Nothing => ()
+        }
+    }
+
+    fn repopulate(&self) {
+        if self.is_mapped() {
+            self.buffered_update().repopulate();
+            self.set_required_map_action(RequiredMapAction::Nothing)
+        } else {
+            self.set_required_map_action(RequiredMapAction::Repopulate)
+        }
+    }
+
+    fn update(&self) {
+        if self.is_mapped() {
+            self.buffered_update().update();
+            self.set_required_map_action(RequiredMapAction::Nothing)
+        } else if self.get_required_map_action() != RequiredMapAction::Repopulate {
+            self.set_required_map_action(RequiredMapAction::Update)
+        }
+    }
+
 }
 
 #[cfg(test)]
