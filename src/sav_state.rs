@@ -30,8 +30,8 @@ use gtk::{TreeSelection, TreeSelectionExt, WidgetExt};
 /// be specified withoit effecting the othet conditions.
 #[derive(Debug, Clone, Copy)]
 pub struct MaskedCondns {
-    condns: u64,
-    mask: u64,
+    pub condns: u64,
+    pub mask: u64,
 }
 
 impl MaskedCondns {
@@ -57,14 +57,14 @@ pub trait MaskedCondnProvider {
     fn get_masked_conditions(&self) -> MaskedCondns;
 }
 
-const _SAV_DONT_CARE: u64 = 0;
+pub const SAV_DONT_CARE: u64 = 0;
 /// Interesting conditions for a TreeSelection that are useful for
 /// tailoring pop up menus.
-const SAV_SELN_NONE: u64 = 2 ^ 0;
-const SAV_SELN_MADE: u64 = 2 ^ 1;
-const SAV_SELN_UNIQUE: u64 = 2 ^ 2;
-const SAV_SELN_PAIR: u64 = 2 ^ 3;
-const SAV_SELN_MASK: u64 = SAV_SELN_NONE + SAV_SELN_MADE + SAV_SELN_UNIQUE + SAV_SELN_PAIR;
+pub const SAV_SELN_NONE: u64 = 2 ^ 0;
+pub const SAV_SELN_MADE: u64 = 2 ^ 1;
+pub const SAV_SELN_UNIQUE: u64 = 2 ^ 2;
+pub const SAV_SELN_PAIR: u64 = 2 ^ 3;
+pub const SAV_SELN_MASK: u64 = SAV_SELN_NONE + SAV_SELN_MADE + SAV_SELN_UNIQUE + SAV_SELN_PAIR;
 
 /// Implementation of MaskedCondnProvider for TreeSelection
 impl MaskedCondnProvider for TreeSelection {
