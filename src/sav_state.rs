@@ -60,10 +60,10 @@ pub trait MaskedCondnProvider {
 pub const SAV_DONT_CARE: u64 = 0;
 /// Interesting conditions for a TreeSelection that are useful for
 /// tailoring pop up menus.
-pub const SAV_SELN_NONE: u64 = 2 ^ 0;
-pub const SAV_SELN_MADE: u64 = 2 ^ 1;
-pub const SAV_SELN_UNIQUE: u64 = 2 ^ 2;
-pub const SAV_SELN_PAIR: u64 = 2 ^ 3;
+pub const SAV_SELN_NONE: u64 = 1 << 0;
+pub const SAV_SELN_MADE: u64 = 1 << 1;
+pub const SAV_SELN_UNIQUE: u64 = 1 << 2;
+pub const SAV_SELN_PAIR: u64 = 1 << 3;
 pub const SAV_SELN_MASK: u64 = SAV_SELN_NONE + SAV_SELN_MADE + SAV_SELN_UNIQUE + SAV_SELN_PAIR;
 
 /// Implementation of MaskedCondnProvider for TreeSelection
