@@ -62,7 +62,6 @@ where
     FSDB: FsDbIfce<FSOI>,
     FSOI: FsObjectIfce,
 {
-    fn new(auto_expand: bool) -> Rc<Self>;
     fn view(&self) -> &gtk::TreeView;
     fn store(&self) -> &gtk::TreeStore;
     fn fs_db(&self) -> &FSDB;
