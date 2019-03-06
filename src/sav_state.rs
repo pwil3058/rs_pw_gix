@@ -55,6 +55,7 @@ impl BitOr for MaskedCondns {
 /// determine their states,
 pub trait MaskedCondnProvider {
     fn get_masked_conditions(&self) -> MaskedCondns;
+    fn get_masked_conditions_with_hover_ok(&self, hover_ok: bool) -> MaskedCondns;
 }
 
 pub const SAV_DONT_CARE: u64 = 0;
@@ -64,7 +65,8 @@ pub const SAV_SELN_NONE: u64 = 1 << 0;
 pub const SAV_SELN_MADE: u64 = 1 << 1;
 pub const SAV_SELN_UNIQUE: u64 = 1 << 2;
 pub const SAV_SELN_PAIR: u64 = 1 << 3;
-pub const SAV_SELN_MASK: u64 = SAV_SELN_NONE + SAV_SELN_MADE + SAV_SELN_UNIQUE + SAV_SELN_PAIR;
+pub const SAV_SELN_UNIQUE_OR_HOVER_OK: u64 = 1 << 4;
+pub const SAV_SELN_MASK: u64 = (1 << 5) - 1;
 
 /// Implementation of MaskedCondnProvider for TreeSelection
 impl MaskedCondnProvider for TreeSelection {
@@ -87,6 +89,14 @@ impl MaskedCondnProvider for TreeSelection {
                 mask: SAV_SELN_MASK,
             },
         }
+    }
+
+    fn get_masked_conditions_with_hover_ok(&self, hover_ok: bool) -> MaskedCondns {
+        let mut mc = self.get_masked_conditions();
+        if hover_ok && (mc.condns & (SAV_SELN_NONE + SAV_SELN_UNIQUE)) != 0 {
+            mc.condns |= SAV_SELN_UNIQUE_OR_HOVER_OK
+        }
+        mc
     }
 }
 
