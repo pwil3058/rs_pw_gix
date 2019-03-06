@@ -90,17 +90,23 @@ impl MaskedCondnProvider for TreeSelection {
     }
 }
 
-pub struct ChangedCondnsNotifier {
+pub struct ChangedCondnsNotifier { // TODO: remove mutexes: Gtk is single threaded
     callbacks: Mutex<RefCell<Vec<(u64, Box<Fn(MaskedCondns)>)>>>,
     next_token: Mutex<Cell<u64>>,
+    current_condns: Cell<u64>,
 }
 
 impl ChangedCondnsNotifier {
-    pub fn new() -> Rc<Self> {
+    pub fn new(initial_condns: u64) -> Rc<Self> {
         Rc::new(Self {
             callbacks: Mutex::new(RefCell::new(Vec::new())),
             next_token: Mutex::new(Cell::new(0)),
+            current_condns: Cell::new(initial_condns),
         })
+    }
+
+    pub fn current_condns(&self) -> u64 {
+        self.current_condns.get()
     }
 
     pub fn register_callback(&self, callback: Box<Fn(MaskedCondns)>) -> u64 {
@@ -122,11 +128,14 @@ impl ChangedCondnsNotifier {
         }
     }
 
-    pub fn notify_changed_condns(&self, condns: MaskedCondns) {
+    pub fn notify_changed_condns(&self, masked_condns: MaskedCondns) {
         let callbacks = self.callbacks.lock().unwrap();
         for (_, callback) in callbacks.borrow().iter() {
-            callback(condns)
+            callback(masked_condns)
         }
+        self.current_condns.set(
+            masked_condns.condns | (self.current_condns.get() & !masked_condns.mask)
+        );
     }
 }
 
@@ -238,15 +247,17 @@ where
         let change_notifier = if let Some(change_notifier) = change_notifier {
             Rc::clone(&change_notifier)
         } else {
-            ChangedCondnsNotifier::new()
+            ChangedCondnsNotifier::new(0)
         };
+        let initial_condns = change_notifier.current_condns();
         let cwg = Rc::new(ConditionalWidgetGroups::<W> {
             widget_states_controlled: wsc,
             groups: RefCell::new(HashMap::new()),
-            current_condns: Cell::new(0),
+            current_condns: Cell::new(initial_condns),
             change_notifier: change_notifier,
         });
         if let Some(selection) = selection {
+            cwg.update_condns(selection.get_masked_conditions());
             let cwg_clone = Rc::clone(&cwg);
             selection
                 .connect_changed(move |seln| cwg_clone.update_condns(seln.get_masked_conditions()));
