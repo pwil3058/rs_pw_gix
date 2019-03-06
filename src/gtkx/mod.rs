@@ -20,6 +20,8 @@ pub mod tree_model;
 pub mod list_store;
 #[macro_use]
 pub mod tree_store;
+#[macro_use]
+pub mod tree_view;
 
 pub mod coloured;
 pub mod combo_box_text;
