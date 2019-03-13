@@ -164,7 +164,7 @@ where
         for dir_data in dirs.iter() {
             let dir_iter = self.store().append(o_parent_iter);
             dir_data.set_row_values(self.store(), &dir_iter);
-            self.auto_expand_dir_or_insert_place_holder(dir_path, &dir_iter);
+            self.auto_expand_dir_or_insert_place_holder(&dir_data.path(), &dir_iter);
         }
         for file_data in files.iter() {
             let file_iter = self.store().append(o_parent_iter);
