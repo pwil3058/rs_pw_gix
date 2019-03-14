@@ -24,7 +24,7 @@ macro_rules! get_row_item_for_event {
                 if let Some(path) = location.0 {
                     if let Some(store) = $view.get_model() {
                         if let Some(iter) = store.get_iter(&path) {
-                            result = store.get_value(&iter, 0).get::<String>();
+                            result = store.get_value(&iter, $index).get::<$type>();
                         }
                     }
                 }
@@ -34,10 +34,17 @@ macro_rules! get_row_item_for_event {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+#[macro_export]
+macro_rules! get_row_item_for_tree_path {
+    ( $view:ident, $tree_path:ident, $type:ty, $index:expr ) => {
+        {
+            let mut result: Option<$type> = None;
+            if let Some(store) = $view.get_model() {
+                if let Some(iter) = store.get_iter(&$tree_path) {
+                    result = store.get_value(&iter, $index).get::<$type>();
+                }
+            }
+            result
+        }
     }
 }
