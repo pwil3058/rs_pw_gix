@@ -172,7 +172,7 @@ impl ManagedMenu {
         wsc: WidgetStatesControlled,
         selection: Option<&gtk::TreeSelection>,
         change_notifier: Option<&Rc<ChangedCondnsNotifier>>,
-        items: &Vec<(&str, &str, &str, u64)>
+        items: &Vec<(&str, &str, Option<&gtk::Image>, &str, u64)>
     ) -> Self {
         let pm = Self {
             menu: gtk::Menu::new(),
@@ -180,8 +180,8 @@ impl ManagedMenu {
                 wsc, selection, change_notifier
             ),
         };
-        for &(name, label_text, tooltip_text, condns) in items.iter() {
-            pm.append_item(name, label_text, tooltip_text, condns);
+        for &(name, label_text, image, tooltip_text, condns) in items.iter() {
+            pm.append_item(name, label_text, image, tooltip_text, condns);
         }
         pm.menu.show_all();
 
@@ -214,29 +214,37 @@ impl ManagedMenu {
         self.menu.show_all();
     }
 
-    fn new_item(&self, label_text: &str, tooltip_text: &str) -> gtk::MenuItem {
-        let item = gtk::MenuItem::new_with_label(label_text);
+    fn new_item(&self, label_text: &str, image: Option<&gtk::Image>, tooltip_text: &str) -> gtk::MenuItem {
+        let item = gtk::MenuItem::new();
+        let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        if let Some(image) = image {
+            h_box.pack_start(image, false, false, 0);
+        }
+        let label = gtk::Label::new(label_text);
+        label.set_xalign(0.0);
+        h_box.pack_start(&label, true, true, 0);
+        item.add(&h_box);
         item.set_tooltip_text(tooltip_text);
 
         item
     }
 
-    pub fn append_item(&self, name: &str, label_text: &str, tooltip_text: &str, condns: u64) -> gtk::MenuItem {
-        let item = self.new_item(label_text, tooltip_text);
+    pub fn append_item(&self, name: &str, label_text: &str, image: Option<&gtk::Image>, tooltip_text: &str, condns: u64) -> gtk::MenuItem {
+        let item = self.new_item(label_text, image, tooltip_text);
         self.append_menu_item(name, &item, condns);
 
         item
     }
 
-    pub fn insert_item(&self, name: &str, label_text: &str, tooltip_text: &str, condns: u64, position: i32) -> gtk::MenuItem {
-        let item = self.new_item(label_text, tooltip_text);
+    pub fn insert_item(&self, name: &str, label_text: &str, image: Option<&gtk::Image>, tooltip_text: &str, condns: u64, position: i32) -> gtk::MenuItem {
+        let item = self.new_item(label_text, image, tooltip_text);
         self.insert_menu_item(name, &item, condns, position);
 
         item
     }
 
-    pub fn prepend_item(&self, name: &str, label_text: &str, tooltip_text: &str, condns: u64) -> gtk::MenuItem {
-        let item = self.new_item(label_text, tooltip_text);
+    pub fn prepend_item(&self, name: &str, label_text: &str, image: Option<&gtk::Image>, tooltip_text: &str, condns: u64) -> gtk::MenuItem {
+        let item = self.new_item(label_text, image, tooltip_text);
         self.prepend_menu_item(name, &item, condns);
 
         item
@@ -263,7 +271,7 @@ impl DualManagedMenu {
     pub fn new(
         selection: Option<&gtk::TreeSelection>,
         change_notifier: Option<&Rc<ChangedCondnsNotifier>>,
-        items: &Vec<(&str, &str, &str, u64, u64)>
+        items: &Vec<(&str, &str, Option<&gtk::Image>, &str, u64, u64)>
     ) -> Self {
         let pm = Self {
             menu: gtk::Menu::new(),
@@ -274,8 +282,8 @@ impl DualManagedMenu {
                 WidgetStatesControlled::Visibility, selection, change_notifier
             ),
         };
-        for &(name, label_text, tooltip_text, sensitivity_condns, visibility_condns) in items.iter() {
-            pm.append_item(name, label_text, tooltip_text, sensitivity_condns, visibility_condns);
+        for &(name, label_text, image, tooltip_text, sensitivity_condns, visibility_condns) in items.iter() {
+            pm.append_item(name, label_text, image, tooltip_text, sensitivity_condns, visibility_condns);
         }
         pm.menu.show_all();
 
@@ -311,29 +319,37 @@ impl DualManagedMenu {
         self.menu.show_all();
     }
 
-    fn new_item(&self, label_text: &str, tooltip_text: &str) -> gtk::MenuItem {
-        let item = gtk::MenuItem::new_with_label(label_text);
+    fn new_item(&self, label_text: &str, image: Option<&gtk::Image>, tooltip_text: &str) -> gtk::MenuItem {
+        let item = gtk::MenuItem::new();
+        if let Some(image) = image {
+            let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+            h_box.pack_start(image, false, false, 0);
+            h_box.pack_start(&gtk::Label::new(label_text), false, false, 0);
+            item.add(&h_box);
+        } else {
+            item.set_label(label_text)
+        }
         item.set_tooltip_text(tooltip_text);
 
         item
     }
 
-    pub fn append_item(&self, name: &str, label_text: &str, tooltip_text: &str, sensitivity_condns: u64, visibility_condns: u64) -> gtk::MenuItem {
-        let item = self.new_item(label_text, tooltip_text);
+    pub fn append_item(&self, name: &str, label_text: &str, image: Option<&gtk::Image>, tooltip_text: &str, sensitivity_condns: u64, visibility_condns: u64) -> gtk::MenuItem {
+        let item = self.new_item(label_text, image, tooltip_text);
         self.append_menu_item(name, &item, sensitivity_condns, visibility_condns);
 
         item
     }
 
-    pub fn insert_item(&self, name: &str, label_text: &str, tooltip_text: &str, sensitivity_condns: u64, visibility_condns: u64, position: i32) -> gtk::MenuItem {
-        let item = self.new_item(label_text, tooltip_text);
+    pub fn insert_item(&self, name: &str, label_text: &str, image: Option<&gtk::Image>, tooltip_text: &str, sensitivity_condns: u64, visibility_condns: u64, position: i32) -> gtk::MenuItem {
+        let item = self.new_item(label_text, image, tooltip_text);
         self.insert_menu_item(name, &item, sensitivity_condns, visibility_condns, position);
 
         item
     }
 
-    pub fn prepend_item(&self, name: &str, label_text: &str, tooltip_text: &str, sensitivity_condns: u64, visibility_condns: u64) -> gtk::MenuItem {
-        let item = self.new_item(label_text, tooltip_text);
+    pub fn prepend_item(&self, name: &str, label_text: &str, image: Option<&gtk::Image>, tooltip_text: &str, sensitivity_condns: u64, visibility_condns: u64) -> gtk::MenuItem {
+        let item = self.new_item(label_text, image, tooltip_text);
         self.prepend_menu_item(name, &item, sensitivity_condns, visibility_condns);
 
         item

@@ -33,3 +33,12 @@ pub mod notebook;
 pub mod paned;
 pub mod tree_view_column;
 pub mod window;
+
+pub mod icon_size {
+    pub const MENU: i32 = 16;
+    pub const SMALL_TOOLBAR: i32 = 16;
+    pub const LARGE_TOOLBAR: i32 = 24;
+    pub const BUTTON: i32 = 16;
+    pub const DND: i32 = 32;
+    pub const DIALOG: i32 = 48;
+}
