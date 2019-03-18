@@ -37,8 +37,11 @@ impl AutoClose for gtk::RecentChooserDialog {}
 
 pub mod dialog_user {
     use std::error::Error;
+    use std::io;
     use std::path::PathBuf;
+    use std::process;
 
+    use glib::markup_escape_text;
     use gtk;
     use gtk::prelude::*;
 
@@ -123,6 +126,47 @@ pub mod dialog_user {
         None
     }
 
+    fn markup_cmd_fail(cmd: &str) -> String {
+        format!(
+            "{}: <span foreground=\"red\">FAILED</span>",
+            markup_escape_text(cmd)
+        )
+    }
+
+    fn markup_cmd_warn(cmd: &str) -> String {
+        format!(
+            "{}: <span foreground=\"orange\">WARNED</span>",
+            markup_escape_text(cmd)
+        )
+    }
+
+    fn markup_cmd_ok(cmd: &str) -> String {
+        format!(
+            "{}: <span foreground=\"green\">OK</span>",
+            markup_escape_text(cmd)
+        )
+    }
+
+    fn markup_output(output: &process::Output) -> Option<String> {
+        if output.stdout.len() > 0 {
+            let stdout = markup_escape_text(&String::from_utf8_lossy(&output.stdout));
+            if output.stderr.len() > 0 {
+                let stderr = markup_escape_text(&String::from_utf8_lossy(&output.stderr));
+                Some(format!(
+                    "{}\n<span foreground=\"red\">{}</span>",
+                    stdout, stderr
+                ))
+            } else {
+                Some(stdout.to_string())
+            }
+        } else if output.stderr.len() > 0 {
+            let stderr = markup_escape_text(&String::from_utf8_lossy(&output.stderr));
+            Some(format!("<span foreground=\"red\">{}</span>", stderr))
+        } else {
+            None
+        }
+    }
+
     pub trait DialogUser: TopGtkWindow {
         fn set_transient_for_and_icon_on<W: gtk::GtkWindowExt>(&self, window: &W) {
             if let Some(tlw) = self.get_toplevel_gtk_window() {
@@ -204,6 +248,73 @@ pub mod dialog_user {
             };
             self.new_inform_user_dialog(msg, Some(&expln), gtk::MessageType::Error)
                 .run();
+        }
+
+        fn report_command_result(&self, cmd: &str, result: &io::Result<process::Output>) {
+            match result {
+                Ok(output) => {
+                    let dialog = self.new_message_dialog(
+                        gtk::DialogFlags::empty(),
+                        gtk::MessageType::Info,
+                        &[("Close", gtk::ResponseType::Close)],
+                        "",
+                    );
+                    dialog.enable_auto_close();
+                    if !output.status.success() {
+                        dialog.set_property_message_type(gtk::MessageType::Error);
+                        dialog.set_markup(&markup_cmd_fail(cmd));
+                    } else if output.stderr.len() > 0 {
+                        dialog.set_property_message_type(gtk::MessageType::Warning);
+                        dialog.set_markup(&markup_cmd_warn(cmd));
+                    } else {
+                        dialog.set_property_message_type(gtk::MessageType::Info);
+                        dialog.set_markup(&markup_cmd_ok(cmd));
+                    }
+                    if let Some(markup) = markup_output(&output) {
+                        dialog.set_property_secondary_use_markup(true);
+                        dialog.set_property_secondary_text(Some(markup.as_str()));
+                    }
+                    dialog.run();
+                }
+                Err(err) => {
+                    let msg = format!("{}: blew up!", cmd);
+                    self.report_error(&msg, err)
+                }
+            }
+        }
+
+        fn report_any_command_problems(&self, cmd: &str, result: &io::Result<process::Output>) {
+            match result {
+                Ok(output) => {
+                    if output.status.success() && output.stderr.len() == 0 {
+                        // Nothing to report
+                        return;
+                    }
+                    let dialog = self.new_message_dialog(
+                        gtk::DialogFlags::empty(),
+                        gtk::MessageType::Info,
+                        &[("Close", gtk::ResponseType::Close)],
+                        "",
+                    );
+                    dialog.enable_auto_close();
+                    if !output.status.success() {
+                        dialog.set_property_message_type(gtk::MessageType::Error);
+                        dialog.set_markup(&markup_cmd_fail(cmd));
+                    } else {
+                        dialog.set_property_message_type(gtk::MessageType::Warning);
+                        dialog.set_markup(&markup_cmd_warn(cmd));
+                    }
+                    if let Some(markup) = markup_output(&output) {
+                        dialog.set_property_secondary_use_markup(true);
+                        dialog.set_property_secondary_text(Some(markup.as_str()));
+                    }
+                    dialog.run();
+                }
+                Err(err) => {
+                    let msg = format!("{}: blew up!", cmd);
+                    self.report_error(&msg, err)
+                }
+            }
         }
 
         fn ask_question(
