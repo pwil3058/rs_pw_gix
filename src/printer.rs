@@ -88,7 +88,12 @@ pub struct PrintError(Option<glib::Error>);
 
 impl fmt::Display for PrintError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "PrintError({}): {:?}.", self.description(), self.source())?;
+        write!(
+            f,
+            "PrintError({}): {:?}.",
+            self.description(),
+            self.source()
+        )?;
         Ok(())
     }
 }

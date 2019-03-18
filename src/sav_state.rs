@@ -104,7 +104,8 @@ impl MaskedCondnProvider for TreeSelection {
     }
 }
 
-pub struct ChangedCondnsNotifier { // TODO: remove mutexes: Gtk is single threaded
+pub struct ChangedCondnsNotifier {
+    // TODO: remove mutexes: Gtk is single threaded
     callbacks: Mutex<RefCell<Vec<(u64, Box<Fn(MaskedCondns)>)>>>,
     next_token: Mutex<Cell<u64>>,
     current_condns: Cell<u64>,
@@ -147,9 +148,8 @@ impl ChangedCondnsNotifier {
         for (_, callback) in callbacks.borrow().iter() {
             callback(masked_condns)
         }
-        self.current_condns.set(
-            masked_condns.condns | (self.current_condns.get() & !masked_condns.mask)
-        );
+        self.current_condns
+            .set(masked_condns.condns | (self.current_condns.get() & !masked_condns.mask));
     }
 }
 
@@ -195,7 +195,7 @@ where
     fn contains_widget(&self, widget: &W) -> bool {
         for value in self.widgets.values() {
             if value == widget {
-                return true
+                return true;
             }
         }
         false

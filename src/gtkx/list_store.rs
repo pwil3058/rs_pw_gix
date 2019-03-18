@@ -262,10 +262,10 @@ pub enum RequiredMapAction {
 }
 
 pub trait MapManagedUpdate<Buffer, RawData, List>
-    where
-        Buffer: BufferedUpdate<RawData, List>,
-        RawData: Default,
-        List: ListRowOps,
+where
+    Buffer: BufferedUpdate<RawData, List>,
+    RawData: Default,
+    List: ListRowOps,
 {
     fn buffered_update(&self) -> Ref<Buffer>;
     fn is_mapped(&self) -> bool;
@@ -289,7 +289,7 @@ pub trait MapManagedUpdate<Buffer, RawData, List>
                 self.update();
                 self.set_required_map_action(RequiredMapAction::Nothing);
             }
-            RequiredMapAction::Nothing => ()
+            RequiredMapAction::Nothing => (),
         }
     }
 
@@ -310,7 +310,6 @@ pub trait MapManagedUpdate<Buffer, RawData, List>
             self.set_required_map_action(RequiredMapAction::Update)
         }
     }
-
 }
 
 #[cfg(test)]
