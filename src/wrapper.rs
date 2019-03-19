@@ -184,15 +184,24 @@ pub trait WidgetWrapper: PackableWidgetObject + DialogUser {
         }
     }
 
-    fn do_showing_busy<F: 'static + Fn(&Self)>(&self, action: F) {
+    fn show_busy(&self) -> Option<gdk::Cursor> {
         let o_old_cursor = self.get_cursor();
         self.set_cursor_from_spec(CursorSpec::Type(gdk::CursorType::Clock));
-        action(self);
-        if let Some(old_cursor) = o_old_cursor {
-            self.set_cursor(Some(&old_cursor));
+        o_old_cursor
+    }
+
+    fn unshow_busy(&self, o_cursor: Option<gdk::Cursor>) {
+        if let Some(cursor) = o_cursor {
+            self.set_cursor(Some(&cursor));
         } else {
             self.set_cursor(None);
         }
+    }
+
+    fn do_showing_busy<F: 'static + Fn(&Self)>(&self, action: F) {
+        let o_old_cursor = self.show_busy();
+        action(self);
+        self.unshow_busy(o_old_cursor);
     }
 
     fn print_pixbuf(&self, pixbuf: &Pixbuf) -> PrintResult {
