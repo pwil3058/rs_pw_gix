@@ -40,24 +40,6 @@ extern crate which;
 
 extern crate pw_pathux;
 
-#[macro_use]
-pub mod fs_db;
-#[macro_use]
-pub mod wrapper;
-
-pub mod cairox;
-pub mod colour;
-pub mod file_tree;
-pub mod gdk_pixbufx;
-pub mod gdkx;
-pub mod geometry;
-pub mod gtkx;
-pub mod printer;
-pub mod rgb_math;
-pub mod sample;
-pub mod sav_state;
-pub mod timeout;
-
 #[macro_export]
 macro_rules! init_gtk_if_needed {
     () => {{
@@ -80,6 +62,24 @@ macro_rules! yield_to_pending_events {
         }
     }};
 }
+
+#[macro_use]
+pub mod fs_db;
+#[macro_use]
+pub mod wrapper;
+
+pub mod cairox;
+pub mod colour;
+pub mod file_tree;
+pub mod gdk_pixbufx;
+pub mod gdkx;
+pub mod geometry;
+pub mod gtkx;
+pub mod printer;
+pub mod rgb_math;
+pub mod sample;
+pub mod sav_state;
+pub mod timeout;
 
 mod recollect {
     use std::collections::HashMap;

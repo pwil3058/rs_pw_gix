@@ -186,7 +186,8 @@ pub trait WidgetWrapper: PackableWidgetObject + DialogUser {
 
     fn show_busy(&self) -> Option<gdk::Cursor> {
         let o_old_cursor = self.get_cursor();
-        self.set_cursor_from_spec(CursorSpec::Type(gdk::CursorType::Clock));
+        self.set_cursor_from_spec(CursorSpec::Type(gdk::CursorType::Watch));
+        yield_to_pending_events!();
         o_old_cursor
     }
 
@@ -196,6 +197,7 @@ pub trait WidgetWrapper: PackableWidgetObject + DialogUser {
         } else {
             self.set_cursor(None);
         }
+        yield_to_pending_events!();
     }
 
     fn do_showing_busy<F: 'static + Fn(&Self)>(&self, action: F) {
