@@ -68,7 +68,7 @@ where
         hide_clean: bool,
     ) -> (Rc<Vec<FSOI>>, Rc<Vec<FSOI>>);
 
-    fn is_current(&self) -> bool {
+    fn update_if_necessary(&self) -> bool {
         true
     }
 
@@ -236,8 +236,16 @@ macro_rules! impl_os_fs_db {
                 }
             }
 
-            fn is_current(&self) -> bool {
-                self.curr_dir_unchanged() && self.base_dir.borrow_mut().is_current()
+            fn update_if_necessary(&self) -> bool {
+                if self.curr_dir_changed() {
+                    self.reset();
+                    true
+                } else if !self.base_dir.borrow_mut().is_current() {
+                    *self.base_dir.borrow_mut() = $db_dir::new("./", false, false);
+                    true
+                } else {
+                    false
+                }
             }
 
             fn reset(&self) {
@@ -250,8 +258,8 @@ macro_rules! impl_os_fs_db {
         where
             FSOI: FsObjectIfce,
         {
-            fn curr_dir_unchanged(&self) -> bool {
-                *self.curr_dir.borrow() == str_path_current_dir_or_panic()
+            fn curr_dir_changed(&self) -> bool {
+                *self.curr_dir.borrow() != str_path_current_dir_or_panic()
             }
 
             fn check_visibility(&self, show_hidden: bool, hide_clean: bool) {
@@ -293,7 +301,7 @@ macro_rules! impl_simple_fs_object {
 
         impl FsObjectIfce for $sfso {
             fn new(name: &str, path: &str, is_dir: bool) -> Self {
-                ScmFsoData {
+                Self {
                     name: name.to_string(),
                     path: path.to_string(),
                     is_dir: is_dir,
@@ -397,4 +405,22 @@ macro_rules! impl_simple_fs_object {
             }
         }
     };
+}
+
+mod simple_os_fs_db {
+    use std::cell::RefCell;
+    use std::collections::HashMap;
+    use std::io::Write;
+
+    use crypto_hash::{Algorithm, Hasher};
+
+    use gtk::prelude::*;
+    use gtk::{StaticType, ToValue, TreeIter};
+
+    use super::*;
+
+    use pw_pathux::str_path::*;
+
+    impl_simple_fs_object!(SimpleFso);
+    impl_os_fs_db!(OsFsDb, OsFsDbDir);
 }

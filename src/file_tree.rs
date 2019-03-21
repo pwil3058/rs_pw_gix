@@ -176,17 +176,15 @@ where
     }
 
     fn repopulate(&self) {
-        self.do_showing_busy(|self_| {
-            if !self_.fs_db().is_current() {
-                self_.fs_db().reset();
-            }
-            self_.store().clear();
-            if let Some(iter) = self_.store().get_iter_first() {
-                self_.populate_dir(".", Some(&iter))
-            } else {
-                self_.populate_dir(".", None)
-            }
-        })
+        let cursor = self.show_busy();
+        self.fs_db().reset();
+        self.store().clear();
+        if let Some(iter) = self.store().get_iter_first() {
+            self.populate_dir(".", Some(&iter))
+        } else {
+            self.populate_dir(".", None)
+        }
+        self.unshow_busy(cursor);
     }
 
     fn update_dir(&self, dir_path: &str, o_parent_iter: Option<&gtk::TreeIter>) -> bool {
@@ -292,16 +290,11 @@ where
         changed
     }
 
-    fn update(&self, force: bool) -> bool {
-        // NB: is_current() must be first to update fs_db()
-        if !self.fs_db().is_current() || force {
-            self.do_showing_busy(|self_| {
-                self_.fs_db().reset();
-                self_.update_dir(".", None);
-            });
-            true
-        } else {
-            false
+    fn update(&self) {
+        let cursor = self.show_busy();
+        if self.fs_db().update_if_necessary() {
+            self.update_dir(".", None);
         }
+        self.unshow_busy(cursor);
     }
 }

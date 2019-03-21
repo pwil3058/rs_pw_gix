@@ -53,14 +53,11 @@ macro_rules! init_gtk_if_needed {
 
 #[macro_export]
 macro_rules! yield_to_pending_events {
-    ( ) => {{
-        loop {
+    ( ) => {
+        while gtk::events_pending() {
             gtk::main_iteration();
-            if !gtk::events_pending() {
-                break;
-            }
         }
-    }};
+    };
 }
 
 #[macro_use]
