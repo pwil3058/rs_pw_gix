@@ -127,6 +127,21 @@ impl WrappedMenu {
         item
     }
 
+    pub fn append_separator(&self) {
+        self.menu.append(&gtk::SeparatorMenuItem::new());
+        self.menu.show_all();
+    }
+
+    pub fn insert_separator(&self, position: i32) {
+        self.menu.insert(&gtk::SeparatorMenuItem::new(), position);
+        self.menu.show_all();
+    }
+
+    pub fn prepend_separator(&self) {
+        self.menu.prepend(&gtk::SeparatorMenuItem::new());
+        self.menu.show_all();
+    }
+
     pub fn connect_item_activate<F: Fn(&gtk::MenuItem) + 'static>(&self, name: &str, f: F) {
         if let Some(item) = self.items.borrow().get(name) {
             item.connect_activate(f);
@@ -273,6 +288,21 @@ impl ManagedMenu {
         self.prepend_menu_item(name, &item, condns);
 
         item
+    }
+
+    pub fn append_separator(&self) {
+        self.menu.append(&gtk::SeparatorMenuItem::new());
+        self.menu.show_all();
+    }
+
+    pub fn insert_separator(&self, position: i32) {
+        self.menu.insert(&gtk::SeparatorMenuItem::new(), position);
+        self.menu.show_all();
+    }
+
+    pub fn prepend_separator(&self) {
+        self.menu.prepend(&gtk::SeparatorMenuItem::new());
+        self.menu.show_all();
     }
 
     pub fn update_condns(&self, changed_condns: MaskedCondns) {
@@ -440,6 +470,21 @@ impl DualManagedMenu {
         self.prepend_menu_item(name, &item, sensitivity_condns, visibility_condns);
 
         item
+    }
+
+    pub fn append_separator(&self) {
+        self.menu.append(&gtk::SeparatorMenuItem::new());
+        self.menu.show_all();
+    }
+
+    pub fn insert_separator(&self, position: i32) {
+        self.menu.insert(&gtk::SeparatorMenuItem::new(), position);
+        self.menu.show_all();
+    }
+
+    pub fn prepend_separator(&self) {
+        self.menu.prepend(&gtk::SeparatorMenuItem::new());
+        self.menu.show_all();
     }
 
     pub fn update_condns(&self, changed_condns: MaskedCondns) {
