@@ -340,6 +340,30 @@ pub mod dialog_user {
             self.ask_question(msg, expln, CANCEL_OK_BUTTONS) == gtk::ResponseType::Ok
         }
 
+        fn ask_string_cancel_or_ok(&self, question: &str) -> (gtk::ResponseType, Option<String>) {
+            let dialog =
+                self.new_dialog_with_buttons(None, gtk::DialogFlags::DESTROY_WITH_PARENT, CANCEL_OK_BUTTONS);
+            dialog.enable_auto_close();
+            dialog.set_default_response(gtk::ResponseType::Ok);
+            let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+            h_box.pack_start(&gtk::Label::new(question), false, false, 2);
+            let entry = gtk::Entry::new();
+            h_box.pack_start(&entry, true, true, 2);
+            dialog.get_content_area().pack_start(&h_box, true, true, 0);
+            dialog.show_all();
+            entry.set_activates_default(true);
+            let response = gtk::ResponseType::from(dialog.run());
+            if response == gtk::ResponseType::Ok {
+                if let Some(gtext) = entry.get_text() {
+                    (response, Some(gtext.to_string()))
+                } else {
+                    (response, None)
+                }
+            } else {
+                (response, None)
+            }
+        }
+
         fn new_file_chooser_dialog(
             &self,
             o_title: Option<&str>,
