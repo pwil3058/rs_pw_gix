@@ -46,8 +46,8 @@ impl ControlledTimeoutCycle {
                     }
                     ct_clone_clone
                         .stopped
-                        .set(ct_clone_clone.check_menu_item.get_active());
-                    gtk::Continue(ct_clone_clone.stopped.get())
+                        .set(!ct_clone_clone.check_menu_item.get_active());
+                    gtk::Continue(!ct_clone_clone.stopped.get())
                 });
                 ct_clone.stopped.set(false);
             }
