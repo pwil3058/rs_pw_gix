@@ -341,8 +341,11 @@ pub mod dialog_user {
         }
 
         fn ask_string_cancel_or_ok(&self, question: &str) -> (gtk::ResponseType, Option<String>) {
-            let dialog =
-                self.new_dialog_with_buttons(None, gtk::DialogFlags::DESTROY_WITH_PARENT, CANCEL_OK_BUTTONS);
+            let dialog = self.new_dialog_with_buttons(
+                None,
+                gtk::DialogFlags::DESTROY_WITH_PARENT,
+                CANCEL_OK_BUTTONS,
+            );
             dialog.enable_auto_close();
             dialog.set_default_response(gtk::ResponseType::Ok);
             let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
