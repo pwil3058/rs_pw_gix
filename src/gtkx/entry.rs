@@ -29,6 +29,37 @@ use gtkx::list_store::*;
 use rgb_math::rgb::*;
 use wrapper::*;
 
+// Labelled Text Entry
+
+#[derive(Debug)]
+pub struct LabelledTextEntry {
+    h_box: gtk::Box,
+    entry: gtk::Entry,
+}
+
+impl_widget_wrapper!(h_box: gtk::Box, LabelledTextEntry);
+
+impl LabelledTextEntry {
+    pub fn new(label: &str) -> Rc<Self> {
+        let lte = Rc::new( Self{
+            h_box: gtk::Box::new(gtk::Orientation::Horizontal, 0),
+            entry: gtk::Entry::new(),
+        });
+
+        let label = gtk::Label::new(label);
+        lte.h_box.pack_start(&label, false, false, 0);
+        lte.h_box.pack_start(&lte.entry, true, true, 0);
+
+        lte
+    }
+
+    pub fn entry(&self) -> &gtk::Entry {
+        &self.entry
+    }
+}
+
+// Hex Entry
+
 pub trait HexEntryInterface {
     fn create() -> Self;
     fn create_with_max(max_value: u32) -> Self;
