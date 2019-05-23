@@ -19,21 +19,21 @@ use gtk;
 use gdkx::*;
 use recollections;
 
-pub trait AutoClose: gtk::DialogExt + gtk::GtkWindowExt + gtk::WidgetExt {
-    fn enable_auto_close(&self) {
+pub trait AutoDestroy: gtk::DialogExt + gtk::GtkWindowExt + gtk::WidgetExt {
+    fn enable_auto_destroy(&self) {
         self.connect_close(|d| d.destroy());
-        self.connect_response(|d, _| d.close());
+        self.connect_response(|d, _| d.destroy());
     }
 }
 
-impl AutoClose for gtk::Dialog {}
-impl AutoClose for gtk::AboutDialog {}
-impl AutoClose for gtk::AppChooserDialog {}
-impl AutoClose for gtk::ColorChooserDialog {}
-impl AutoClose for gtk::FileChooserDialog {}
-impl AutoClose for gtk::FontChooserDialog {}
-impl AutoClose for gtk::MessageDialog {}
-impl AutoClose for gtk::RecentChooserDialog {}
+impl AutoDestroy for gtk::Dialog {}
+impl AutoDestroy for gtk::AboutDialog {}
+impl AutoDestroy for gtk::AppChooserDialog {}
+impl AutoDestroy for gtk::ColorChooserDialog {}
+impl AutoDestroy for gtk::FileChooserDialog {}
+impl AutoDestroy for gtk::FontChooserDialog {}
+impl AutoDestroy for gtk::MessageDialog {}
+impl AutoDestroy for gtk::RecentChooserDialog {}
 
 pub mod dialog_user {
     use std::error::Error;
@@ -47,7 +47,7 @@ pub mod dialog_user {
 
     use pw_pathux;
 
-    use super::AutoClose;
+    use super::AutoDestroy;
     use gtkx::entry::PathCompletion;
 
     pub trait TopGtkWindow {
@@ -227,7 +227,7 @@ pub mod dialog_user {
             if let Some(expln) = o_expln {
                 dialog.set_property_secondary_text(Some(expln));
             };
-            dialog.enable_auto_close();
+            dialog.enable_auto_destroy();
             dialog
         }
 
@@ -259,7 +259,7 @@ pub mod dialog_user {
                         &[("Close", gtk::ResponseType::Close)],
                         "",
                     );
-                    dialog.enable_auto_close();
+                    dialog.enable_auto_destroy();
                     if !output.status.success() {
                         dialog.set_property_message_type(gtk::MessageType::Error);
                         dialog.set_markup(&markup_cmd_fail(cmd));
@@ -296,7 +296,7 @@ pub mod dialog_user {
                         &[("Close", gtk::ResponseType::Close)],
                         "",
                     );
-                    dialog.enable_auto_close();
+                    dialog.enable_auto_destroy();
                     if !output.status.success() {
                         dialog.set_property_message_type(gtk::MessageType::Error);
                         dialog.set_markup(&markup_cmd_fail(cmd));
@@ -332,7 +332,7 @@ pub mod dialog_user {
             if let Some(expln) = o_expln {
                 dialog.set_property_secondary_text(Some(expln));
             };
-            dialog.enable_auto_close();
+            dialog.enable_auto_destroy();
             gtk::ResponseType::from(dialog.run())
         }
 
@@ -346,7 +346,7 @@ pub mod dialog_user {
                 gtk::DialogFlags::DESTROY_WITH_PARENT,
                 CANCEL_OK_BUTTONS,
             );
-            dialog.enable_auto_close();
+            dialog.enable_auto_destroy();
             dialog.set_default_response(gtk::ResponseType::Ok);
             let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
             h_box.pack_start(&gtk::Label::new(question), false, false, 2);
