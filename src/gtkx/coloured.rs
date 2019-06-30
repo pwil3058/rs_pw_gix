@@ -16,8 +16,8 @@ use gdk;
 use gtk;
 use gtk::prelude::*;
 
-use colour::*;
-use rgb_math::rgb::*;
+use crate::colour::*;
+use crate::rgb_math::rgb::*;
 
 #[allow(deprecated)]
 pub trait Colourable: gtk::WidgetExt {

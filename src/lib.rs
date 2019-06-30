@@ -191,7 +191,7 @@ pub mod recollections {
     //! Provide a mechanism for widgets to remember configuration
     //! data (size, position, etc.) from one session to the next.
     use mut_static::*;
-    use recollect::*;
+    use crate::recollect::*;
     use std::path;
 
     lazy_static! {

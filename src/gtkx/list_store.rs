@@ -399,7 +399,7 @@ mod tests {
     fn list_store_simple_row_ops() {
         init_gtk_if_needed!();
 
-        use gtkx::list_store::ListRowOps;
+        use crate::gtkx::list_store::ListRowOps;
 
         let test_list_store =
             gtk::ListStore::new(&[gtk::Type::String, gtk::Type::String, gtk::Type::String]);

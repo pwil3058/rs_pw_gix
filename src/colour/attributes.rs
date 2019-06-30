@@ -20,10 +20,10 @@ use gtk;
 use gtk::prelude::*;
 use gtk::WidgetExt;
 
-use cairox::*;
-use colour::*;
-use rgb_math::angle::*;
-use wrapper::*;
+use crate::cairox::*;
+use crate::colour::*;
+use crate::rgb_math::angle::*;
+use crate::wrapper::*;
 
 type ColourStops = Vec<[f64; 4]>;
 

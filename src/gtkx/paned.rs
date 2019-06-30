@@ -17,7 +17,7 @@ use std::str::FromStr;
 
 use gtk;
 
-use recollections;
+use crate::recollections;
 
 pub trait RememberPosition: gtk::WidgetExt + gtk::PanedExt {
     fn recall_last_position(&self, paned_name: &str, default: i32) -> i32 {

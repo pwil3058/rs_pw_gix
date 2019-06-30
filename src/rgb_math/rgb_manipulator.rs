@@ -14,9 +14,9 @@
 
 use std::cell::RefCell;
 
-use rgb_math::angle::*;
-use rgb_math::hue::*;
-use rgb_math::rgb::*;
+use crate::rgb_math::angle::*;
+use crate::rgb_math::hue::*;
+use crate::rgb_math::rgb::*;
 
 pub struct RGBManipulator {
     rgb: RefCell<RGB>,

@@ -25,11 +25,11 @@ use gtk;
 use gtk::prelude::*;
 
 use cairo::Operator;
-use cairox::*;
+use crate::cairox::*;
 
-use gtkx::drawing_area::*;
-use recollections;
-use wrapper::*;
+use crate::gtkx::drawing_area::*;
+use crate::recollections;
+use crate::wrapper::*;
 
 struct Zoomable {
     unzoomed: gdk_pixbuf::Pixbuf,

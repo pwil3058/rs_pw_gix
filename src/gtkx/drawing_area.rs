@@ -20,7 +20,7 @@ use gdk;
 use gtk;
 use gtk::prelude::*;
 
-use geometry::*;
+use crate::geometry::*;
 
 pub struct XYSelectionCore {
     drawing_area: gtk::DrawingArea,

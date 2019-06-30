@@ -26,7 +26,7 @@ use gdk;
 
 use num::Num;
 
-use rgb_math::angle::*;
+use crate::rgb_math::angle::*;
 
 #[derive(Debug)]
 pub enum RGBError {

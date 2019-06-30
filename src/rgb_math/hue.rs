@@ -18,8 +18,8 @@ use std::convert::From;
 use std::hash::*;
 use std::ops::{Add, Sub};
 
-use rgb_math::angle::*;
-use rgb_math::rgb::*;
+use crate::rgb_math::angle::*;
+use crate::rgb_math::rgb::*;
 
 macro_rules! is_proportion {
     ( $x:expr ) => {{

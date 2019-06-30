@@ -20,8 +20,8 @@ pub use glib::Cast;
 use gtk;
 use gtk::prelude::*;
 
-pub use gtkx::dialog::dialog_user::{parent_none, DialogUser, TopGtkWindow, CANCEL_OK_BUTTONS};
-use printer::*;
+pub use crate::gtkx::dialog::dialog_user::{parent_none, DialogUser, TopGtkWindow, CANCEL_OK_BUTTONS};
+use crate::printer::*;
 
 #[macro_export]
 macro_rules! define_gtkw_using_pwo {

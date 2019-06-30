@@ -16,8 +16,8 @@ use std::io::{self, Write};
 
 use gtk;
 
-use gdkx::*;
-use recollections;
+use crate::gdkx::*;
+use crate::recollections;
 
 pub trait AutoDestroy: gtk::DialogExt + gtk::GtkWindowExt + gtk::WidgetExt {
     fn enable_auto_destroy(&self) {
@@ -48,7 +48,7 @@ pub mod dialog_user {
     use pw_pathux;
 
     use super::AutoDestroy;
-    use gtkx::entry::PathCompletion;
+    use crate::gtkx::entry::PathCompletion;
 
     pub trait TopGtkWindow {
         fn get_toplevel_gtk_window(&self) -> Option<gtk::Window>;

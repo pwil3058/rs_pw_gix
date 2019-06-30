@@ -20,7 +20,7 @@ use gtk;
 
 use num::Num;
 
-use rgb_math::angle::Angle;
+use crate::rgb_math::angle::Angle;
 
 // POINT
 #[derive(Debug, PartialEq, Clone, Copy)]

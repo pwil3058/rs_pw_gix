@@ -19,7 +19,7 @@ use gio;
 use gtk;
 use gtk::{BoxExt, ButtonExt, ContainerExt, WidgetExt};
 
-use wrapper::*;
+use crate::wrapper::*;
 
 pub struct TabRemoveLabelCore {
     hbox: gtk::Box,

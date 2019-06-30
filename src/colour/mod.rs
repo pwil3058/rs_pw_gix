@@ -16,8 +16,8 @@ use std::cmp::{Eq, Ordering, PartialEq, PartialOrd};
 use std::convert::From;
 use std::rc::Rc;
 
-use rgb_math::hue::*;
-use rgb_math::rgb::*;
+use crate::rgb_math::hue::*;
+use crate::rgb_math::rgb::*;
 
 pub mod attributes;
 
@@ -166,7 +166,7 @@ impl ColourInterface for RGB {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rgb_math::angle::*;
+    use crate::rgb_math::angle::*;
 
     fn within_limit_quiet(x1: f64, x2: f64) -> bool {
         let limit = 0.0000000001;

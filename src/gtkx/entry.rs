@@ -24,10 +24,10 @@ use gtk::prelude::*;
 
 use pw_pathux;
 
-use gtkx::coloured::*;
-use gtkx::list_store::*;
-use rgb_math::rgb::*;
-use wrapper::*;
+use crate::gtkx::coloured::*;
+use crate::gtkx::list_store::*;
+use crate::rgb_math::rgb::*;
+use crate::wrapper::*;
 
 // Labelled Text Entry
 

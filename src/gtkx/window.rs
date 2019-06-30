@@ -17,8 +17,8 @@ use std::io::{self, Write};
 use gtk;
 use gtk::prelude::*;
 
-use gdkx::*;
-use recollections;
+use crate::gdkx::*;
+use crate::recollections;
 
 pub trait RememberGeometry: gtk::WidgetExt + gtk::GtkWindowExt {
     fn set_geometry_from_recollections(&self, window_name: &str, default_size: (i32, i32)) {

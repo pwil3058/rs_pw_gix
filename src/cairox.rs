@@ -18,10 +18,10 @@ use cairo;
 use gdk::prelude::ContextExt;
 use gdk_pixbuf::Pixbuf;
 
-use colour::*;
-use rgb_math::rgb::RGB;
+use crate::colour::*;
+use crate::rgb_math::rgb::RGB;
 
-pub use geometry::*;
+pub use crate::geometry::*;
 
 /// Direction in which to draw indicators
 pub enum Dirn {
