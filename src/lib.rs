@@ -16,29 +16,11 @@
 //! included in the **gtk-rs** project <http://gtk-rs.org/> by providing
 //! mechanisms to do common operations.
 
-extern crate cairo;
-extern crate crypto_hash;
-extern crate gdk;
-extern crate gdk_pixbuf;
-extern crate gio;
-extern crate glib;
-extern crate gtk;
-extern crate pango;
-extern crate pangocairo;
-
-extern crate fs2;
 #[macro_use]
 extern crate lazy_static;
-extern crate mut_static;
-extern crate num;
-extern crate regex;
-extern crate serde;
+
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_json;
-extern crate which;
-
-extern crate pw_pathux;
 
 #[macro_export]
 macro_rules! init_gtk_if_needed {
@@ -190,8 +172,8 @@ mod recollect {
 pub mod recollections {
     //! Provide a mechanism for widgets to remember configuration
     //! data (size, position, etc.) from one session to the next.
-    use mut_static::*;
     use crate::recollect::*;
+    use mut_static::*;
     use std::path;
 
     lazy_static! {

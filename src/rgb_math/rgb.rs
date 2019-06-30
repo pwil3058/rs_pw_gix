@@ -303,7 +303,7 @@ impl FromStr for RGB16 {
 }
 
 impl fmt::Display for RGB16 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "RGB16(red=0x{:04X}, green=0x{:04X}, blue=0x{:04X})",

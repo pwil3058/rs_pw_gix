@@ -24,8 +24,8 @@ use gdk_pixbuf;
 use gtk;
 use gtk::prelude::*;
 
-use cairo::Operator;
 use crate::cairox::*;
+use cairo::Operator;
 
 use crate::gtkx::drawing_area::*;
 use crate::recollections;

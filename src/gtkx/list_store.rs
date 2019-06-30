@@ -231,7 +231,7 @@ pub trait RowBuffer<RawData: Default> {
 
 pub trait BufferedUpdate<RawData: Default, L: ListRowOps> {
     fn get_list_store(&self) -> L;
-    fn get_row_buffer(&self) -> Rc<RefCell<RowBuffer<RawData>>>;
+    fn get_row_buffer(&self) -> Rc<RefCell<dyn RowBuffer<RawData>>>;
 
     fn repopulate(&self) {
         let row_buffer_rc = self.get_row_buffer();
@@ -267,7 +267,7 @@ where
     RawData: Default,
     List: ListRowOps,
 {
-    fn buffered_update(&self) -> Ref<Buffer>;
+    fn buffered_update(&self) -> Ref<'_, Buffer>;
     fn is_mapped(&self) -> bool;
     fn get_required_map_action(&self) -> RequiredMapAction;
     fn set_required_map_action(&self, action: RequiredMapAction);

@@ -21,7 +21,7 @@ pub struct ControlledTimeoutCycle {
     interval_secs: Cell<u32>,
     stopped: Cell<bool>, // Help try to stop multiple timeouts being in play
     check_menu_item: gtk::CheckMenuItem,
-    callbacks: RefCell<Vec<(u32, Box<Fn()>)>>,
+    callbacks: RefCell<Vec<(u32, Box<dyn Fn()>)>>,
     next_cb_id: Cell<u32>,
 }
 
@@ -71,7 +71,7 @@ impl ControlledTimeoutCycle {
         self.interval_secs.get()
     }
 
-    pub fn register_callback(&self, callback: Box<Fn()>) -> u32 {
+    pub fn register_callback(&self, callback: Box<dyn Fn()>) -> u32 {
         let cb_id = self.next_cb_id.get();
         self.next_cb_id.set(cb_id + 1);
         self.callbacks.borrow_mut().push((cb_id, callback));

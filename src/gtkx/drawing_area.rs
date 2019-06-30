@@ -27,7 +27,7 @@ pub struct XYSelectionCore {
     start_xy: Cell<Option<Point>>,
     end_xy: Cell<Option<Point>>,
     selection_made: Cell<bool>,
-    selection_made_callbacks: RefCell<Vec<Box<Fn()>>>,
+    selection_made_callbacks: RefCell<Vec<Box<dyn Fn()>>>,
 }
 
 impl XYSelectionCore {

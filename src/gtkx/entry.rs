@@ -41,7 +41,7 @@ impl_widget_wrapper!(h_box: gtk::Box, LabelledTextEntry);
 
 impl LabelledTextEntry {
     pub fn new(label: &str) -> Rc<Self> {
-        let lte = Rc::new( Self{
+        let lte = Rc::new(Self {
             h_box: gtk::Box::new(gtk::Orientation::Horizontal, 0),
             entry: gtk::Entry::new(),
         });
@@ -73,7 +73,7 @@ pub struct HexEntryData {
     current_step: Cell<u32>,
     max_step: u32,
     width: usize,
-    callbacks: RefCell<Vec<Box<Fn(u32)>>>,
+    callbacks: RefCell<Vec<Box<dyn Fn(u32)>>>,
 }
 
 impl_widget_wrapper!(entry: gtk::Entry, HexEntryData);
@@ -179,7 +179,7 @@ impl HexEntryInterface for HexEntry {
         let width = sig_hex_digits(max_value);
         let max_step = cmp::max(max_value / 32, 1);
         let current_step: Cell<u32> = Cell::new(1);
-        let callbacks: RefCell<Vec<Box<Fn(u32)>>> = RefCell::new(Vec::new());
+        let callbacks: RefCell<Vec<Box<dyn Fn(u32)>>> = RefCell::new(Vec::new());
         entry.set_width_chars(width as i32 + 2);
         entry.set_text(&format!("0x{:0width$X}", value.get(), width = width));
         let hex_entry = Rc::new(HexEntryData {
@@ -246,7 +246,7 @@ pub struct RGBHexEntryBoxData {
     red_entry: HexEntry,
     green_entry: HexEntry,
     blue_entry: HexEntry,
-    callbacks: RefCell<Vec<Box<Fn(RGB)>>>,
+    callbacks: RefCell<Vec<Box<dyn Fn(RGB)>>>,
 }
 
 impl_widget_wrapper!(hbox: gtk::Box, RGBHexEntryBoxData);
@@ -303,7 +303,7 @@ impl RGBEntryInterface for RGBHexEntryBox {
         hbox.pack_start(&green_entry.pwo(), true, true, 0);
         hbox.pack_start(&blue_label, true, true, 0);
         hbox.pack_start(&blue_entry.pwo(), true, true, 0);
-        let callbacks: RefCell<Vec<Box<Fn(RGB)>>> = RefCell::new(Vec::new());
+        let callbacks: RefCell<Vec<Box<dyn Fn(RGB)>>> = RefCell::new(Vec::new());
         let rgb_entry_box = Rc::new(RGBHexEntryBoxData {
             hbox,
             red_entry,

@@ -106,7 +106,7 @@ impl MaskedCondnProvider for TreeSelection {
 
 pub struct ChangedCondnsNotifier {
     // TODO: remove mutexes: Gtk is single threaded
-    callbacks: Mutex<RefCell<Vec<(u64, Box<Fn(MaskedCondns)>)>>>,
+    callbacks: Mutex<RefCell<Vec<(u64, Box<dyn Fn(MaskedCondns)>)>>>,
     next_token: Mutex<Cell<u64>>,
     current_condns: Cell<u64>,
 }
@@ -124,7 +124,7 @@ impl ChangedCondnsNotifier {
         self.current_condns.get()
     }
 
-    pub fn register_callback(&self, callback: Box<Fn(MaskedCondns)>) -> u64 {
+    pub fn register_callback(&self, callback: Box<dyn Fn(MaskedCondns)>) -> u64 {
         let next_token = self.next_token.lock().unwrap();
         let token = next_token.get();
         next_token.set(token + 1);

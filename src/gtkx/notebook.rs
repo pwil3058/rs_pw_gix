@@ -23,7 +23,7 @@ use crate::wrapper::*;
 
 pub struct TabRemoveLabelCore {
     hbox: gtk::Box,
-    remove_page_callbacks: RefCell<Vec<Box<Fn()>>>,
+    remove_page_callbacks: RefCell<Vec<Box<dyn Fn()>>>,
 }
 
 impl_widget_wrapper!(hbox: gtk::Box, TabRemoveLabelCore);

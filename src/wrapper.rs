@@ -20,7 +20,9 @@ pub use glib::Cast;
 use gtk;
 use gtk::prelude::*;
 
-pub use crate::gtkx::dialog::dialog_user::{parent_none, DialogUser, TopGtkWindow, CANCEL_OK_BUTTONS};
+pub use crate::gtkx::dialog::dialog_user::{
+    parent_none, DialogUser, TopGtkWindow, CANCEL_OK_BUTTONS,
+};
 use crate::printer::*;
 
 #[macro_export]
@@ -146,7 +148,7 @@ pub trait WidgetWrapper: PackableWidgetObject + DialogUser {
         }
     }
 
-    fn set_cursor_from_spec(&self, spec: CursorSpec) {
+    fn set_cursor_from_spec(&self, spec: CursorSpec<'_>) {
         if let Some(cursor) = self.new_cursor_from_spec(spec) {
             self.set_cursor(Some(&cursor))
         }
@@ -176,7 +178,7 @@ pub trait WidgetWrapper: PackableWidgetObject + DialogUser {
         }
     }
 
-    fn new_cursor_from_spec(&self, spec: CursorSpec) -> Option<gdk::Cursor> {
+    fn new_cursor_from_spec(&self, spec: CursorSpec<'_>) -> Option<gdk::Cursor> {
         match spec {
             CursorSpec::Type(cursor_type) => self.new_cursor(cursor_type),
             CursorSpec::Name(name) => self.new_cursor_from_name(name),

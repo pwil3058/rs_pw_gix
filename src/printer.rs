@@ -87,7 +87,7 @@ fn save_printer_settings(settings: &gtk::PrintSettings) {
 pub struct PrintError(Option<glib::Error>);
 
 impl fmt::Display for PrintError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "PrintError({}): {:?}.",
@@ -103,7 +103,7 @@ impl Error for PrintError {
         "Printing failed."
     }
 
-    fn cause(&self) -> Option<&Error> {
+    fn cause(&self) -> Option<&dyn Error> {
         if let Some(ref error) = self.0 {
             Some(error)
         } else {
