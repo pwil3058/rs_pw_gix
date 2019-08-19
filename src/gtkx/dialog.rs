@@ -332,12 +332,17 @@ pub mod dialog_user {
             if let Some(expln) = o_expln {
                 dialog.set_property_secondary_text(Some(expln));
             };
-            dialog.enable_auto_destroy();
-            gtk::ResponseType::from(dialog.run())
+            //dialog.enable_auto_destroy();
+            let response = dialog.run();
+            dialog.destroy();
+            response
+            //gtk::ResponseType::from(dialog.run())
         }
 
         fn ask_confirm_action(&self, msg: &str, expln: Option<&str>) -> bool {
-            self.ask_question(msg, expln, CANCEL_OK_BUTTONS) == gtk::ResponseType::Ok
+            let response = self.ask_question(msg, expln, CANCEL_OK_BUTTONS);
+            println!("response: {:?}", response);
+            response == gtk::ResponseType::Ok
         }
 
         fn ask_string_cancel_or_ok(&self, question: &str) -> (gtk::ResponseType, Option<String>) {
@@ -346,7 +351,6 @@ pub mod dialog_user {
                 gtk::DialogFlags::DESTROY_WITH_PARENT,
                 CANCEL_OK_BUTTONS,
             );
-            dialog.enable_auto_destroy();
             dialog.set_default_response(gtk::ResponseType::Ok);
             let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
             h_box.pack_start(&gtk::Label::new(Some(question)), false, false, 2);
@@ -356,6 +360,7 @@ pub mod dialog_user {
             dialog.show_all();
             entry.set_activates_default(true);
             let response = gtk::ResponseType::from(dialog.run());
+            dialog.destroy();
             if response == gtk::ResponseType::Ok {
                 if let Some(gtext) = entry.get_text() {
                     (response, Some(gtext.to_string()))
