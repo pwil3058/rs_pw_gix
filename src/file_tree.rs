@@ -24,7 +24,7 @@ use crate::wrapper::WidgetWrapper;
 
 trait FileTreeStoreExt: TreeRowOps {
     fn recursive_remove(&self, iter: &gtk::TreeIter) -> bool {
-        if let Some(child_iter) = self.iter_children(iter) {
+        if let Some(child_iter) = self.iter_children(Some(iter)) {
             while self.recursive_remove(&child_iter) {}
         }
         self.remove(iter)
@@ -85,12 +85,12 @@ where
     }
 
     fn insert_place_holder(&self, dir_iter: &gtk::TreeIter) {
-        let iter = self.store().append(dir_iter);
+        let iter = self.store().append(Some(dir_iter));
         FSOI::set_place_holder_values(self.store(), &iter);
     }
 
     fn insert_place_holder_if_needed(&self, dir_iter: &gtk::TreeIter) {
-        if self.store().iter_n_children(dir_iter) == 0 {
+        if self.store().iter_n_children(Some(dir_iter)) == 0 {
             self.insert_place_holder(dir_iter)
         }
     }
@@ -104,7 +104,7 @@ where
     }
 
     fn not_yet_populated(&self, dir_iter: &gtk::TreeIter) -> bool {
-        if self.store().iter_n_children(dir_iter) < 2 {
+        if self.store().iter_n_children(Some(dir_iter)) < 2 {
             if let Some(child_iter) = self.store().iter_children(Some(dir_iter)) {
                 FSOI::row_is_place_holder(self.store(), &child_iter)
             } else {
@@ -119,14 +119,14 @@ where
         if self.not_yet_populated(dir_iter) {
             let path = FSOI::get_path_from_row(self.store(), dir_iter);
             self.populate_dir(&path, Some(dir_iter));
-            if self.store().iter_n_children(dir_iter) > 1 {
+            if self.store().iter_n_children(Some(dir_iter)) > 1 {
                 self.remove_place_holder(dir_iter)
             }
         }
     }
 
     fn depopulate(&self, iter: &gtk::TreeIter) {
-        if let Some(ref child_iter) = self.store().iter_children(iter) {
+        if let Some(ref child_iter) = self.store().iter_children(Some(iter)) {
             while self.store().recursive_remove(child_iter) {}
         }
         self.insert_place_holder(iter)
@@ -193,7 +193,7 @@ where
         let mut o_place_holder_iter: Option<gtk::TreeIter> = None;
         let child_iter: gtk::TreeIter; // needed to satisfy lifetimes
         let mut o_child_iter: Option<&gtk::TreeIter> = if let Some(parent_iter) = o_parent_iter {
-            if let Some(iter) = self.store().iter_children(parent_iter) {
+            if let Some(iter) = self.store().iter_children(Some(parent_iter)) {
                 child_iter = iter;
                 if FSOI::row_is_place_holder(self.store(), &child_iter) {
                     o_place_holder_iter = Some(child_iter.clone());
@@ -277,7 +277,7 @@ where
             .remove_dead_rows(o_child_iter, |_, _| false, &mut changed);
 
         if let Some(parent_iter) = o_parent_iter {
-            let n_children = self.store().iter_n_children(parent_iter);
+            let n_children = self.store().iter_n_children(Some(parent_iter));
             if n_children == 0 {
                 self.insert_place_holder(parent_iter)
             } else if n_children > 1 {

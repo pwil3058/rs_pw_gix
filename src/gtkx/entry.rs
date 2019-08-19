@@ -46,7 +46,7 @@ impl LabelledTextEntry {
             entry: gtk::Entry::new(),
         });
 
-        let label = gtk::Label::new(label);
+        let label = gtk::Label::new(Some(label));
         lte.h_box.pack_start(&label, false, false, 0);
         lte.h_box.pack_start(&lte.entry, true, true, 0);
 
@@ -288,13 +288,13 @@ impl RGBEntryInterface for RGBHexEntryBox {
     fn create() -> RGBHexEntryBox {
         let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 1);
         let max_value = u16::max_value() as u32;
-        let red_label = gtk::Label::new("Red");
+        let red_label = gtk::Label::new(Some("Red"));
         red_label.set_widget_colour_rgb(RED);
         let red_entry = HexEntry::create_with_max(max_value);
-        let green_label = gtk::Label::new("Green");
+        let green_label = gtk::Label::new(Some("Green"));
         green_label.set_widget_colour_rgb(GREEN);
         let green_entry = HexEntry::create_with_max(max_value);
-        let blue_label = gtk::Label::new("Blue");
+        let blue_label = gtk::Label::new(Some("Blue"));
         blue_label.set_widget_colour_rgb(BLUE);
         let blue_entry = HexEntry::create_with_max(max_value);
         hbox.pack_start(&red_label, true, true, 0);
@@ -340,7 +340,7 @@ pub trait PathCompletion: gtk::EntryExt + gtk::EditableSignals {
         let list_store = gtk::ListStore::new(&[gtk::Type::String]);
         entry_completion.set_model(Some(&list_store.clone()));
 
-        self.set_completion(&entry_completion);
+        self.set_completion(Some(&entry_completion));
         self.connect_changed(move |editable| {
             let dir_path_txt = match editable.get_text() {
                 Some(text) => pw_pathux::dir_path_text(&text).to_string(),

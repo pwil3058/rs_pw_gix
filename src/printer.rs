@@ -28,7 +28,6 @@ use glib;
 use gtk;
 use gtk::prelude::{IsA, PrintOperationExt};
 use pango;
-use pango::LayoutExt;
 use pangocairo;
 
 struct RememberedPrinterSettings {
@@ -154,7 +153,7 @@ impl MarkupPrinterInterface for Rc<MarkupPrinterCore> {
             pages: RefCell::new(Vec::new()),
         });
         mp.print_operation
-            .set_print_settings(&get_printer_settings());
+            .set_print_settings(Some(&get_printer_settings()));
         mp.print_operation.set_unit(gtk::Unit::Mm);
 
         let mp_c = mp.clone();
@@ -236,7 +235,7 @@ impl PixbufPrinterInterface for Rc<PixbufPrinterCore> {
             pixbuf: RefCell::new(pixbuf.clone()),
         });
         mp.print_operation
-            .set_print_settings(&get_printer_settings());
+            .set_print_settings(Some(&get_printer_settings()));
         mp.print_operation.set_unit(gtk::Unit::Mm);
 
         let mp_c = mp.clone();
@@ -313,7 +312,7 @@ impl TextPrinterInterface for Rc<TextPrinterCore> {
             next_line_index: Cell::new(0),
         });
         mp.print_operation
-            .set_print_settings(&get_printer_settings());
+            .set_print_settings(Some(&get_printer_settings()));
         mp.print_operation.set_unit(gtk::Unit::Mm);
 
         let mp_c = mp.clone();

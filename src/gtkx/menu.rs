@@ -95,7 +95,7 @@ impl WrappedMenu {
 
     fn new_item(&self, label_text: &str, tooltip_text: &str) -> gtk::MenuItem {
         let item = gtk::MenuItem::new_with_label(label_text);
-        item.set_tooltip_text(tooltip_text);
+        item.set_tooltip_text(Some(tooltip_text));
 
         item
     }
@@ -238,11 +238,11 @@ impl ManagedMenu {
         if let Some(image) = image {
             h_box.pack_start(image, false, false, 0);
         }
-        let label = gtk::Label::new(label_text);
+        let label = gtk::Label::new(Some(label_text));
         label.set_xalign(0.0);
         h_box.pack_start(&label, true, true, 0);
         item.add(&h_box);
-        item.set_tooltip_text(tooltip_text);
+        item.set_tooltip_text(Some(tooltip_text));
 
         item
     }
@@ -416,12 +416,12 @@ impl DualManagedMenu {
         if let Some(image) = image {
             let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
             h_box.pack_start(image, false, false, 0);
-            h_box.pack_start(&gtk::Label::new(label_text), false, false, 0);
+            h_box.pack_start(&gtk::Label::new(Some(label_text)), false, false, 0);
             item.add(&h_box);
         } else {
             item.set_label(label_text)
         }
-        item.set_tooltip_text(tooltip_text);
+        item.set_tooltip_text(Some(tooltip_text));
 
         item
     }

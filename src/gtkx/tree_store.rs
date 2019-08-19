@@ -75,40 +75,38 @@ macro_rules! prepend_row_to_tree {
 pub trait TreeRowOps:
     TreeModelRowOps + gtk::TreeStoreExt + gtk::prelude::TreeStoreExtManual
 {
-    fn append_row<'a, P>(&self, row: &Row, parent: P) -> gtk::TreeIter
-    where
-        P: Into<Option<&'a gtk::TreeIter>>,
-    {
+    fn append_row(&self, row: &Row, parent: Option<&gtk::TreeIter>) -> gtk::TreeIter {
         append_row_to_tree!(row, self, parent)
     }
 
-    fn insert_row<'a, P>(&self, row: &Row, parent: P, position: i32) -> gtk::TreeIter
-    where
-        P: Into<Option<&'a gtk::TreeIter>>,
-    {
+    fn insert_row(
+        &self,
+        row: &Row,
+        parent: Option<&gtk::TreeIter>,
+        position: i32,
+    ) -> gtk::TreeIter {
         insert_row_in_tree_at!(row, self, parent, position)
     }
 
-    fn insert_row_after<'a, 'b, P, Q>(&self, row: &Row, parent: P, sibling: Q) -> gtk::TreeIter
-    where
-        P: Into<Option<&'a gtk::TreeIter>>,
-        Q: Into<Option<&'b gtk::TreeIter>>,
-    {
+    fn insert_row_after(
+        &self,
+        row: &Row,
+        parent: Option<&gtk::TreeIter>,
+        sibling: Option<&gtk::TreeIter>,
+    ) -> gtk::TreeIter {
         insert_row_in_tree_after!(row, self, parent, sibling)
     }
 
-    fn insert_row_before<'a, 'b, P, Q>(&self, row: &Row, parent: P, sibling: Q) -> gtk::TreeIter
-    where
-        P: Into<Option<&'a gtk::TreeIter>>,
-        Q: Into<Option<&'b gtk::TreeIter>>,
-    {
+    fn insert_row_before(
+        &self,
+        row: &Row,
+        parent: Option<&gtk::TreeIter>,
+        sibling: Option<&gtk::TreeIter>,
+    ) -> gtk::TreeIter {
         insert_row_in_tree_before!(row, self, parent, sibling)
     }
 
-    fn prepend_row<'a, P>(&self, row: &Row, parent: P) -> gtk::TreeIter
-    where
-        P: Into<Option<&'a gtk::TreeIter>>,
-    {
+    fn prepend_row(&self, row: &Row, parent: Option<&gtk::TreeIter>) -> gtk::TreeIter {
         prepend_row_to_tree!(row, self, parent)
     }
 

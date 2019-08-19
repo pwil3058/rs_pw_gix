@@ -104,11 +104,11 @@ pub trait ListRowOps: TreeModelRowOps + gtk::GtkListStoreExt + gtk::GtkListStore
     }
 
     fn insert_row_after(&self, iter: &gtk::TreeIter, row: &Row) -> gtk::TreeIter {
-        insert_row_in_list_after!(row, self, iter)
+        insert_row_in_list_after!(row, self, Some(iter))
     }
 
     fn insert_row_before(&self, iter: &gtk::TreeIter, row: &Row) -> gtk::TreeIter {
-        insert_row_in_list_before!(row, self, iter)
+        insert_row_in_list_before!(row, self, Some(iter))
     }
 
     fn prepend_row(&self, row: &Row) -> gtk::TreeIter {

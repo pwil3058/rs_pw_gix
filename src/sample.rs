@@ -270,7 +270,7 @@ pub mod area_selection {
             if let Some(screen) = gdk::Screen::get_default() {
                 if screen.is_composited() {
                     if let Some(ref visual) = screen.get_rgba_visual() {
-                        sad.window.set_visual(visual);
+                        sad.window.set_visual(Some(visual));
                         sad.window.set_app_paintable(true);
                     } else {
                         return Err(Failure::new(FailureReason::NoRGBAVisual));

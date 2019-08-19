@@ -42,7 +42,7 @@ pub trait Draw {
     fn line_to_point(&self, point: Point);
     fn set_source_colour(&self, rgb: &Colour);
     fn set_source_colour_rgb(&self, rgb: RGB);
-    fn set_source_surface_at<T: AsRef<cairo::Surface>>(&self, surface: &T, position: Point);
+    fn set_source_surface_at(&self, surface: &cairo::Surface, position: Point);
     fn set_source_pixbuf_at(&self, pixbuf: &Pixbuf, position: Point, with_border: bool);
 }
 
@@ -148,14 +148,15 @@ impl Draw for cairo::Context {
         self.set_source_rgb(rgb[0], rgb[1], rgb[2])
     }
 
-    fn set_source_surface_at<T: AsRef<cairo::Surface>>(&self, surface: &T, position: Point) {
+    fn set_source_surface_at(&self, surface: &cairo::Surface, position: Point) {
         self.set_source_surface(surface, position.0, position.1)
     }
 
     fn set_source_pixbuf_at(&self, pixbuf: &Pixbuf, position: Point, with_border: bool) {
         if !with_border {
             // TODO: find out how to kill border
-            if let Some(surface) = Self::cairo_surface_create_from_pixbuf(pixbuf, 0, None) {
+            let for_window: Option<&gdk::Window> = None;
+            if let Some(surface) = Self::cairo_surface_create_from_pixbuf(pixbuf, 0, for_window) {
                 self.set_source_surface_at(&surface, position);
                 return;
             };

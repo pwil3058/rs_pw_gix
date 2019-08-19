@@ -102,7 +102,7 @@ pub mod dialog_user {
         let dialog = gtk::FileChooserDialog::new(o_prompt, dialog_parent, action);
         if let Some(parent) = dialog_parent {
             if let Some(ref icon) = parent.get_icon() {
-                dialog.set_icon(icon)
+                dialog.set_icon(Some(icon))
             }
         };
         for button in CANCEL_OK_BUTTONS {
@@ -349,7 +349,7 @@ pub mod dialog_user {
             dialog.enable_auto_destroy();
             dialog.set_default_response(gtk::ResponseType::Ok);
             let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-            h_box.pack_start(&gtk::Label::new(question), false, false, 2);
+            h_box.pack_start(&gtk::Label::new(Some(question)), false, false, 2);
             let entry = gtk::Entry::new();
             h_box.pack_start(&entry, true, true, 2);
             dialog.get_content_area().pack_start(&h_box, true, true, 0);

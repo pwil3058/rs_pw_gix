@@ -46,7 +46,6 @@ impl Colourable for gtk::Button {
     }
 }
 
-impl Colourable for gtk::Arrow {}
 impl Colourable for gtk::Bin {}
 impl Colourable for gtk::Box {}
 impl Colourable for gtk::ButtonBox {}

@@ -288,13 +288,13 @@ impl PixbufViewInterface for PixbufView {
 
         let menu = gtk::Menu::new();
         let copy_selection_item = gtk::MenuItem::new_with_label("Copy");
-        copy_selection_item.set_tooltip_text("Copy the selection to the clipboard");
+        copy_selection_item.set_tooltip_text(Some("Copy the selection to the clipboard"));
         menu.append(&copy_selection_item.clone());
         let load_image_item = gtk::MenuItem::new_with_label("Load");
-        load_image_item.set_tooltip_text("Load an image from a file");
+        load_image_item.set_tooltip_text(Some("Load an image from a file"));
         menu.append(&load_image_item.clone());
         let print_image_item = gtk::MenuItem::new_with_label("Print");
-        print_image_item.set_tooltip_text("Print the image");
+        print_image_item.set_tooltip_text(Some("Print the image"));
         menu.append(&print_image_item.clone());
         menu.show_all();
 
