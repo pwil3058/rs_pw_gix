@@ -217,11 +217,11 @@ mod tests {
                 let tint = (*rgb + WHITE) / 2.0;
                 assert!(within_limit(
                     Colour::from(*rgb * *factor).warmth(),
-                    (factor * DEG_60.cos() + 1.0) / 2.0
+                    (factor * Angle::DEG_60.cos() + 1.0) / 2.0
                 ));
                 assert!(within_limit(
                     Colour::from(tint * *factor).warmth(),
-                    (0.5 * factor * DEG_60.cos() + 1.0) / 2.0
+                    (0.5 * factor * Angle::DEG_60.cos() + 1.0) / 2.0
                 ));
             }
         }
@@ -230,11 +230,11 @@ mod tests {
                 let tint = (*rgb + WHITE) / 2.0;
                 assert!(within_limit(
                     Colour::from(*rgb * *factor).warmth(),
-                    (factor * DEG_120.cos() + 1.0) / 2.0
+                    (factor * Angle::DEG_120.cos() + 1.0) / 2.0
                 ));
                 assert!(within_limit(
                     Colour::from(tint * *factor).warmth(),
-                    (0.5 * factor * DEG_120.cos() + 1.0) / 2.0
+                    (0.5 * factor * Angle::DEG_120.cos() + 1.0) / 2.0
                 ));
             }
         }

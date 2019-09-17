@@ -390,13 +390,13 @@ impl RGB {
     pub fn components_rotated(&self, delta_hue_angle: Angle) -> RGB {
         fn calc_ks(delta_hue_angle: Angle) -> (f64, f64) {
             let a = delta_hue_angle.sin();
-            let b = (DEG_120 - delta_hue_angle).sin();
+            let b = (Angle::DEG_120 - delta_hue_angle).sin();
             let c = a + b;
             (b / c, a / c)
         }
-        if delta_hue_angle > DEG_0 {
-            if delta_hue_angle > DEG_120 {
-                let ks = calc_ks(delta_hue_angle - DEG_120);
+        if delta_hue_angle > Angle::DEG_0 {
+            if delta_hue_angle > Angle::DEG_120 {
+                let ks = calc_ks(delta_hue_angle - Angle::DEG_120);
                 return RGB {
                     red: self.ff((2, 1), ks),
                     green: self.ff((0, 2), ks),
@@ -410,9 +410,9 @@ impl RGB {
                     blue: self.ff((2, 1), ks),
                 };
             }
-        } else if delta_hue_angle < DEG_0 {
-            if delta_hue_angle < -DEG_120 {
-                let ks = calc_ks(delta_hue_angle.abs() - DEG_120);
+        } else if delta_hue_angle < Angle::DEG_0 {
+            if delta_hue_angle < -Angle::DEG_120 {
+                let ks = calc_ks(delta_hue_angle.abs() - Angle::DEG_120);
                 return RGB {
                     red: self.ff((1, 2), ks),
                     green: self.ff((2, 0), ks),
@@ -517,70 +517,70 @@ mod tests {
             RGB16::from(YELLOW)
         );
         assert_eq!(
-            RGB16::from((YELLOW).components_rotated(-DEG_60)),
+            RGB16::from((YELLOW).components_rotated(-Angle::DEG_60)),
             RGB16::from((RED + WHITE) / 2)
         );
         assert_eq!(
-            RGB16::from(RED.components_rotated(DEG_60)),
+            RGB16::from(RED.components_rotated(Angle::DEG_60)),
             RGB16::from(YELLOW / 2)
         );
         assert_eq!(
-            RGB16::from(RED.components_rotated(DEG_120)),
+            RGB16::from(RED.components_rotated(Angle::DEG_120)),
             RGB16::from(GREEN)
         );
         //assert_eq!(RGB16::from(RED.components_rotated(DEG_180)), RGB16::from(CYAN / 2));
-        assert!(within_limits(RED.components_rotated(DEG_180), CYAN / 2));
+        assert!(within_limits(RED.components_rotated(Angle::DEG_180), CYAN / 2));
         assert_eq!(
-            RGB16::from(RED.components_rotated(-DEG_60)),
+            RGB16::from(RED.components_rotated(-Angle::DEG_60)),
             RGB16::from(MAGENTA / 2)
         );
         assert_eq!(
-            RGB16::from(RED.components_rotated(-DEG_120)),
+            RGB16::from(RED.components_rotated(-Angle::DEG_120)),
             RGB16::from(BLUE)
         );
         //assert_eq!(RGB16::from(RED.components_rotated(-DEG_180)), RGB16::from(CYAN / 2));
-        assert!(within_limits(RED.components_rotated(-DEG_180), CYAN / 2));
+        assert!(within_limits(RED.components_rotated(-Angle::DEG_180), CYAN / 2));
 
         assert_eq!(
-            RGB16::from(YELLOW.components_rotated(DEG_60)),
+            RGB16::from(YELLOW.components_rotated(Angle::DEG_60)),
             RGB16::from((GREEN + WHITE) * 0.5)
         );
         assert_eq!(
-            RGB16::from(YELLOW.components_rotated(DEG_120)),
+            RGB16::from(YELLOW.components_rotated(Angle::DEG_120)),
             RGB16::from(CYAN)
         );
         //assert_eq!(RGB16::from(YELLOW.components_rotated(DEG_180)), RGB16::from((BLUE + WHITE) * 0.5));
         assert!(within_limits(
-            YELLOW.components_rotated(DEG_180),
+            YELLOW.components_rotated(Angle::DEG_180),
             (BLUE + WHITE) * 0.5
         ));
         assert_eq!(
-            RGB16::from(YELLOW.components_rotated(-DEG_60)),
+            RGB16::from(YELLOW.components_rotated(-Angle::DEG_60)),
             RGB16::from((RED + WHITE) / 2)
         );
 
         //assert_eq!(RGB16::from(GREEN.components_rotated(DEG_60)), RGB16::from(CYAN / 2));
-        assert!(within_limits(GREEN.components_rotated(DEG_60), CYAN / 2));
+        assert!(within_limits(GREEN.components_rotated(Angle::DEG_60), CYAN / 2));
         assert_eq!(
-            RGB16::from(GREEN.components_rotated(DEG_120)),
+            RGB16::from(GREEN.components_rotated(Angle::DEG_120)),
             RGB16::from(BLUE)
         );
         //assert_eq!(RGB16::from(GREEN.components_rotated(DEG_180)), RGB16::from(MAGENTA / 2));
         assert!(within_limits(
-            GREEN.components_rotated(DEG_180),
+            GREEN.components_rotated(Angle::DEG_180),
             MAGENTA / 2
         ));
         assert_eq!(
-            RGB16::from(GREEN.components_rotated(-DEG_60)),
+            RGB16::from(GREEN.components_rotated(-Angle::DEG_60)),
             RGB16::from(YELLOW / 2)
         );
         assert_eq!(
-            RGB16::from(GREEN.components_rotated(-DEG_120)),
+            RGB16::from(GREEN.components_rotated(-Angle::DEG_120)),
             RGB16::from(RED)
         );
         //assert_eq!(RGB16::from(GREEN.components_rotated(-DEG_180)), RGB16::from(MAGENTA / 2));
         assert!(within_limits(
-            GREEN.components_rotated(-DEG_180),
+            GREEN.components_rotated(-Angle::DEG_180),
             MAGENTA / 2
         ));
     }

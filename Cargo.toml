@@ -8,6 +8,9 @@ edition = "2018"
 # TODO: change pw_pathux dependency when it goes public
 #pw_pathux = { git = "https://github.com/pwil3058/rs_pw_pathux.git" }
 pw_pathux = { path = "../rs_pw_pathux.git" }
+# TODO: change normalised_angles dependency when it goes public
+#normalised_angles = { git = "https://github.com/pwil3058/rs_normalised_angles.git" }
+normalised_angles = { path = "../rs_normalised_angles.git" }
 
 pango = "0.7.0"
 cairo-rs = "0.7.0"

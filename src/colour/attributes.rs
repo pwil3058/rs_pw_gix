@@ -296,8 +296,8 @@ pub struct HueCADData {
 impl HueCADData {
     fn set_colour_stops_for_hue_angle(&self, angle: HueAngle) {
         let mut stops: ColourStops = Vec::new();
-        let mut hue_angle = angle + DEG_180;
-        let delta_angle = DEG_180 / 6;
+        let mut hue_angle = angle + Angle::DEG_180;
+        let delta_angle = Angle::DEG_180 / 6;
         for i in 0..13 {
             let offset = i as f64 / 12.0;
             let rgb = hue_angle.max_chroma_rgb();
@@ -343,7 +343,8 @@ impl HueCADData {
 }
 
 fn calc_hue_value(hue: HueAngle, target_hue: HueAngle) -> f64 {
-    0.5 - (target_hue.angle() - hue.angle()) / DEG_360
+    const DEG_360: f64 = std::f64::consts::PI * 2.0;
+    0.5 - (target_hue.angle() - hue.angle()).radians() / DEG_360
 }
 
 pub type HueCAD = Rc<HueCADData>;

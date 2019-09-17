@@ -112,21 +112,21 @@ impl Sub<HueAngle> for HueAngle {
 }
 
 fn calc_other(abs_angle: Angle) -> f64 {
-    if [DEG_0, DEG_120].contains(&abs_angle) {
+    if [Angle::DEG_0, Angle::DEG_120].contains(&abs_angle) {
         0.0
-    } else if [DEG_60, DEG_180].contains(&abs_angle) {
+    } else if [Angle::DEG_60, Angle::DEG_180].contains(&abs_angle) {
         1.0
     } else {
         fn f(angle: Angle) -> f64 {
             // Careful of float not fully representing reals
-            (angle.sin() / (DEG_120 - angle).sin()).min(1.0)
+            (angle.sin() / (Angle::DEG_120 - angle).sin()).min(1.0)
         };
-        if abs_angle <= DEG_60 {
+        if abs_angle <= Angle::DEG_60 {
             f(abs_angle)
-        } else if abs_angle <= DEG_120 {
-            f(DEG_120 - abs_angle)
+        } else if abs_angle <= Angle::DEG_120 {
+            f(Angle::DEG_120 - abs_angle)
         } else {
-            f(abs_angle - DEG_120)
+            f(abs_angle - Angle::DEG_120)
         }
     }
 }
@@ -141,18 +141,18 @@ impl From<Angle> for HueAngle {
             }
         } else {
             let other = calc_other(angle.abs());
-            let max_chroma_rgb = if angle >= DEG_0 {
-                if angle <= DEG_60 {
+            let max_chroma_rgb = if angle >= Angle::DEG_0 {
+                if angle <= Angle::DEG_60 {
                     RGB::from((1.0, other, 0.0))
-                } else if angle <= DEG_120 {
+                } else if angle <= Angle::DEG_120 {
                     RGB::from((other, 1.0, 0.0))
                 } else {
                     RGB::from((0.0, 1.0, other))
                 }
             } else {
-                if angle >= -DEG_60 {
+                if angle >= -Angle::DEG_60 {
                     RGB::from((1.0, 0.0, other))
-                } else if angle >= -DEG_120 {
+                } else if angle >= -Angle::DEG_120 {
                     RGB::from((other, 0.0, 1.0))
                 } else {
                     RGB::from((0.0, other, 1.0))
@@ -359,82 +359,114 @@ mod tests {
 
     #[test]
     fn rgb_math_hue_angle_basics() {
-        assert_eq!(HueAngle::from(DEG_0).max_chroma_rgb, RED);
-        assert_eq!(HueAngle::from(DEG_60).max_chroma_rgb, YELLOW);
-        assert_eq!(HueAngle::from(DEG_120).max_chroma_rgb, GREEN);
-        assert_eq!(HueAngle::from(DEG_180).max_chroma_rgb, CYAN);
-        assert_eq!(HueAngle::from(-DEG_0).max_chroma_rgb, RED);
-        assert_eq!(HueAngle::from(-DEG_60).max_chroma_rgb, MAGENTA);
-        assert_eq!(HueAngle::from(-DEG_120).max_chroma_rgb, BLUE);
-        assert_eq!(HueAngle::from(-DEG_180).max_chroma_rgb, CYAN);
+        assert_eq!(HueAngle::from(Angle::DEG_0).max_chroma_rgb, RED);
+        assert_eq!(HueAngle::from(Angle::DEG_60).max_chroma_rgb, YELLOW);
+        assert_eq!(HueAngle::from(Angle::DEG_120).max_chroma_rgb, GREEN);
+        assert_eq!(HueAngle::from(Angle::DEG_180).max_chroma_rgb, CYAN);
+        assert_eq!(HueAngle::from(-Angle::DEG_0).max_chroma_rgb, RED);
+        assert_eq!(HueAngle::from(-Angle::DEG_60).max_chroma_rgb, MAGENTA);
+        assert_eq!(HueAngle::from(-Angle::DEG_120).max_chroma_rgb, BLUE);
+        assert_eq!(HueAngle::from(-Angle::DEG_180).max_chroma_rgb, CYAN);
 
-        assert_eq!(HueAngle::from(DEG_60) - DEG_60, HueAngle::from(DEG_0));
-        assert_eq!(HueAngle::from(DEG_60) + DEG_60, HueAngle::from(DEG_120));
+        assert_eq!(
+            HueAngle::from(Angle::DEG_60) - Angle::DEG_60,
+            HueAngle::from(Angle::DEG_0)
+        );
+        assert_eq!(
+            HueAngle::from(Angle::DEG_60) + Angle::DEG_60,
+            HueAngle::from(Angle::DEG_120)
+        );
 
         assert!(within_limit(
-            (HueAngle::from(DEG_120) - HueAngle::from(DEG_90)).radians(),
-            DEG_30.radians()
+            (HueAngle::from(Angle::DEG_120) - HueAngle::from(Angle::DEG_90)).radians(),
+            Angle::DEG_30.radians()
         ));
 
         for angle in [
-            DEG_0, DEG_60, DEG_120, DEG_180, -DEG_0, -DEG_60, -DEG_120, -DEG_180,
+            Angle::DEG_0,
+            Angle::DEG_60,
+            Angle::DEG_120,
+            Angle::DEG_180,
+            -Angle::DEG_0,
+            -Angle::DEG_60,
+            -Angle::DEG_120,
+            -Angle::DEG_180,
         ]
         .iter()
         {
             assert_eq!(HueAngle::from(*angle).chroma_correction, 1.0);
         }
         for mul in 1..7 {
-            let hue_angle = HueAngle::from(DEG_30 * mul);
+            let hue_angle = HueAngle::from(Angle::DEG_30 * mul);
             assert!(within_limit(
                 hue_angle.max_chroma_rgb.calculate_chroma(),
                 1.0
             ));
         }
-        for angle in [DEG_30, DEG_90].iter() {
+        for angle in [Angle::DEG_30, Angle::DEG_90].iter() {
             assert_eq!(
                 HueAngle::from(*angle).max_chroma_rgb.non_zero_indices(),
                 vec![0, 1]
             )
         }
-        for angle in [-DEG_30, -DEG_90].iter() {
+        for angle in [-Angle::DEG_30, -Angle::DEG_90].iter() {
             assert_eq!(
                 HueAngle::from(*angle).max_chroma_rgb.non_zero_indices(),
                 vec![0, 2]
             )
         }
-        for angle in [DEG_150, -DEG_150].iter() {
+        for angle in [Angle::DEG_150, -Angle::DEG_150].iter() {
             assert_eq!(
                 HueAngle::from(*angle).max_chroma_rgb.non_zero_indices(),
                 vec![1, 2]
             )
         }
         assert_eq!(
-            HueAngle::from(DEG_30).max_chroma_rgb.indices_value_order(),
+            HueAngle::from(Angle::DEG_30)
+                .max_chroma_rgb
+                .indices_value_order(),
             (0, 1, 2)
         );
         assert_eq!(
-            HueAngle::from(DEG_90).max_chroma_rgb.indices_value_order(),
+            HueAngle::from(Angle::DEG_90)
+                .max_chroma_rgb
+                .indices_value_order(),
             (1, 0, 2)
         );
         assert_eq!(
-            HueAngle::from(DEG_150).max_chroma_rgb.indices_value_order(),
+            HueAngle::from(Angle::DEG_150)
+                .max_chroma_rgb
+                .indices_value_order(),
             (1, 2, 0)
         );
         assert_eq!(
-            HueAngle::from(-DEG_30).max_chroma_rgb.indices_value_order(),
+            HueAngle::from(-Angle::DEG_30)
+                .max_chroma_rgb
+                .indices_value_order(),
             (0, 2, 1)
         );
         assert_eq!(
-            HueAngle::from(-DEG_90).max_chroma_rgb.indices_value_order(),
+            HueAngle::from(-Angle::DEG_90)
+                .max_chroma_rgb
+                .indices_value_order(),
             (2, 0, 1)
         );
         assert_eq!(
-            HueAngle::from(-DEG_150)
+            HueAngle::from(-Angle::DEG_150)
                 .max_chroma_rgb
                 .indices_value_order(),
             (2, 1, 0)
         );
-        for angle in [DEG_30, DEG_90, DEG_150, -DEG_30, -DEG_90, -DEG_150].iter() {
+        for angle in [
+            Angle::DEG_30,
+            Angle::DEG_90,
+            Angle::DEG_150,
+            -Angle::DEG_30,
+            -Angle::DEG_90,
+            -Angle::DEG_150,
+        ]
+        .iter()
+        {
             let hue_angle = HueAngle::from(*angle);
             let second_index = hue_angle.max_chroma_rgb.indices_value_order().1;
             assert!(within_limit(hue_angle.max_chroma_rgb[second_index], 0.5));
@@ -471,19 +503,20 @@ mod tests {
     #[test]
     fn rgb_math_hue_angle_max_chroma_for_value() {
         for angle in [
-            DEG_0,
-            DEG_30,
-            DEG_60,
-            DEG_90,
-            DEG_120,
-            DEG_150,
-            DEG_180,
-            -DEG_0,
-            -DEG_30 - DEG_60,
-            -DEG_90,
-            -DEG_120,
-            -DEG_150,
-            -DEG_180,
+            Angle::DEG_0,
+            Angle::DEG_30,
+            Angle::DEG_60,
+            Angle::DEG_90,
+            Angle::DEG_120,
+            Angle::DEG_150,
+            Angle::DEG_180,
+            -Angle::DEG_0,
+            -Angle::DEG_30,
+            -Angle::DEG_60,
+            -Angle::DEG_90,
+            -Angle::DEG_120,
+            -Angle::DEG_150,
+            -Angle::DEG_180,
         ]
         .iter()
         {
@@ -534,19 +567,20 @@ mod tests {
     #[test]
     fn rgb_math_hue_rgb_range_with_chroma() {
         for angle in [
-            DEG_0,
-            DEG_30,
-            DEG_60,
-            DEG_90,
-            DEG_120,
-            DEG_150,
-            DEG_180,
-            -DEG_0,
-            -DEG_30 - DEG_60,
-            -DEG_90,
-            -DEG_120,
-            -DEG_150,
-            -DEG_180,
+            Angle::DEG_0,
+            Angle::DEG_30,
+            Angle::DEG_60,
+            Angle::DEG_90,
+            Angle::DEG_120,
+            Angle::DEG_150,
+            Angle::DEG_180,
+            -Angle::DEG_0,
+            -Angle::DEG_30,
+            -Angle::DEG_60,
+            -Angle::DEG_90,
+            -Angle::DEG_120,
+            -Angle::DEG_150,
+            -Angle::DEG_180,
         ]
         .iter()
         {
@@ -582,19 +616,20 @@ mod tests {
     #[test]
     fn rgb_math_hue_rgb_with_chroma_and_value_extremities() {
         for angle in [
-            DEG_0,
-            DEG_30,
-            DEG_60,
-            DEG_90,
-            DEG_120,
-            DEG_150,
-            DEG_180,
-            -DEG_0,
-            -DEG_30 - DEG_60,
-            -DEG_90,
-            -DEG_120,
-            -DEG_150,
-            -DEG_180,
+            Angle::DEG_0,
+            Angle::DEG_30,
+            Angle::DEG_60,
+            Angle::DEG_90,
+            Angle::DEG_120,
+            Angle::DEG_150,
+            Angle::DEG_180,
+            -Angle::DEG_0,
+            -Angle::DEG_30,
+            -Angle::DEG_60,
+            -Angle::DEG_90,
+            -Angle::DEG_120,
+            -Angle::DEG_150,
+            -Angle::DEG_180,
         ]
         .iter()
         {
@@ -627,19 +662,20 @@ mod tests {
         let mut count_a = 0;
         let mut count_b = 0;
         for angle in [
-            DEG_0,
-            DEG_30,
-            DEG_60,
-            DEG_90,
-            DEG_120,
-            DEG_150,
-            DEG_180,
-            -DEG_0,
-            -DEG_30 - DEG_60,
-            -DEG_90,
-            -DEG_120,
-            -DEG_150,
-            -DEG_180,
+            Angle::DEG_0,
+            Angle::DEG_30,
+            Angle::DEG_60,
+            Angle::DEG_90,
+            Angle::DEG_120,
+            Angle::DEG_150,
+            Angle::DEG_180,
+            -Angle::DEG_0,
+            -Angle::DEG_30,
+            -Angle::DEG_60,
+            -Angle::DEG_90,
+            -Angle::DEG_120,
+            -Angle::DEG_150,
+            -Angle::DEG_180,
         ]
         .iter()
         {
@@ -722,19 +758,20 @@ mod tests {
     #[test]
     fn rgb_math_hue_max_chroma_rgb_for_value() {
         for angle in [
-            DEG_0,
-            DEG_30,
-            DEG_60,
-            DEG_90,
-            DEG_120,
-            DEG_150,
-            DEG_180,
-            -DEG_0,
-            -DEG_30 - DEG_60,
-            -DEG_90,
-            -DEG_120,
-            -DEG_150,
-            -DEG_180,
+            Angle::DEG_0,
+            Angle::DEG_30,
+            Angle::DEG_60,
+            Angle::DEG_90,
+            Angle::DEG_120,
+            Angle::DEG_150,
+            Angle::DEG_180,
+            -Angle::DEG_0,
+            -Angle::DEG_30,
+            -Angle::DEG_60,
+            -Angle::DEG_90,
+            -Angle::DEG_120,
+            -Angle::DEG_150,
+            -Angle::DEG_180,
         ]
         .iter()
         {
