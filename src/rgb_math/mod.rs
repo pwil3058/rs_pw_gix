@@ -11,5 +11,5 @@ pub mod hue;
 
 pub mod angle {
     pub use normalised_angles::AngleConst;
-    pub type Angle = normalised_angles::Angle<f64>;
+    pub type Angle = normalised_angles::Radians<f64>;
 }
