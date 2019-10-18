@@ -2,7 +2,7 @@
 
 use std;
 use std::cmp::{Ordering, PartialOrd};
-use std::convert::From;
+use std::convert::{From, TryFrom};
 use std::hash::*;
 use std::ops::{Add, Sub};
 
@@ -33,8 +33,9 @@ macro_rules! rgb_y_coord {
 pub trait XYHA {
     fn x(&self) -> f64;
     fn y(&self) -> f64;
+    fn xy(&self) -> (f64, f64);
     fn hypot(&self) -> f64;
-    fn angle(&self) -> Angle;
+    fn angle(&self) -> Option<Angle>;
 }
 
 impl XYHA for RGB {
@@ -46,18 +47,22 @@ impl XYHA for RGB {
         rgb_y_coord!(self)
     }
 
+    fn xy(&self) -> (f64, f64) {
+        (rgb_x_coord!(self), rgb_y_coord!(self))
+    }
+
     fn hypot(&self) -> f64 {
         // Be paranoid about fact floats only approximate reals
         rgb_x_coord!(self).hypot(rgb_y_coord!(self)).min(1.0)
     }
 
-    fn angle(&self) -> Angle {
+    fn angle(&self) -> Option<Angle> {
         let x = rgb_x_coord!(self);
         let y = rgb_y_coord!(self);
-        if x == 0.0 && y == 0.0 {
-            Angle::from(std::f64::NAN)
+        if let Ok(angle) = Angle::try_from((x, y)) {
+            Some(angle)
         } else {
-            Angle::from(y.atan2(x))
+            None
         }
     }
 }
@@ -133,49 +138,39 @@ fn calc_other(abs_angle: Angle) -> f64 {
 
 impl From<Angle> for HueAngle {
     fn from(angle: Angle) -> HueAngle {
-        if angle.is_nan() {
-            HueAngle {
-                angle: angle,
-                max_chroma_rgb: WHITE,
-                chroma_correction: 1.0,
+        let other = calc_other(angle.abs());
+        let max_chroma_rgb = if angle >= Angle::DEG_0 {
+            if angle <= Angle::DEG_60 {
+                RGB::from((1.0, other, 0.0))
+            } else if angle <= Angle::DEG_120 {
+                RGB::from((other, 1.0, 0.0))
+            } else {
+                RGB::from((0.0, 1.0, other))
             }
         } else {
-            let other = calc_other(angle.abs());
-            let max_chroma_rgb = if angle >= Angle::DEG_0 {
-                if angle <= Angle::DEG_60 {
-                    RGB::from((1.0, other, 0.0))
-                } else if angle <= Angle::DEG_120 {
-                    RGB::from((other, 1.0, 0.0))
-                } else {
-                    RGB::from((0.0, 1.0, other))
-                }
+            if angle >= -Angle::DEG_60 {
+                RGB::from((1.0, 0.0, other))
+            } else if angle >= -Angle::DEG_120 {
+                RGB::from((other, 0.0, 1.0))
             } else {
-                if angle >= -Angle::DEG_60 {
-                    RGB::from((1.0, 0.0, other))
-                } else if angle >= -Angle::DEG_120 {
-                    RGB::from((other, 0.0, 1.0))
-                } else {
-                    RGB::from((0.0, other, 1.0))
-                }
-            };
-            // Careful of float not fully representing reals
-            let chroma_correction = (1.0 + other * other - other).sqrt().min(1.0).recip();
-            HueAngle {
-                angle,
-                max_chroma_rgb,
-                chroma_correction,
+                RGB::from((0.0, other, 1.0))
             }
+        };
+        // Careful of float not fully representing reals
+        let chroma_correction = (1.0 + other * other - other).sqrt().min(1.0).recip();
+        HueAngle {
+            angle,
+            max_chroma_rgb,
+            chroma_correction,
         }
     }
 }
 
-impl From<RGB> for HueAngle {
-    fn from(rgb: RGB) -> HueAngle {
-        let angle = rgb.angle();
-        if angle.is_nan() {
-            // NB: float limitations using ::from(angle) unwise for real angles
-            return HueAngle::from(angle);
-        }
+impl TryFrom<RGB> for HueAngle {
+    type Error = &'static str;
+    fn try_from(rgb: RGB) -> Result<HueAngle, Self::Error> {
+        use std::convert::TryInto;
+        let angle: Angle = rgb.xy().try_into()?;
         let io = rgb.indices_value_order();
         // Careful of float not fully representing reals
         let mut parts: [f64; 3] = [0.0, 0.0, 0.0];
@@ -189,21 +184,15 @@ impl From<RGB> for HueAngle {
         }
         let max_chroma_rgb = RGB::from(parts);
         let chroma_correction = max_chroma_rgb.hypot().recip();
-        HueAngle {
+        Ok(HueAngle {
             angle,
             max_chroma_rgb,
             chroma_correction,
-        }
+        })
     }
 }
 
 impl HueAngle {
-    // Return the maximum chroma value that can be achieved for an
-    // RGB with this hue and the given value
-    pub fn is_grey(&self) -> bool {
-        self.angle.is_nan()
-    }
-
     pub fn angle(&self) -> Angle {
         self.angle
     }
@@ -218,69 +207,63 @@ impl HueAngle {
 
     pub fn max_chroma_for_value(&self, value: f64) -> f64 {
         assert!(is_proportion!(value));
-        if self.is_grey() {
-            0.0
+        let mcv = self.max_chroma_rgb.value();
+        if mcv > value {
+            value / mcv
         } else {
-            let mcv = self.max_chroma_rgb.value();
-            if mcv > value {
-                value / mcv
-            } else {
-                (1.0 - value) / (1.0 - mcv)
-            }
+            (1.0 - value) / (1.0 - mcv)
         }
     }
 
-    pub fn rgb_range_with_chroma(&self, req_chroma: f64) -> Option<(RGB, RGB)> {
+    pub fn rgb_range_with_chroma(&self, req_chroma: f64) -> (RGB, RGB) {
         assert!(is_proportion!(req_chroma));
         if req_chroma == 0.0 {
-            Some((BLACK, WHITE))
-        } else if self.is_grey() {
-            None
+            (BLACK, WHITE)
         } else if req_chroma == 1.0 {
-            Some((self.max_chroma_rgb, self.max_chroma_rgb))
+            (self.max_chroma_rgb, self.max_chroma_rgb)
         } else {
             let darkest = self.max_chroma_rgb * req_chroma;
             let lightest = darkest + WHITE * (1.0 - req_chroma);
-            Some((darkest, lightest))
+            (darkest, lightest)
         }
     }
 
-    pub fn value_range_with_chroma(&self, req_chroma: f64) -> Option<(f64, f64)> {
+    pub fn value_range_with_chroma(&self, req_chroma: f64) -> (f64, f64) {
         assert!(is_proportion!(req_chroma));
         if req_chroma == 0.0 {
-            Some((0.0, 1.0))
-        } else if self.is_grey() {
-            None
+            (0.0, 1.0)
         } else if req_chroma == 1.0 {
             let val = self.max_chroma_rgb.value();
-            Some((val, val))
+            (val, val)
         } else {
             let darkest = self.max_chroma_rgb.value() * req_chroma;
             let lightest = darkest + (1.0 - req_chroma);
-            Some((darkest, lightest))
+            (darkest, lightest)
         }
     }
 
     pub fn rgb_with_chroma_and_value(&self, req_chroma: f64, req_value: f64) -> Option<(RGB)> {
         assert!(is_proportion!(req_chroma));
         assert!(is_proportion!(req_value));
-        if let Some((min_value, max_value)) = self.value_range_with_chroma(req_chroma) {
-            if req_value < min_value || req_value > max_value {
-                return None;
-            } else {
-                // NB: because floats only approximate reals trying to
-                // set chroma too small (but non zero) results in a drift
-                // in the hue angle of the resulting RGB. When this
-                // happens we go straight to a zero chroma RGB
-                let rgb = self.max_chroma_rgb * req_chroma + WHITE * (req_value - min_value);
-                if (rgb.angle() - self.angle).abs().radians() < 0.00001 {
-                    return Some(rgb);
+        let (min_value, max_value) = self.value_range_with_chroma(req_chroma);
+        if req_value < min_value || req_value > max_value {
+            None
+        } else {
+            // NB: because floats only approximate reals trying to
+            // set chroma too small (but non zero) results in a drift
+            // in the hue angle of the resulting RGB. When this
+            // happens we go straight to a zero chroma RGB
+            let rgb = self.max_chroma_rgb * req_chroma + WHITE * (req_value - min_value);
+            if let Some(rgb_angle) = rgb.angle() {
+                if (rgb_angle - self.angle).abs().radians() < 0.00001 {
+                    Some(rgb)
                 } else {
-                    return Some(WHITE * req_value);
+                    Some(WHITE * req_value)
                 }
+            } else {
+                Some(WHITE * req_value)
             }
         }
-        None
     }
 
     pub fn max_chroma_rgb_with_value(&self, req_value: f64) -> RGB {
@@ -353,7 +336,11 @@ mod tests {
         }
 
         fn calculate_chroma(self) -> f64 {
-            self.hypot() * HueAngle::from(self).chroma_correction
+            if let Ok(angle) = HueAngle::try_from(self) {
+                self.hypot() * angle.chroma_correction
+            } else {
+                0.0
+            }
         }
     }
 
@@ -471,32 +458,43 @@ mod tests {
             let second_index = hue_angle.max_chroma_rgb.indices_value_order().1;
             assert!(within_limit(hue_angle.max_chroma_rgb[second_index], 0.5));
         }
-        for rgb in [WHITE, RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA].iter() {
-            assert!(within_limits(HueAngle::from(*rgb).max_chroma_rgb, *rgb));
+        for rgb in [RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA].iter() {
+            assert!(within_limits(
+                HueAngle::try_from(*rgb).unwrap().max_chroma_rgb,
+                *rgb
+            ));
             for m in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9].iter() {
                 assert!(within_limits(
-                    HueAngle::from(*rgb * *m).max_chroma_rgb,
+                    HueAngle::try_from(*rgb * *m).unwrap().max_chroma_rgb,
                     *rgb
                 ));
                 let tint = (*rgb + WHITE) * 0.5;
                 assert!(within_limits(
-                    HueAngle::from(tint * *m).max_chroma_rgb,
+                    HueAngle::try_from(tint * *m).unwrap().max_chroma_rgb,
                     *rgb
                 ));
             }
         }
         for g in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9].iter() {
             let rgb = RGB::from((1.0, *g, 0.0));
-            assert!(within_limits(HueAngle::from(rgb).max_chroma_rgb, rgb));
+            assert!(within_limits(
+                HueAngle::try_from(rgb).unwrap().max_chroma_rgb,
+                rgb
+            ));
             for m in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9].iter() {
-                assert!(within_limits(HueAngle::from(rgb * *m).max_chroma_rgb, rgb));
+                assert!(within_limits(
+                    HueAngle::try_from(rgb * *m).unwrap().max_chroma_rgb,
+                    rgb
+                ));
                 let tint = (rgb + WHITE) * 0.5;
-                assert!(within_limits(HueAngle::from(tint * *m).max_chroma_rgb, rgb));
+                assert!(within_limits(
+                    HueAngle::try_from(tint * *m).unwrap().max_chroma_rgb,
+                    rgb
+                ));
             }
         }
-        assert!(within_limits(HueAngle::from(BLACK).max_chroma_rgb, WHITE));
         for rgb in [BLACK, WHITE, WHITE * 0.5].iter() {
-            assert!(HueAngle::from(*rgb).is_grey());
+            assert!(HueAngle::try_from(*rgb).is_err());
         }
     }
 
@@ -526,19 +524,19 @@ mod tests {
                 if let Some(rgb) = hue_angle.rgb_with_chroma_and_value(max_chroma, *value) {
                     assert!(within_limit(rgb.calculate_chroma(), max_chroma));
                     assert!(within_limit(rgb.value(), *value));
-                    assert!((hue_angle - HueAngle::from(rgb)).abs().radians() <= 0.00000000001);
-                } else {
-                    assert!(false)
-                };
-                if let Some((min_value, max_value)) = hue_angle.value_range_with_chroma(max_chroma)
-                {
                     assert!(
-                        within_limit_quiet(min_value, *value)
-                            || within_limit_quiet(max_value, *value)
+                        (hue_angle - HueAngle::try_from(rgb).unwrap())
+                            .abs()
+                            .radians()
+                            <= 0.00000000001
                     );
                 } else {
                     assert!(false)
-                }
+                };
+                let (min_value, max_value) = hue_angle.value_range_with_chroma(max_chroma);
+                assert!(
+                    within_limit_quiet(min_value, *value) || within_limit_quiet(max_value, *value)
+                );
             }
             for value in [0.0, 1.0].iter() {
                 let max_chroma = hue_angle.max_chroma_for_value(*value);
@@ -547,20 +545,8 @@ mod tests {
                     .unwrap();
                 assert!(within_limit(rgb.calculate_chroma(), max_chroma));
                 assert!(within_limit(rgb.value(), *value));
-                assert!(HueAngle::from(rgb).is_grey());
+                assert!(HueAngle::try_from(rgb).is_err());
             }
-        }
-        let hue_angle = HueAngle::from(Angle::from(std::f64::NAN));
-        for value in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
-            let max_chroma = hue_angle.max_chroma_for_value(*value);
-            assert_eq!(max_chroma, 0.0);
-            if let Some(rgb) = hue_angle.rgb_with_chroma_and_value(max_chroma, *value) {
-                assert!(within_limit(rgb.calculate_chroma(), max_chroma));
-                assert!(within_limit(rgb.value(), *value));
-                assert!(HueAngle::from(rgb).is_grey());
-            } else {
-                assert!(false)
-            };
         }
     }
 
@@ -585,31 +571,19 @@ mod tests {
         .iter()
         {
             let hue_angle = HueAngle::from(*angle);
-            assert_eq!(
-                hue_angle.rgb_range_with_chroma(0.0).unwrap(),
-                (BLACK, WHITE)
-            );
+            assert_eq!(hue_angle.rgb_range_with_chroma(0.0), (BLACK, WHITE));
             for chroma in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
-                let (rgb_shade, rgb_tint) = hue_angle.rgb_range_with_chroma(*chroma).unwrap();
+                let (rgb_shade, rgb_tint) = hue_angle.rgb_range_with_chroma(*chroma);
                 assert!(rgb_shade.value() <= rgb_tint.value());
                 let shade_chroma = rgb_shade.calculate_chroma();
                 let tint_chroma = rgb_tint.calculate_chroma();
                 assert!(within_limit(shade_chroma, *chroma));
                 assert!(within_limit(tint_chroma, *chroma));
-                let shade_angle = HueAngle::from(rgb_shade);
-                let tint_angle = HueAngle::from(rgb_tint);
+                let shade_angle = HueAngle::try_from(rgb_shade).unwrap();
+                let tint_angle = HueAngle::try_from(rgb_tint).unwrap();
                 assert!((hue_angle - shade_angle).abs().radians() <= 0.00000000001);
                 assert!((hue_angle - tint_angle).abs().radians() <= 0.00000000001);
             }
-        }
-        let hue_angle = HueAngle::from(Angle::from(std::f64::NAN));
-        assert_eq!(
-            hue_angle.rgb_range_with_chroma(0.0).unwrap(),
-            (BLACK, WHITE)
-        );
-        for chroma in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
-            assert_eq!(hue_angle.rgb_range_with_chroma(*chroma), None);
-            assert_eq!(hue_angle.value_range_with_chroma(*chroma), None);
         }
     }
 
@@ -635,24 +609,21 @@ mod tests {
         {
             let hue_angle = HueAngle::from(*angle);
             for chroma in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
-                if let Some((min_value, max_value)) = hue_angle.value_range_with_chroma(*chroma) {
-                    let rgb_shade = hue_angle
-                        .rgb_with_chroma_and_value(*chroma, min_value)
-                        .unwrap();
-                    let rgb_tint = hue_angle
-                        .rgb_with_chroma_and_value(*chroma, max_value)
-                        .unwrap();
-                    let shade_chroma = rgb_shade.calculate_chroma();
-                    let tint_chroma = rgb_tint.calculate_chroma();
-                    assert!(within_limit(shade_chroma, *chroma));
-                    assert!(within_limit(tint_chroma, *chroma));
-                    let shade_angle = HueAngle::from(rgb_shade);
-                    let tint_angle = HueAngle::from(rgb_tint);
-                    assert!((hue_angle - shade_angle).abs().radians() <= 0.00000000001);
-                    assert!((hue_angle - tint_angle).abs().radians() <= 0.00000000001);
-                } else {
-                    assert!(false) //should not get here for real angles
-                }
+                let (min_value, max_value) = hue_angle.value_range_with_chroma(*chroma);
+                let rgb_shade = hue_angle
+                    .rgb_with_chroma_and_value(*chroma, min_value)
+                    .unwrap();
+                let rgb_tint = hue_angle
+                    .rgb_with_chroma_and_value(*chroma, max_value)
+                    .unwrap();
+                let shade_chroma = rgb_shade.calculate_chroma();
+                let tint_chroma = rgb_tint.calculate_chroma();
+                assert!(within_limit(shade_chroma, *chroma));
+                assert!(within_limit(tint_chroma, *chroma));
+                let shade_angle = HueAngle::try_from(rgb_shade).unwrap();
+                let tint_angle = HueAngle::try_from(rgb_tint).unwrap();
+                assert!((hue_angle - shade_angle).abs().radians() <= 0.00000000001);
+                assert!((hue_angle - tint_angle).abs().radians() <= 0.00000000001);
             }
         }
     }
@@ -687,15 +658,15 @@ mod tests {
                             assert!(within_limit(rgb.calculate_chroma(), *chroma));
                             assert!(within_limit(rgb.value(), *value));
                             assert!(
-                                (hue_angle - HueAngle::from(rgb)).abs().radians() <= 0.00000001
+                                (hue_angle - HueAngle::try_from(rgb).unwrap())
+                                    .abs()
+                                    .radians()
+                                    <= 0.00000001
                             );
                         }
                         None => {
-                            (if let Some((min_value, max_value)) =
-                                hue_angle.value_range_with_chroma(*chroma)
-                            {
-                                assert!(*value < min_value || *value > max_value);
-                            })
+                            let (min_value, max_value) = hue_angle.value_range_with_chroma(*chroma);
+                            assert!(*value < min_value || *value > max_value);
                         }
                     }
                 }
@@ -705,25 +676,23 @@ mod tests {
                 for chroma in [0.000000001, 0.0000000001, 0.00000000001, 0.000000000001].iter() {
                     match hue_angle.rgb_with_chroma_and_value(*chroma, *value) {
                         Some(rgb) => {
-                            if rgb.angle().is_nan() {
+                            if rgb.angle().is_none() {
                                 assert!(within_limit(rgb.value(), *value));
                                 count_a += 1;
                             } else {
                                 assert!(within_limit(rgb.value(), *value));
                                 assert!(
-                                    (hue_angle - HueAngle::from(rgb)).abs().radians() <= 0.00001
+                                    (hue_angle - HueAngle::try_from(rgb).unwrap())
+                                        .abs()
+                                        .radians()
+                                        <= 0.00001
                                 );
                                 count_b += 1;
                             };
                         }
                         None => {
-                            if let Some((min_value, max_value)) =
-                                hue_angle.value_range_with_chroma(*chroma)
-                            {
-                                assert!(*value < min_value || *value > max_value);
-                            } else {
-                                panic!("File: {:?} Line: {:?} shouldn't get here", file!(), line!())
-                            }
+                            let (min_value, max_value) = hue_angle.value_range_with_chroma(*chroma);
+                            assert!(*value < min_value || *value > max_value);
                         }
                     }
                 }
@@ -733,7 +702,7 @@ mod tests {
                     Some(rgb) => {
                         assert!(within_limit(rgb.calculate_chroma(), 0.0));
                         assert!(within_limit(rgb.value(), *value));
-                        assert!(HueAngle::from(rgb).is_grey());
+                        assert!(HueAngle::try_from(rgb).is_err());
                     }
                     None => (assert!(false)),
                 }
@@ -741,18 +710,6 @@ mod tests {
         }
         assert!(count_a > 0);
         assert!(count_b > 0);
-        let hue_angle = HueAngle::from(Angle::from(std::f64::NAN));
-        for chroma in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
-            for value in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
-                assert_eq!(hue_angle.rgb_with_chroma_and_value(*chroma, *value), None);
-            }
-        }
-        for value in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
-            assert_eq!(
-                hue_angle.rgb_with_chroma_and_value(0.0, *value),
-                Some(WHITE * *value)
-            );
-        }
     }
 
     #[test]
@@ -779,19 +736,20 @@ mod tests {
             for value in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99].iter() {
                 let rgb = hue_angle.max_chroma_rgb_with_value(*value);
                 assert!(within_limit(rgb.value(), *value));
-                assert!((hue_angle - HueAngle::from(rgb)).abs().radians() <= 0.00000000001);
+                assert!(
+                    (hue_angle - HueAngle::try_from(rgb).unwrap())
+                        .abs()
+                        .radians()
+                        <= 0.00000000001
+                );
                 let max_chroma = hue_angle.max_chroma_for_value(*value);
                 assert!(within_limit(rgb.calculate_chroma(), max_chroma));
             }
             for value in [0.0, 1.0].iter() {
                 let rgb = hue_angle.max_chroma_rgb_with_value(*value);
                 assert!(within_limit(rgb.value(), *value));
-                assert!(HueAngle::from(rgb).is_grey());
+                assert!(HueAngle::try_from(rgb).is_err());
             }
-        }
-        let hue_angle = HueAngle::from(Angle::from(std::f64::NAN));
-        for value in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].iter() {
-            assert_eq!(hue_angle.max_chroma_rgb_with_value(*value), WHITE * *value);
         }
     }
 }

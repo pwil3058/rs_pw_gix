@@ -30,20 +30,28 @@ impl ScalarAttribute {
 
 pub trait ColourInterface {
     fn rgb(&self) -> RGB;
-    fn hue(&self) -> HueAngle;
+    fn hue(&self) -> Option<HueAngle>;
 
     fn is_grey(&self) -> bool {
-        self.hue().is_grey()
+        self.hue().is_none()
     }
 
     fn chroma(&self) -> f64 {
-        // Be paranoid about fact floats only approximate reals
-        (self.rgb().hypot() * self.hue().chroma_correction()).min(1.0)
+        if let Some(hue) = self.hue() {
+            // Be paranoid about fact floats only approximate reals
+            (self.rgb().hypot() * hue.chroma_correction()).min(1.0)
+        } else {
+            0.0
+        }
     }
 
     fn greyness(&self) -> f64 {
-        // Be paranoid about fact floats only approximate reals
-        (1.0 - self.rgb().hypot() * self.hue().chroma_correction()).max(0.0)
+        if let Some(hue) = self.hue() {
+            // Be paranoid about fact floats only approximate reals
+            (1.0 - self.rgb().hypot() * hue.chroma_correction()).max(0.0)
+        } else {
+            1.0
+        }
     }
 
     fn value(&self) -> f64 {
@@ -63,7 +71,11 @@ pub trait ColourInterface {
     }
 
     fn max_chroma_rgb(&self) -> RGB {
-        self.hue().max_chroma_rgb()
+	if let Some(hue) = self.hue() {
+            hue.max_chroma_rgb()
+        } else {
+            WHITE
+        }
     }
 
     fn warmth_rgb(&self) -> RGB {
@@ -90,7 +102,7 @@ pub trait ColourInterface {
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Hash)]
 pub struct ColourInternals {
     rgb: RGB,
-    hue: HueAngle,
+    hue: Option<HueAngle>,
 }
 
 impl PartialEq for ColourInternals {
@@ -105,19 +117,22 @@ impl PartialOrd for ColourInternals {
     fn partial_cmp(&self, other: &ColourInternals) -> Option<Ordering> {
         if self.rgb == other.rgb {
             Some(Ordering::Equal)
-        } else if self.hue.is_grey() {
-            if other.hue.is_grey() {
-                self.rgb.value().partial_cmp(&other.rgb.value())
+        } else if let Some(hue) = self.hue {
+            if let Some(other_hue) = other.hue {
+                // This orders via hue from CYAN to CYAN via GREEN, RED, BLUE in that order
+                match hue.partial_cmp(&other_hue) {
+                    Some(Ordering::Less) => Some(Ordering::Less),
+                    Some(Ordering::Greater) => Some(Ordering::Greater),
+                    Some(Ordering::Equal) => self.rgb.value().partial_cmp(&other.rgb.value()),
+                    None => None,
+                }
             } else {
-                Some(Ordering::Less)
+                Some(Ordering::Greater)
             }
-        } else if other.hue.is_grey() {
-            Some(Ordering::Greater)
+        } else if other.hue.is_some() {
+            Some(Ordering::Less)
         } else {
-            self.hue
-                .angle()
-                .radians()
-                .partial_cmp(&other.hue.angle().radians())
+            self.rgb.value().partial_cmp(&other.rgb.value())
         }
     }
 }
@@ -126,7 +141,12 @@ pub type Colour = Rc<ColourInternals>;
 
 impl From<RGB> for Colour {
     fn from(rgb: RGB) -> Colour {
-        let hue = HueAngle::from(rgb);
+        use std::convert::TryFrom;
+        let hue: Option<HueAngle> = if let Ok(hue_angle) = HueAngle::try_from(rgb) {
+            Some(hue_angle)
+        } else {
+            None
+        };
         Rc::new(ColourInternals { rgb, hue })
     }
 }
@@ -136,7 +156,7 @@ impl ColourInterface for Colour {
         self.rgb
     }
 
-    fn hue(&self) -> HueAngle {
+    fn hue(&self) -> Option<HueAngle> {
         self.hue
     }
 }
@@ -146,8 +166,13 @@ impl ColourInterface for RGB {
         *self
     }
 
-    fn hue(&self) -> HueAngle {
-        HueAngle::from(*self)
+    fn hue(&self) -> Option<HueAngle> {
+        use std::convert::TryFrom;
+        if let Ok(hue_angle) = HueAngle::try_from(*self) {
+            Some(hue_angle)
+        } else {
+            None
+        }
     }
 }
 

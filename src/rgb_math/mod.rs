@@ -10,6 +10,6 @@ pub mod rgb_manipulator;
 pub mod hue;
 
 pub mod angle {
-    pub use normalised_angles::AngleConst;
-    pub type Angle = normalised_angles::Radians<f64>;
+    //pub use normalised_angles::AngleConst;
+    pub type Angle = normalised_angles::Degrees<f64>;
 }

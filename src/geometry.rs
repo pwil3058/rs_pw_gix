@@ -56,11 +56,7 @@ impl From<(Angle, f64)> for Point {
     fn from(polar: (Angle, f64)) -> Point {
         // NB: cairo coordinates are upside down to normal people
         let (angle, radius) = polar;
-        if angle.is_nan() {
-            Point(0.0, -radius)
-        } else {
-            Point(radius * angle.cos(), -radius * angle.sin())
-        }
+        Point(radius * angle.cos(), -radius * angle.sin())
     }
 }
 

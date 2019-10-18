@@ -309,12 +309,12 @@ impl HueCADData {
 
     fn set_colour_stops(&self, ocolour: Option<&Colour>) {
         if let Some(ref colour) = ocolour {
-            if colour.is_grey() {
+            if let Some(hue_angle) = colour.hue() {
+                self.set_colour_stops_for_hue_angle(hue_angle);
+            } else {
                 let value = colour.value();
                 *self.colour_stops.borrow_mut() =
                     vec![[0.0, value, value, value], [1.0, value, value, value]]
-            } else {
-                self.set_colour_stops_for_hue_angle(colour.hue());
             }
         } else {
             *self.colour_stops.borrow_mut() = vec![[0.0, 0.5, 0.5, 0.5], [1.0, 0.5, 0.5, 0.5]]
@@ -375,19 +375,18 @@ impl ColourAttributeDisplayInterface for HueCAD {
 
     fn set_colour(&self, colour: Option<&Colour>) {
         if let Some(colour) = colour {
-            if colour.is_grey() {
-                self.set_hue_defaults();
-            } else {
-                let val_angle = colour.hue();
-                self.value_angle.set(Some(val_angle));
+            if let Some(hue_angle) = colour.hue() {
+                self.value_angle.set(Some(hue_angle));
                 self.attr_value_fg_rgb.set(colour.best_foreground_rgb());
                 if let Some(target_angle) = self.target_angle.get() {
-                    let val = calc_hue_value(target_angle, val_angle);
+                    let val = calc_hue_value(target_angle, hue_angle);
                     self.attr_value.set(Some(val));
                 } else {
                     self.set_colour_stops(Some(&colour));
                     self.attr_value.set(Some(0.5))
                 }
+            } else {
+                self.set_hue_defaults();
             }
         } else {
             self.set_hue_defaults();
@@ -405,10 +404,7 @@ impl ColourAttributeDisplayInterface for HueCAD {
 
     fn set_target_colour(&self, colour: Option<&Colour>) {
         if let Some(colour) = colour {
-            if colour.is_grey() {
-                self.set_target_defaults();
-            } else {
-                let target_angle = colour.hue;
+            if let Some(target_angle) = colour.hue() {
                 self.target_angle.set(Some(target_angle));
                 self.attr_target_value_fg_rgb
                     .set(colour.best_foreground_rgb());
@@ -417,6 +413,8 @@ impl ColourAttributeDisplayInterface for HueCAD {
                     self.attr_value.set(Some(val));
                 }
                 self.set_colour_stops(Some(&colour));
+            } else {
+                self.set_target_defaults();
             }
         } else {
             self.set_target_defaults();
