@@ -179,7 +179,7 @@ impl ColourInterface for RGB {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rgb_math::angle::*;
+    use normalised_angles::Degrees;
 
     fn within_limit_quiet(x1: f64, x2: f64) -> bool {
         let limit = 0.0000000001;
@@ -242,11 +242,11 @@ mod tests {
                 let tint = (*rgb + WHITE) / 2.0;
                 assert!(within_limit(
                     Colour::from(*rgb * *factor).warmth(),
-                    (factor * Angle::DEG_60.cos() + 1.0) / 2.0
+                    (factor * Degrees::<f64>::DEG_60.cos() + 1.0) / 2.0
                 ));
                 assert!(within_limit(
                     Colour::from(tint * *factor).warmth(),
-                    (0.5 * factor * Angle::DEG_60.cos() + 1.0) / 2.0
+                    (0.5 * factor * Degrees::<f64>::DEG_60.cos() + 1.0) / 2.0
                 ));
             }
         }
@@ -255,11 +255,11 @@ mod tests {
                 let tint = (*rgb + WHITE) / 2.0;
                 assert!(within_limit(
                     Colour::from(*rgb * *factor).warmth(),
-                    (factor * Angle::DEG_120.cos() + 1.0) / 2.0
+                    (factor * Degrees::<f64>::DEG_120.cos() + 1.0) / 2.0
                 ));
                 assert!(within_limit(
                     Colour::from(tint * *factor).warmth(),
-                    (0.5 * factor * Angle::DEG_120.cos() + 1.0) / 2.0
+                    (0.5 * factor * Degrees::<f64>::DEG_120.cos() + 1.0) / 2.0
                 ));
             }
         }

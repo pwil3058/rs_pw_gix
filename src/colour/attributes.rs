@@ -8,9 +8,10 @@ use gtk;
 use gtk::prelude::*;
 use gtk::WidgetExt;
 
+use normalised_angles::Degrees;
+
 use crate::cairox::*;
 use crate::colour::*;
-use crate::rgb_math::angle::*;
 use crate::wrapper::*;
 
 type ColourStops = Vec<[f64; 4]>;
@@ -296,8 +297,8 @@ pub struct HueCADData {
 impl HueCADData {
     fn set_colour_stops_for_hue_angle(&self, angle: HueAngle) {
         let mut stops: ColourStops = Vec::new();
-        let mut hue_angle = angle + Angle::DEG_180;
-        let delta_angle = Angle::DEG_180 / 6;
+        let mut hue_angle = angle + Degrees::DEG_180;
+        let delta_angle = Degrees::DEG_180 / 6;
         for i in 0..13 {
             let offset = i as f64 / 12.0;
             let rgb = hue_angle.max_chroma_rgb();

@@ -1,6 +1,7 @@
 // Copyright 2017 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
-use crate::rgb_math::angle::*;
+use normalised_angles::Degrees;
+
 use crate::rgb_math::hue::*;
 use crate::rgb_math::rgb::*;
 
@@ -65,7 +66,7 @@ impl RGBManipulator {
             if let Some(last_angle) = self.last_angle {
                 Some(last_angle)
             } else {
-                Some(HueAngle::from(Angle::DEG_0))
+                Some(HueAngle::from(Degrees::DEG_0))
             }
         } else {
             self.angle
@@ -155,7 +156,7 @@ impl RGBManipulator {
         }
     }
 
-    pub fn rotate(&mut self, by_angle: Angle) -> bool {
+    pub fn rotate(&mut self, by_angle: Degrees<f64>) -> bool {
         if let Some(angle) = self.angle {
             let cur_value = self.rgb.value();
             let cur_chroma = self.chroma;
@@ -245,7 +246,7 @@ mod tests {
                 assert!(!rgb_manipulator.angle.is_none());
                 assert!(
                     (rgb_manipulator.angle.unwrap().angle() - angle).abs()
-                        < Angle::from(0.00000001)
+                        < Degrees::from(0.00000001)
                 );
                 assert!(within_limit(rgb_manipulator.chroma, chroma));
                 value = rgb_manipulator.rgb.value();
@@ -257,7 +258,7 @@ mod tests {
                 assert!(rgb_manipulator.angle.is_some());
                 assert!(
                     (rgb_manipulator.angle.unwrap().angle() - angle).abs()
-                        < Angle::from(0.00000001)
+                        < Degrees::from(0.00000001)
                 );
                 assert!(within_limit(rgb_manipulator.chroma, chroma));
                 value = rgb_manipulator.rgb.value();
@@ -275,7 +276,7 @@ mod tests {
             rgb_manipulator.set_rgb(tint);
             let angle = tint.angle().unwrap();
             assert!(
-                (rgb_manipulator.angle.unwrap().angle() - angle).abs() < Angle::from(0.00000001)
+                (rgb_manipulator.angle.unwrap().angle() - angle).abs() < Degrees::from(0.00000001)
             );
             let value = tint.value();
             let mut chroma = rgb_manipulator.chroma;
@@ -288,7 +289,7 @@ mod tests {
                 } else {
                     assert!(
                         (rgb_manipulator.angle.unwrap().angle() - angle).abs()
-                            < Angle::from(0.00000001)
+                            < Degrees::from(0.00000001)
                     );
                 }
                 chroma = rgb_manipulator.chroma;
@@ -297,7 +298,7 @@ mod tests {
             assert!(!rgb_manipulator.decr_chroma(0.1));
             assert!(
                 (rgb_manipulator.last_angle.unwrap().angle() - angle).abs()
-                    < Angle::from(0.00000001)
+                    < Degrees::from(0.00000001)
             );
             while rgb_manipulator.incr_chroma(0.01) {
                 assert!(rgb_manipulator.chroma > chroma);
@@ -305,7 +306,7 @@ mod tests {
                 assert!(!rgb_manipulator.angle.is_none());
                 assert!(
                     (rgb_manipulator.angle.unwrap().angle() - angle).abs()
-                        < Angle::from(0.00000001)
+                        < Degrees::from(0.00000001)
                 );
                 chroma = rgb_manipulator.chroma;
             }
@@ -315,15 +316,15 @@ mod tests {
     #[test]
     fn rgb_math_rgb_manipulator_rotate() {
         let mut rgb_manipulator = RGBManipulator::new();
-        assert!(!rgb_manipulator.rotate(Angle::from(10.0)));
-        assert!(!rgb_manipulator.rotate(-Angle::from(10.0)));
+        assert!(!rgb_manipulator.rotate(Degrees::from(10.0)));
+        assert!(!rgb_manipulator.rotate(-Degrees::from(10.0)));
         for rgb in [RED, GREEN, BLUE, CYAN, MAGENTA, YELLOW, (RED + YELLOW) / 2].iter() {
             let tint = (*rgb + WHITE) / 2.0;
             rgb_manipulator.set_rgb(tint);
             for delta in [-60.0, -30.0, -10.0, -5.0, 5.0, 10.0, 30.0, 60.0].iter() {
                 let cur_chroma = rgb_manipulator.chroma;
                 let cur_angle = rgb_manipulator.angle.unwrap();
-                let delta_angle = Angle::from(*delta);
+                let delta_angle = Degrees::from(*delta);
                 rgb_manipulator.rotate(delta_angle);
                 assert!(within_limit(cur_chroma, rgb_manipulator.chroma));
                 let diff = rgb_manipulator.angle.unwrap() - cur_angle;
@@ -336,7 +337,7 @@ mod tests {
             for delta in [-60.0, -30.0, -10.0, -5.0, 5.0, 10.0, 30.0, 60.0].iter() {
                 let cur_chroma = rgb_manipulator.chroma;
                 let cur_angle = rgb_manipulator.angle.unwrap();
-                let delta_angle = Angle::from(*delta);
+                let delta_angle = Degrees::from(*delta);
                 rgb_manipulator.rotate(delta_angle);
                 assert!(within_limit(cur_chroma, rgb_manipulator.chroma));
                 let diff = rgb_manipulator.angle.unwrap() - cur_angle;

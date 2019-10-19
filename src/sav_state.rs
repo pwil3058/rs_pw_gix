@@ -127,7 +127,7 @@ impl ChangedCondnsNotifier {
         let callbacks = self.callbacks.lock().unwrap();
         let position = callbacks.borrow().iter().position(|x| x.0 == token);
         if let Some(position) = position {
-            callbacks.borrow_mut().remove(position);
+            let _ = callbacks.borrow_mut().remove(position);
         }
     }
 
