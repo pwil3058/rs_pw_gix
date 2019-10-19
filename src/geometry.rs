@@ -8,7 +8,7 @@ use gtk;
 
 use num::Num;
 
-use crate::rgb_math::angle::Angle;
+use normalised_angles::Angle;
 
 // POINT
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -52,8 +52,8 @@ impl From<(f64, f64)> for Point {
     }
 }
 
-impl From<(Angle, f64)> for Point {
-    fn from(polar: (Angle, f64)) -> Point {
+impl From<(Angle<f64>, f64)> for Point {
+    fn from(polar: (Angle<f64>, f64)) -> Point {
         // NB: cairo coordinates are upside down to normal people
         let (angle, radius) = polar;
         Point(radius * angle.cos(), -radius * angle.sin())
