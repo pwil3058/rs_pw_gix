@@ -12,9 +12,9 @@ use gtk::prelude::*;
 
 use pw_pathux;
 
+use crate::colour::*;
 use crate::gtkx::coloured::*;
 use crate::gtkx::list_store::*;
-use crate::rgb_math::rgb::*;
 use crate::wrapper::*;
 
 // Labelled Text Entry
@@ -245,14 +245,14 @@ impl RGBHexEntryBoxData {
         let red = self.red_entry.get_value() as f64 / max_value;
         let green = self.green_entry.get_value() as f64 / max_value;
         let blue = self.blue_entry.get_value() as f64 / max_value;
-        RGB::from((red, green, blue))
+        [red, green, blue].into()
     }
 
     pub fn set_rgb(&self, rgb: RGB) {
         let max_value = u16::max_value() as f64;
-        let red = (rgb.red * max_value) as u32;
-        let green = (rgb.green * max_value) as u32;
-        let blue = (rgb.blue * max_value) as u32;
+        let red = (rgb[I_RED] * max_value) as u32;
+        let green = (rgb[I_GREEN] * max_value) as u32;
+        let blue = (rgb[I_BLUE] * max_value) as u32;
         self.red_entry.set_value(red);
         self.green_entry.set_value(green);
         self.blue_entry.set_value(blue);
@@ -277,13 +277,13 @@ impl RGBEntryInterface for RGBHexEntryBox {
         let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 1);
         let max_value = u16::max_value() as u32;
         let red_label = gtk::Label::new(Some("Red"));
-        red_label.set_widget_colour_rgb(RED);
+        red_label.set_widget_colour_rgb(RGB::RED);
         let red_entry = HexEntry::create_with_max(max_value);
         let green_label = gtk::Label::new(Some("Green"));
-        green_label.set_widget_colour_rgb(GREEN);
+        green_label.set_widget_colour_rgb(RGB::GREEN);
         let green_entry = HexEntry::create_with_max(max_value);
         let blue_label = gtk::Label::new(Some("Blue"));
-        blue_label.set_widget_colour_rgb(BLUE);
+        blue_label.set_widget_colour_rgb(RGB::BLUE);
         let blue_entry = HexEntry::create_with_max(max_value);
         hbox.pack_start(&red_label, true, true, 0);
         hbox.pack_start(&red_entry.pwo(), true, true, 0);
@@ -383,7 +383,7 @@ mod tests {
 
         let rgb_entry_box = RGBHexEntryBox::create();
         let rgb = rgb_entry_box.get_rgb();
-        println!("{:?} {:?}", rgb, BLACK);
-        assert_eq!(rgb, BLACK);
+        println!("{:?} {:?}", rgb, RGB::BLACK);
+        assert_eq!(rgb, RGB::BLACK);
     }
 }

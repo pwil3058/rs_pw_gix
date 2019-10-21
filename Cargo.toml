@@ -11,6 +11,9 @@ pw_pathux = { path = "../rs_pw_pathux.git" }
 # TODO: change normalised_angles dependency when it goes public
 #normalised_angles = { git = "https://github.com/pwil3058/rs_normalised_angles.git" }
 normalised_angles = { path = "../rs_normalised_angles.git" }
+# TODO: change colour_math dependency when it goes public
+#colour_math = { git = "https://github.com/pwil3058/rs_colour_math.git" }
+colour_math = { path = "../rs_colour_math.git" }
 
 pango = "0.7.0"
 cairo-rs = "0.7.0"

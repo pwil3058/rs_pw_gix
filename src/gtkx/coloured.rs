@@ -5,17 +5,25 @@ use gtk;
 use gtk::prelude::*;
 
 use crate::colour::*;
-use crate::rgb_math::rgb::*;
+
+fn rgba_from_rgb(rgb: RGB) -> gdk::RGBA {
+    gdk::RGBA {
+        red: rgb[I_RED],
+        blue: rgb[I_BLUE],
+        green: rgb[I_GREEN],
+        alpha: 1.0,
+    }
+}
 
 #[allow(deprecated)]
 pub trait Colourable: gtk::WidgetExt {
     fn set_widget_colour(&self, colour: &Colour) {
-        self.set_widget_colour_rgb(colour.rgb())
+        self.set_widget_colour_rgb(colour.rgb().into())
     }
 
     fn set_widget_colour_rgb(&self, rgb: RGB) {
-        let bg_rgba = gdk::RGBA::from(rgb);
-        let fg_rgba = gdk::RGBA::from(rgb.best_foreground_rgb());
+        let bg_rgba = rgba_from_rgb(rgb);
+        let fg_rgba = rgba_from_rgb(rgb.best_foreground_rgb());
         self.override_background_color(gtk::StateFlags::empty(), Some(&bg_rgba));
         self.override_color(gtk::StateFlags::empty(), Some(&fg_rgba));
     }
@@ -24,8 +32,8 @@ pub trait Colourable: gtk::WidgetExt {
 #[allow(deprecated)]
 impl Colourable for gtk::Button {
     fn set_widget_colour_rgb(&self, rgb: RGB) {
-        let bg_rgba = gdk::RGBA::from(rgb);
-        let fg_rgba = gdk::RGBA::from(rgb.best_foreground_rgb());
+        let bg_rgba = rgba_from_rgb(rgb);
+        let fg_rgba = rgba_from_rgb(rgb.best_foreground_rgb());
         self.override_background_color(gtk::StateFlags::empty(), Some(&bg_rgba));
         self.override_color(gtk::StateFlags::empty(), Some(&fg_rgba));
         for child in self.get_children().iter() {

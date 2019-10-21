@@ -43,7 +43,6 @@ pub mod gdkx;
 pub mod geometry;
 pub mod gtkx;
 pub mod printer;
-pub mod rgb_math;
 pub mod sample;
 pub mod sav_state;
 pub mod timeout;

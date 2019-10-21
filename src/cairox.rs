@@ -7,7 +7,6 @@ use gdk::prelude::ContextExt;
 use gdk_pixbuf::Pixbuf;
 
 use crate::colour::*;
-use crate::rgb_math::rgb::RGB;
 
 pub use crate::geometry::*;
 
