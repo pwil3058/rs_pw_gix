@@ -1,19 +1,9 @@
 // Copyright 2017 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
-use gdk;
 use gtk;
 use gtk::prelude::*;
 
 use crate::colour::*;
-
-fn rgba_from_rgb(rgb: RGB) -> gdk::RGBA {
-    gdk::RGBA {
-        red: rgb[I_RED],
-        blue: rgb[I_BLUE],
-        green: rgb[I_GREEN],
-        alpha: 1.0,
-    }
-}
 
 #[allow(deprecated)]
 pub trait Colourable: gtk::WidgetExt {

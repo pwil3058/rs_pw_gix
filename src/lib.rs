@@ -7,9 +7,6 @@
 #[macro_use]
 extern crate lazy_static;
 
-#[macro_use]
-extern crate serde_derive;
-
 #[macro_export]
 macro_rules! init_gtk_if_needed {
     () => {{
