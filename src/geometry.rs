@@ -11,7 +11,7 @@ use num::Num;
 use normalised_angles::Angle;
 
 // POINT
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub struct Point(pub f64, pub f64);
 
 const SQRT_2: f64 = 1.4142_13562_37309_50488;

@@ -175,7 +175,7 @@ impl ManagedMenu {
         wsc: WidgetStatesControlled,
         selection: Option<&gtk::TreeSelection>,
         change_notifier: Option<&Rc<ChangedCondnsNotifier>>,
-        items: &Vec<(&str, &str, Option<&gtk::Image>, &str, u64)>,
+        items: &[(&str, &str, Option<&gtk::Image>, &str, u64)],
     ) -> Self {
         let pm = Self {
             menu: gtk::Menu::new(),
