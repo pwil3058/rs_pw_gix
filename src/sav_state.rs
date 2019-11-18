@@ -227,6 +227,7 @@ where
 /// Groups of widgets whose sensitivity and/or visibility is determined
 /// by the current conditions
 // TODO: get a better name than ConditionalWidgetGroups
+// TODO: make a dynamic trait version
 pub struct ConditionalWidgetGroups<W>
 where
     W: WidgetExt + Clone + PartialEq,

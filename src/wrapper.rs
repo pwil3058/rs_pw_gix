@@ -254,9 +254,9 @@ mod tests {
     fn widget_wrapper_generic_simple() {
         struct _TestWrapper<A, B, C> {
             vbox: gtk::Box,
-            a: A,
-            b: B,
-            c: C,
+            _a: A,
+            _b: B,
+            _c: C,
         }
 
         impl_widget_wrapper!(vbox: gtk::Box, _TestWrapper<A, B, C>);
@@ -270,9 +270,9 @@ mod tests {
             C: PartialEq,
         {
             vbox: gtk::Box,
-            a: A,
-            b: B,
-            c: C,
+            _a: A,
+            _b: B,
+            _c: C,
         }
 
         impl_widget_wrapper!(vbox: gtk::Box, _TestWrapper<A, B, C>
@@ -294,8 +294,8 @@ mod tests {
             B: PartialEq,
         {
             vbox: gtk::Box,
-            a: A,
-            b: B,
+            _a: A,
+            _b: B,
         }
 
         impl_widget_wrapper!(vbox: gtk::Box, _TestWrapper<A, B>

@@ -154,7 +154,7 @@ impl ColourAttributeDisplayInterface for ValueCAD {
         if let Some(colour) = colour {
             self.attr_value.set(Some(colour.value()));
             self.attr_value_fg_rgb
-                .set(colour.monotone_rgb().best_foreground_rgb());
+                .set(colour.monochrome_rgb().best_foreground_rgb());
         } else {
             self.attr_value.set(None);
             self.attr_value_fg_rgb.set(RGB::BLACK);
@@ -174,7 +174,7 @@ impl ColourAttributeDisplayInterface for ValueCAD {
         if let Some(colour) = colour {
             self.attr_target_value.set(Some(colour.value()));
             self.attr_target_value_fg_rgb
-                .set(colour.monotone_rgb().best_foreground_rgb());
+                .set(colour.monochrome_rgb().best_foreground_rgb());
         } else {
             self.attr_target_value.set(None);
             self.attr_target_value_fg_rgb.set(RGB::BLACK);
@@ -241,7 +241,7 @@ impl ColourAttributeDisplayInterface for WarmthCAD {
         if let Some(colour) = colour {
             self.attr_value.set(Some(colour.warmth()));
             self.attr_value_fg_rgb
-                .set(colour.monotone_rgb().best_foreground_rgb());
+                .set(colour.monochrome_rgb().best_foreground_rgb());
         } else {
             self.attr_value.set(None);
             self.attr_value_fg_rgb.set(RGB::BLACK);
@@ -261,7 +261,7 @@ impl ColourAttributeDisplayInterface for WarmthCAD {
         if let Some(colour) = colour {
             self.attr_target_value.set(Some(colour.warmth()));
             self.attr_target_value_fg_rgb
-                .set(colour.monotone_rgb().best_foreground_rgb());
+                .set(colour.monochrome_rgb().best_foreground_rgb());
         } else {
             self.attr_target_value.set(None);
             self.attr_target_value_fg_rgb.set(RGB::BLACK);
