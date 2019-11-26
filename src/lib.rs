@@ -187,7 +187,8 @@ pub mod recollections {
     /// will return `None`, calls to `recall_or_else()` will return the
     /// default supplied and calls to `remember()` will be ignored.
     /// The operation of the application will not be effected otherwise.
-    pub fn init(file_path: &path::Path) {
+    pub fn init<P: AsRef<path::Path>>(file_path: P) {
+        let file_path: &path::Path = file_path.as_ref();
         RECOLLECTIONS.write().unwrap().set_data_file_path(file_path);
     }
 
