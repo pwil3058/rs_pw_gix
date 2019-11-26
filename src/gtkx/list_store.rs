@@ -79,7 +79,7 @@ macro_rules! prepend_row_to_list {
 }
 
 pub trait ListRowOps: TreeModelRowOps + gtk::GtkListStoreExt + gtk::GtkListStoreExtManual {
-    fn append_row(&self, row: &Row) -> gtk::TreeIter {
+    fn append_row(&self, row: &[gtk::Value]) -> gtk::TreeIter {
         append_row_to_list!(row, self)
     }
 
@@ -87,19 +87,19 @@ pub trait ListRowOps: TreeModelRowOps + gtk::GtkListStoreExt + gtk::GtkListStore
         get_rows_values_from_list!(self)
     }
 
-    fn insert_row(&self, position: i32, row: &Row) -> gtk::TreeIter {
+    fn insert_row(&self, position: i32, row: &[gtk::Value]) -> gtk::TreeIter {
         insert_row_in_list_at!(row, self, position)
     }
 
-    fn insert_row_after(&self, iter: &gtk::TreeIter, row: &Row) -> gtk::TreeIter {
+    fn insert_row_after(&self, iter: &gtk::TreeIter, row: &[gtk::Value]) -> gtk::TreeIter {
         insert_row_in_list_after!(row, self, Some(iter))
     }
 
-    fn insert_row_before(&self, iter: &gtk::TreeIter, row: &Row) -> gtk::TreeIter {
+    fn insert_row_before(&self, iter: &gtk::TreeIter, row: &[gtk::Value]) -> gtk::TreeIter {
         insert_row_in_list_before!(row, self, Some(iter))
     }
 
-    fn prepend_row(&self, row: &Row) -> gtk::TreeIter {
+    fn prepend_row(&self, row: &[gtk::Value]) -> gtk::TreeIter {
         prepend_row_to_list!(row, self)
     }
 
@@ -464,5 +464,4 @@ mod tests {
         assert!(test_list_store.get_row_values_at(3).is_none());
         assert_eq!(test_list_store.get_rows_values().len(), 3);
     }
-
 }
