@@ -329,7 +329,6 @@ pub mod dialog_user {
 
         fn ask_confirm_action(&self, msg: &str, expln: Option<&str>) -> bool {
             let response = self.ask_question(msg, expln, CANCEL_OK_BUTTONS);
-            println!("response: {:?}", response);
             response == gtk::ResponseType::Ok
         }
 
