@@ -230,9 +230,9 @@ pub mod dialog_user {
         }
 
         fn report_error<E: Error>(&self, msg: &str, error: &E) {
-            let mut expln = error.description().to_string();
+            let mut expln = error.to_string();
             if let Some(source) = error.source() {
-                expln += &format!("\nCaused by: {}.", source.description());
+                expln += &format!("\nCaused by: {}.", source);
             };
             self.new_inform_user_dialog(msg, Some(&expln), gtk::MessageType::Error)
                 .run();

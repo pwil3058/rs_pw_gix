@@ -279,6 +279,10 @@ where
         len
     }
 
+    pub fn current_condns(&self) -> u64 {
+        self.current_condns.get()
+    }
+
     pub fn change_notifier(&self) -> &Rc<ChangedCondnsNotifier> {
         &self.change_notifier
     }
