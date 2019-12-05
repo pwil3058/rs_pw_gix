@@ -297,6 +297,10 @@ impl ManagedMenu {
         self.items.update_condns(changed_condns)
     }
 
+    pub fn update_hover_condns(&self, hover_ok: bool) {
+        self.items.update_hover_condns(hover_ok)
+    }
+
     pub fn popup_at_event(&self, event: &gdk::EventButton) {
         if self.items.len() > 0 {
             self.menu.popup_easy(event.get_button(), event.get_time());
@@ -478,6 +482,11 @@ impl DualManagedMenu {
     pub fn update_condns(&self, changed_condns: MaskedCondns) {
         self.sensitivity.update_condns(changed_condns);
         self.visibility.update_condns(changed_condns);
+    }
+
+    pub fn update_hover_condns(&self, hover_ok: bool) {
+        self.sensitivity.update_hover_condns(hover_ok);
+        self.visibility.update_hover_condns(hover_ok);
     }
 
     pub fn popup_at_event(&self, event: &gdk::EventButton) {

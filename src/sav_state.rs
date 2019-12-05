@@ -56,6 +56,24 @@ pub const SAV_SELN_PAIR: u64 = 1 << 3;
 pub const SAV_SELN_MADE_OR_HOVER_OK: u64 = 1 << 4;
 pub const SAV_SELN_UNIQUE_OR_HOVER_OK: u64 = 1 << 5;
 pub const SAV_SELN_MASK: u64 = (1 << 6) - 1;
+pub const SAV_HOVER_OK: u64 = 1 << 6;
+pub const SAV_HOVER_NOT_OK: u64 = 1 << 7;
+pub const SAV_HOVER_MASK: u64 = SAV_HOVER_OK | SAV_HOVER_NOT_OK;
+pub const SAV_NEXT_CONDN: u64 = 1 << 8;
+
+pub fn hover_masked_conditions(hover_ok: bool) -> MaskedCondns {
+    if hover_ok {
+        MaskedCondns {
+            condns: SAV_HOVER_OK,
+            mask: SAV_HOVER_MASK,
+        }
+    } else {
+        MaskedCondns {
+            condns: SAV_HOVER_NOT_OK,
+            mask: SAV_HOVER_MASK,
+        }
+    }
+}
 
 /// Implementation of MaskedCondnProvider for TreeSelection
 impl MaskedCondnProvider for TreeSelection {
@@ -88,7 +106,7 @@ impl MaskedCondnProvider for TreeSelection {
         if hover_ok || (mc.condns & SAV_SELN_MADE) != 0 {
             mc.condns |= SAV_SELN_MADE_OR_HOVER_OK
         }
-        mc
+        mc | hover_masked_conditions(hover_ok)
     }
 }
 
@@ -236,6 +254,7 @@ where
     groups: RefCell<HashMap<u64, ConditionalWidgetGroup<W>>>,
     current_condns: Cell<u64>,
     change_notifier: Rc<ChangedCondnsNotifier>,
+    selection: Option<gtk::TreeSelection>,
 }
 
 impl<W> ConditionalWidgetGroups<W>
@@ -258,6 +277,11 @@ where
             groups: RefCell::new(HashMap::new()),
             current_condns: Cell::new(initial_condns),
             change_notifier: change_notifier,
+            selection: if let Some(selection) = selection {
+                Some(selection.clone())
+            } else {
+                None
+            },
         });
         if let Some(selection) = selection {
             cwg.update_condns(selection.get_masked_conditions());
@@ -338,5 +362,14 @@ where
             };
         }
         self.current_condns.set(new_condns)
+    }
+
+    pub fn update_hover_condns(&self, hover_ok: bool) {
+        let new_condns = if let Some(selection) = &self.selection {
+            selection.get_masked_conditions_with_hover_ok(hover_ok)
+        } else {
+            hover_masked_conditions(hover_ok)
+        };
+        self.update_condns(new_condns);
     }
 }
