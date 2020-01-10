@@ -11,6 +11,7 @@ pub mod tree_store;
 #[macro_use]
 pub mod tree_view;
 
+pub mod check_button;
 pub mod coloured;
 pub mod combo_box_text;
 pub mod dialog;
