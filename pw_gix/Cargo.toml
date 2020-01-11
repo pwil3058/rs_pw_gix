@@ -15,6 +15,8 @@ normalised_angles = { path = "../../rs_normalised_angles.git" }
 #colour_math = { git = "https://github.com/pwil3058/rs_colour_math.git" }
 colour_math = { path = "../../rs_colour_math.git" }
 
+pw_gix_derive = { path = "../pw_gix_derive" }
+
 pango = "0.7.0"
 cairo-rs = "0.7.0"
 pangocairo = "0.8.0"

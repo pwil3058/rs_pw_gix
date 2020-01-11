@@ -2,4 +2,5 @@
 
 members = [
     "pw_gix",
+    "pw_gix_derive",
 ]
