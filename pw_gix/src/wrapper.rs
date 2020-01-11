@@ -13,6 +13,8 @@ pub use crate::gtkx::dialog::dialog_user::{
 };
 use crate::printer::*;
 
+pub use pw_gix_derive::*;
+
 #[macro_export]
 macro_rules! define_gtkw_using_pwo {
     () => (

@@ -3,4 +3,5 @@
 members = [
     "pw_gix",
     "pw_gix_derive",
+    "component_test_gui",
 ]
