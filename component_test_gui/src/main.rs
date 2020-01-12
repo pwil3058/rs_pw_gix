@@ -1,4 +1,6 @@
 // Copyright 2019 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
+use std::rc::Rc;
+
 use gtk;
 use gtk::{BoxExt, ContainerExt, WidgetExt};
 
@@ -21,7 +23,11 @@ fn main() {
         .check_button("b", "--b", "just testing: b")
         .check_button("c", "--c", "just testing: c")
         .build();
-    mecbs.connect_changed(|name| println!("name = {:?}", name));
+    let mecbs_c = Rc::clone(&mecbs);
+    mecbs.connect_changed(move |name| {
+        let selected = mecbs_c.selected();
+        assert_eq!(name, selected);
+    });
     vbox.pack_start(&mecbs.pwo(), false, false, 0);
 
     vbox.show_all();
