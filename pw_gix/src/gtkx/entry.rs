@@ -371,19 +371,3 @@ pub trait PathCompletion: gtk::EntryExt + gtk::EditableSignals {
 }
 
 impl PathCompletion for gtk::Entry {}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::*;
-
-    #[test]
-    fn gtkx_entry_rgb_entry_box() {
-        init_gtk_if_needed!();
-
-        let rgb_entry_box = RGBHexEntryBox::create();
-        let rgb = rgb_entry_box.get_rgb();
-        println!("{:?} {:?}", rgb, RGB::BLACK);
-        assert_eq!(rgb, RGB::BLACK);
-    }
-}

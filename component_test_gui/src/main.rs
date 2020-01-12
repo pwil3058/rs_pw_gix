@@ -1,12 +1,27 @@
 // Copyright 2019 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use gtk;
+use gtk::prelude::*;
 use gtk::{BoxExt, ContainerExt, WidgetExt};
 
-use pw_gix::gtkx::check_button::MutuallyExclusiveCheckButtonsBuilder;
-use pw_gix::recollections;
-use pw_gix::wrapper::*;
+use pw_gix::{
+    colour::{
+        attributes::{
+            ChromaCAD, ColourAttributeDisplayInterface, ColourAttributeDisplayStackInterface,
+            HueCAD, HueChromaValueCADS, ValueCAD,
+        },
+        Colour, RGB,
+    },
+    gtkx::{
+        check_button::MutuallyExclusiveCheckButtonsBuilder,
+        combo_box_text::SortedUnique,
+        entry::{RGBEntryInterface, RGBHexEntryBox},
+        list_store::*,
+    },
+    recollections,
+    wrapper::*,
+};
 
 fn main() {
     recollections::init("./.recollections");
@@ -15,6 +30,11 @@ fn main() {
         return;
     };
     let win = gtk::Window::new(gtk::WindowType::Toplevel);
+
+    test_list_store_simple_row_ops();
+    test_list_store_row_buffer();
+    test_colour_attributes();
+
     let vbox = gtk::Box::new(gtk::Orientation::Vertical, 0);
 
     let mecbs = MutuallyExclusiveCheckButtonsBuilder::new()
@@ -30,9 +50,269 @@ fn main() {
     });
     vbox.pack_start(&mecbs.pwo(), false, false, 0);
 
+    let cbt = gtk::ComboBoxText::new();
+    assert!(!cbt.remove_text_item("one"));
+    assert_eq!(cbt.insert_text_item("one"), -1);
+    assert_eq!(cbt.insert_text_item("two"), -1);
+    assert_eq!(cbt.insert_text_item("three"), 1);
+    assert_eq!(cbt.insert_text_item("four"), 0);
+    assert_eq!(cbt.insert_text_item("five"), 0);
+    assert_eq!(cbt.insert_text_item("six"), 3);
+    assert_eq!(cbt.insert_text_item("zero"), -1);
+    assert!(cbt.remove_text_item("two"));
+    assert!(!cbt.remove_text_item("two"));
+    assert!(cbt.remove_text_item("four"));
+    assert!(!cbt.remove_text_item("four"));
+    assert_eq!(
+        cbt.get_text_items(),
+        vec!["five", "one", "six", "three", "zero"]
+    );
+    assert_ne!(
+        cbt.get_text_items(),
+        vec!["five", "one", "six", "ten", "three", "zero"]
+    );
+    cbt.update_with(&vec![
+        "five".to_string(),
+        "one".to_string(),
+        "ten".to_string(),
+        "three".to_string(),
+        "zero".to_string(),
+        "twelve".to_string(),
+        "aa".to_string(),
+        "zz".to_string(),
+    ]);
+    assert_eq!(
+        cbt.get_text_items(),
+        vec!["aa", "five", "one", "ten", "three", "twelve", "zero", "zz"]
+    );
+    vbox.pack_start(&cbt, false, false, 0);
+
+    let rgb_entry_box = RGBHexEntryBox::create();
+    let rgb = rgb_entry_box.get_rgb();
+    println!("{:?} {:?}", rgb, RGB::BLACK);
+    assert_eq!(rgb, RGB::BLACK);
+    vbox.pack_start(&rgb_entry_box.pwo(), false, false, 0);
+
+    let hcv_cads = HueChromaValueCADS::create();
+    hcv_cads.set_colour(Some(&Colour::from(RGB::RED)));
+    vbox.pack_start(&hcv_cads.pwo(), false, false, 0);
+
     vbox.show_all();
     win.add(&vbox);
     win.connect_destroy(|_| gtk::main_quit());
     win.show();
     gtk::main()
+}
+
+macro_rules! are_equal_as {
+    ( $v1:expr, $v2:expr, $t:ty ) => {{
+        assert_eq!($v1.type_(), $v2.type_());
+        // TODO: panic if extracted values are None
+        let v1: Option<$t> = $v1.get();
+        let v2: Option<$t> = $v2.get();
+        v1 == v2
+    }};
+}
+
+macro_rules! are_eq_values {
+    ( $v1:expr, $v2:expr ) => {{
+        match $v1.type_() {
+            gtk::Type::I8 => are_equal_as!($v1, $v2, i8),
+            gtk::Type::U8 => are_equal_as!($v1, $v2, u8),
+            gtk::Type::Bool => are_equal_as!($v1, $v2, bool),
+            gtk::Type::I32 => are_equal_as!($v1, $v2, i32),
+            gtk::Type::U32 => are_equal_as!($v1, $v2, u32),
+            gtk::Type::I64 => are_equal_as!($v1, $v2, i64),
+            gtk::Type::U64 => are_equal_as!($v1, $v2, u64),
+            gtk::Type::F32 => are_equal_as!($v1, $v2, f32),
+            gtk::Type::F64 => are_equal_as!($v1, $v2, f64),
+            gtk::Type::String => are_equal_as!($v1, $v2, String),
+            _ => panic!("operation not defined for: {:?}", $v1.type_()),
+        }
+    }};
+}
+
+macro_rules! are_equal_rows {
+    ( $r1:expr, $r2:expr ) => {{
+        assert_eq!($r1.len(), $r2.len());
+        let mut result = true;
+        for i in 0..$r1.len() {
+            if !are_eq_values!($r1[i], $r2[i]) {
+                result = false;
+                break;
+            }
+        }
+        result
+    }};
+}
+
+fn test_list_store_simple_row_ops() {
+    let test_list_store =
+        gtk::ListStore::new(&[gtk::Type::String, gtk::Type::String, gtk::Type::String]);
+    assert_eq!(test_list_store.len(), 0);
+    let row1 = vec!["one".to_value(), "two".to_value(), "three".to_value()];
+    let row2 = vec!["four".to_value(), "five".to_value(), "six".to_value()];
+    let row3 = vec!["seven".to_value(), "eight".to_value(), "nine".to_value()];
+
+    test_list_store.append_row(&row1);
+    assert_eq!(test_list_store.len(), 1);
+    assert_eq!(test_list_store.find_row_index(&row1), Some(0));
+    assert_eq!(test_list_store.find_row_index(&row2), None);
+    assert_eq!(test_list_store.find_row_index(&row3), None);
+    assert!(are_equal_rows!(
+        test_list_store.get_row_values_at(0).unwrap(),
+        row1
+    ));
+    assert!(test_list_store.get_row_values_at(1).is_none());
+
+    test_list_store.prepend_row(&row2);
+    assert_eq!(test_list_store.len(), 2);
+    assert_eq!(test_list_store.find_row_index(&row1), Some(1));
+    assert_eq!(test_list_store.find_row_index(&row2), Some(0));
+    assert_eq!(test_list_store.find_row_index(&row3), None);
+    assert!(are_equal_rows!(
+        test_list_store.get_row_values_at(0).unwrap(),
+        row2
+    ));
+    assert!(are_equal_rows!(
+        test_list_store.get_row_values_at(1).unwrap(),
+        row1
+    ));
+    assert!(test_list_store.get_row_values_at(2).is_none());
+
+    test_list_store.insert_row(1, &row3);
+    assert_eq!(test_list_store.len(), 3);
+    assert_eq!(test_list_store.find_row_index(&row1), Some(2));
+    assert_eq!(test_list_store.find_row_index(&row2), Some(0));
+    assert_eq!(test_list_store.find_row_index(&row3), Some(1));
+    assert!(are_equal_rows!(
+        test_list_store.get_row_values_at(0).unwrap(),
+        row2
+    ));
+    assert!(are_equal_rows!(
+        test_list_store.get_row_values_at(1).unwrap(),
+        row3
+    ));
+    assert!(are_equal_rows!(
+        test_list_store.get_row_values_at(2).unwrap(),
+        row1
+    ));
+    assert!(test_list_store.get_row_values_at(3).is_none());
+
+    let row4 = vec!["ten".to_value(), "eleven".to_value(), "twelve".to_value()];
+    let rows = vec![row1.clone(), row2.clone(), row4.clone()];
+    test_list_store.update_with(&rows);
+    assert_eq!(test_list_store.len(), 3);
+    assert_eq!(test_list_store.find_row_index(&row1), Some(1));
+    assert_eq!(test_list_store.find_row_index(&row2), Some(0));
+    assert_eq!(test_list_store.find_row_index(&row3), None);
+    assert_eq!(test_list_store.find_row_index(&row4), Some(2));
+    assert!(are_equal_rows!(
+        test_list_store.get_row_values_at(0).unwrap(),
+        row2
+    ));
+    assert!(are_equal_rows!(
+        test_list_store.get_row_values_at(1).unwrap(),
+        row1
+    ));
+    assert!(are_equal_rows!(
+        test_list_store.get_row_values_at(2).unwrap(),
+        row4
+    ));
+    assert!(test_list_store.get_row_values_at(3).is_none());
+    assert_eq!(test_list_store.get_rows_values().len(), 3);
+}
+
+fn test_list_store_row_buffer() {
+    struct TestBuffer {
+        id: u8,
+        row_buffer_core: Rc<RefCell<RowBufferCore<Vec<String>>>>,
+    }
+
+    impl TestBuffer {
+        pub fn new() -> TestBuffer {
+            let row_buffer_core = RowBufferCore::<Vec<String>>::default();
+            let buf = TestBuffer {
+                id: 0,
+                row_buffer_core: Rc::new(RefCell::new(row_buffer_core)),
+            };
+            buf.init();
+            buf
+        }
+
+        pub fn set_id(&mut self, value: u8) {
+            self.id = value;
+        }
+    }
+
+    impl RowBuffer<Vec<String>> for TestBuffer {
+        fn get_core(&self) -> Rc<RefCell<RowBufferCore<Vec<String>>>> {
+            self.row_buffer_core.clone()
+        }
+
+        fn set_raw_data(&self) {
+            let mut core = self.row_buffer_core.borrow_mut();
+            match self.id {
+                0 => {
+                    core.set_raw_data(Vec::new(), Vec::new());
+                }
+                1 => {
+                    core.set_raw_data(
+                        vec!["one".to_string(), "two".to_string(), "three".to_string()],
+                        vec![1, 2, 3],
+                    );
+                }
+                _ => {
+                    core.set_raw_data(Vec::new(), Vec::new());
+                }
+            }
+        }
+
+        fn finalise(&self) {
+            let mut core = self.row_buffer_core.borrow_mut();
+            let mut rows: Vec<Row> = Vec::new();
+            for item in core.raw_data.iter() {
+                rows.push(vec![item.to_value()]);
+            }
+            core.rows = Rc::new(rows);
+            core.set_is_finalised_true();
+        }
+    }
+
+    let mut buffer = TestBuffer::new();
+
+    assert_eq!(buffer.get_rows().len(), 0);
+    assert!(buffer.needs_init());
+    assert!(!buffer.needs_finalise());
+    assert!(buffer.is_current());
+
+    buffer.set_id(1);
+    assert!(!buffer.is_current());
+    assert_eq!(buffer.get_rows().len(), 0);
+    buffer.finalise();
+    assert!(buffer.is_current());
+    let rows = buffer.get_rows();
+    assert_eq!(rows[0][0].get(), Some("one"));
+    assert_eq!(rows[1][0].get(), Some("two"));
+    assert_eq!(rows[2][0].get(), Some("three"));
+}
+
+fn test_colour_attributes() {
+    let vcad = ValueCAD::create();
+
+    vcad.set_colour(Some(&Colour::from(RGB::RED)));
+    vcad.set_target_colour(Some(&Colour::from(RGB::BLUE)));
+
+    let hcad = HueCAD::create();
+
+    hcad.set_colour(Some(&Colour::from(RGB::RED)));
+    hcad.set_target_colour(Some(&Colour::from(RGB::BLUE)));
+
+    let ccad = ChromaCAD::create();
+
+    ccad.set_colour(Some(&Colour::from(RGB::RED)));
+    ccad.set_target_colour(Some(&Colour::from(RGB::BLUE)));
+
+    let hcv_cads = HueChromaValueCADS::create();
+    hcv_cads.set_colour(Some(&Colour::from(RGB::RED)));
 }

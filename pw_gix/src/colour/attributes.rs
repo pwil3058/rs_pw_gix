@@ -802,32 +802,3 @@ impl ColourAttributeDisplayStackInterface for HueGreynessValueCADS {
         self.value_cad.set_target_colour(target_colour);
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::*;
-
-    #[test]
-    fn colour_attributes() {
-        init_gtk_if_needed!();
-
-        let vcad = ValueCAD::create();
-
-        vcad.set_colour(Some(&Colour::from(RGB::RED)));
-        vcad.set_target_colour(Some(&Colour::from(RGB::BLUE)));
-
-        let hcad = HueCAD::create();
-
-        hcad.set_colour(Some(&Colour::from(RGB::RED)));
-        hcad.set_target_colour(Some(&Colour::from(RGB::BLUE)));
-
-        let ccad = ChromaCAD::create();
-
-        ccad.set_colour(Some(&Colour::from(RGB::RED)));
-        ccad.set_target_colour(Some(&Colour::from(RGB::BLUE)));
-
-        let hcv_cads = HueChromaValueCADS::create();
-        hcv_cads.set_colour(Some(&Colour::from(RGB::RED)));
-    }
-}

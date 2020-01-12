@@ -8,17 +8,6 @@
 extern crate lazy_static;
 
 #[macro_export]
-macro_rules! init_gtk_if_needed {
-    () => {{
-        if !gtk::is_initialized() {
-            if let Err(err) = gtk::init() {
-                panic!("File: {:?} Line: {:?}: {:?}", file!(), line!(), err)
-            };
-        }
-    }};
-}
-
-#[macro_export]
 macro_rules! yield_to_pending_events {
     ( ) => {
         while gtk::events_pending() {
@@ -38,6 +27,7 @@ pub mod file_tree;
 pub mod gdk_pixbufx;
 pub mod gdkx;
 pub mod geometry;
+#[macro_use]
 pub mod gtkx;
 pub mod printer;
 pub mod sample;

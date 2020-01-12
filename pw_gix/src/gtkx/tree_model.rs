@@ -5,22 +5,6 @@ use gtk::prelude::*;
 
 pub use super::value::Row;
 
-// Macros
-#[macro_export]
-macro_rules! are_equal_rows {
-    ( $r1:expr, $r2:expr ) => {{
-        assert_eq!($r1.len(), $r2.len());
-        let mut result = true;
-        for i in 0..$r1.len() {
-            if !are_eq_values!($r1[i], $r2[i]) {
-                result = false;
-                break;
-            }
-        }
-        result
-    }};
-}
-
 // NB: when done with the returned row it's items need to be unset?
 #[macro_export]
 macro_rules! get_row_values_from {
