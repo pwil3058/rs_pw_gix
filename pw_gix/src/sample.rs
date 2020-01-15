@@ -7,7 +7,7 @@ use std::fmt;
 use std::io;
 use std::process::Command;
 
-use gdk::{self, WindowExtManual};
+use gdk::{self, prelude::WindowExtManual};
 use gdk_pixbuf::Pixbuf;
 use gtk;
 
@@ -143,9 +143,8 @@ pub mod area_selection {
     use std::rc::Rc;
 
     use cairo;
-    use gdk::{self, WindowExt, WindowExtManual};
-    use gio;
-    use gtk::{self, GtkWindowExt, WidgetExt, WidgetExtManual};
+    use gdk::{self, prelude::WindowExtManual, WindowExt};
+    use gtk::{self, prelude::WidgetExtManual, GtkWindowExt, WidgetExt};
 
     #[derive(Debug, PartialEq, Clone, Copy)]
     struct IntPoint {
@@ -295,7 +294,7 @@ pub mod area_selection {
                         cairo_context.stroke();
                     }
                 };
-                gio::signal::Inhibit(false)
+                gtk::Inhibit(false)
             });
 
             let sad_c = sad.clone();
@@ -309,7 +308,7 @@ pub mod area_selection {
                     gtk::main_quit();
                 }
 
-                gio::signal::Inhibit(true)
+                gtk::Inhibit(true)
             });
 
             let sad_c = sad.clone();
@@ -319,7 +318,7 @@ pub mod area_selection {
                     sad_c.start_position.set(Some(event.get_position()));
                 }
 
-                gio::signal::Inhibit(true)
+                gtk::Inhibit(true)
             });
 
             let sad_c = sad.clone();
@@ -334,7 +333,7 @@ pub mod area_selection {
                         gtk::main_quit();
                     }
 
-                    gio::signal::Inhibit(true)
+                    gtk::Inhibit(true)
                 });
 
             let sad_c = sad.clone();
@@ -345,7 +344,7 @@ pub mod area_selection {
                         window.queue_draw();
                     }
 
-                    gio::signal::Inhibit(true)
+                    gtk::Inhibit(true)
                 });
 
             let root_window = gdk::Window::get_default_root_window();

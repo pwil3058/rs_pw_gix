@@ -23,7 +23,7 @@ pub trait FsObjectIfce {
     fn new(name: &str, path: &str, is_dir: bool) -> Self;
     fn from_dir_entry(dir_entry: &UsableDirEntry) -> Self;
 
-    fn tree_store_spec() -> Vec<gtk::Type>;
+    fn tree_store_spec() -> Vec<glib::Type>;
     fn tree_view_columns() -> Vec<gtk::TreeViewColumn>;
 
     fn row_is_a_dir<S: TreeRowOps>(store: &S, iter: &TreeIter) -> bool;
@@ -266,11 +266,11 @@ macro_rules! impl_os_fs_db {
 macro_rules! impl_simple_fs_object {
     ( $sfso:ident ) => {
         lazy_static! {
-            pub static ref OS_FS_DB_ROW_SPEC: [gtk::Type; 4] =
+            pub static ref OS_FS_DB_ROW_SPEC: [glib::Type; 4] =
                 [
-                    gtk::Type::String,          // 0 Name
-                    gtk::Type::String,          // 1 Path
-                    gtk::Type::String,          // 2 Path
+                    glib::Type::String,   // 0 Name
+                    glib::Type::String,   // 1 Path
+                    glib::Type::String,   // 2 Path
                     bool::static_type(),        // 3 is a directory?
                 ];
         }
@@ -304,7 +304,7 @@ macro_rules! impl_simple_fs_object {
                 }
             }
 
-            fn tree_store_spec() -> Vec<gtk::Type> {
+            fn tree_store_spec() -> Vec<glib::Type> {
                 OS_FS_DB_ROW_SPEC.to_vec()
             }
 
@@ -321,7 +321,11 @@ macro_rules! impl_simple_fs_object {
             }
 
             fn row_is_a_dir<S: TreeRowOps>(store: &S, iter: &TreeIter) -> bool {
-                store.get_value(iter, IS_DIR).get::<bool>().unwrap()
+                store
+                    .get_value(iter, IS_DIR)
+                    .get::<bool>()
+                    .unwrap()
+                    .unwrap()
             }
 
             fn row_is_place_holder<S: TreeRowOps>(store: &S, iter: &TreeIter) -> bool {
@@ -329,29 +333,54 @@ macro_rules! impl_simple_fs_object {
                     .get_value(iter, NAME)
                     .get::<String>()
                     .unwrap()
+                    .unwrap()
                     .as_str()
                     == "(empty)"
             }
 
             fn get_name_from_row<S: TreeRowOps>(store: &S, iter: &TreeIter) -> String {
-                store.get_value(iter, NAME).get::<String>().unwrap()
+                store
+                    .get_value(iter, NAME)
+                    .get::<String>()
+                    .unwrap()
+                    .unwrap()
             }
 
             fn get_path_from_row<S: TreeRowOps>(store: &S, iter: &TreeIter) -> String {
-                store.get_value(iter, PATH).get::<String>().unwrap()
+                store
+                    .get_value(iter, PATH)
+                    .get::<String>()
+                    .unwrap()
+                    .unwrap()
             }
 
             fn update_row_if_required<S: TreeRowOps>(&self, store: &S, iter: &TreeIter) -> bool {
                 assert_eq!(
                     self.name,
-                    store.get_value(iter, NAME).get::<String>().unwrap()
+                    store
+                        .get_value(iter, NAME)
+                        .get::<String>()
+                        .unwrap()
+                        .unwrap()
                 );
                 let mut changed = false;
-                if self.path != store.get_value(iter, PATH).get::<String>().unwrap() {
+                if self.path
+                    != store
+                        .get_value(iter, PATH)
+                        .get::<String>()
+                        .unwrap()
+                        .unwrap()
+                {
                     store.set_value(iter, PATH as u32, &self.path.to_value());
                     changed = true;
                 }
-                if self.is_dir != store.get_value(iter, IS_DIR).get::<bool>().unwrap() {
+                if self.is_dir
+                    != store
+                        .get_value(iter, IS_DIR)
+                        .get::<bool>()
+                        .unwrap()
+                        .unwrap()
+                {
                     store.set_value(iter, IS_DIR as u32, &self.is_dir.to_value());
                     if self.is_dir {
                         store.set_value(iter, ICON as u32, &"stock_directory".to_value());
@@ -402,8 +431,9 @@ mod simple_os_fs_db {
 
     use crypto_hash::{Algorithm, Hasher};
 
+    use glib::{types::StaticType, value::ToValue};
     use gtk::prelude::*;
-    use gtk::{StaticType, ToValue, TreeIter};
+    use gtk::TreeIter;
 
     use super::*;
 

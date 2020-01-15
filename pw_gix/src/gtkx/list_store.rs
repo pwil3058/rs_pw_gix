@@ -78,8 +78,10 @@ macro_rules! prepend_row_to_list {
     }};
 }
 
-pub trait ListRowOps: TreeModelRowOps + gtk::GtkListStoreExt + gtk::GtkListStoreExtManual {
-    fn append_row(&self, row: &[gtk::Value]) -> gtk::TreeIter {
+pub trait ListRowOps:
+    TreeModelRowOps + gtk::GtkListStoreExt + gtk::prelude::GtkListStoreExtManual
+{
+    fn append_row(&self, row: &[glib::Value]) -> gtk::TreeIter {
         append_row_to_list!(row, self)
     }
 
@@ -87,19 +89,19 @@ pub trait ListRowOps: TreeModelRowOps + gtk::GtkListStoreExt + gtk::GtkListStore
         get_rows_values_from_list!(self)
     }
 
-    fn insert_row(&self, position: i32, row: &[gtk::Value]) -> gtk::TreeIter {
+    fn insert_row(&self, position: i32, row: &[glib::Value]) -> gtk::TreeIter {
         insert_row_in_list_at!(row, self, position)
     }
 
-    fn insert_row_after(&self, iter: &gtk::TreeIter, row: &[gtk::Value]) -> gtk::TreeIter {
+    fn insert_row_after(&self, iter: &gtk::TreeIter, row: &[glib::Value]) -> gtk::TreeIter {
         insert_row_in_list_after!(row, self, Some(iter))
     }
 
-    fn insert_row_before(&self, iter: &gtk::TreeIter, row: &[gtk::Value]) -> gtk::TreeIter {
+    fn insert_row_before(&self, iter: &gtk::TreeIter, row: &[glib::Value]) -> gtk::TreeIter {
         insert_row_in_list_before!(row, self, Some(iter))
     }
 
-    fn prepend_row(&self, row: &[gtk::Value]) -> gtk::TreeIter {
+    fn prepend_row(&self, row: &[glib::Value]) -> gtk::TreeIter {
         prepend_row_to_list!(row, self)
     }
 

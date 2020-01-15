@@ -10,7 +10,7 @@ use std::result;
 
 use mut_static::*;
 
-use gdk::ContextExt;
+use gdk::prelude::GdkContextExt;
 use gdk_pixbuf;
 use glib;
 use gtk;

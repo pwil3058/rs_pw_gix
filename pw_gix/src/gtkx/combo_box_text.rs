@@ -30,7 +30,7 @@ impl SortedUnique for gtk::ComboBoxText {
         if let Some(model) = self.get_model() {
             if let Some(ref iter) = model.get_iter_first() {
                 for index in 0.. {
-                    if let Some(ref text) = model.get_value(iter, 0).get::<String>() {
+                    if let Some(ref text) = model.get_value(iter, 0).get::<String>().unwrap() {
                         if text == item {
                             return (true, index);
                         } else if item < text.as_str() {
@@ -51,7 +51,7 @@ impl SortedUnique for gtk::ComboBoxText {
         if let Some(model) = self.get_model() {
             if let Some(ref iter) = model.get_iter_first() {
                 loop {
-                    if let Some(ref text) = model.get_value(iter, 0).get::<String>() {
+                    if let Some(ref text) = model.get_value(iter, 0).get::<String>().unwrap() {
                         text_items.push(text.clone());
                     };
                     if !model.iter_next(iter) {

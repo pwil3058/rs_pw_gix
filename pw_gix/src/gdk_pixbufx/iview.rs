@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use gdk;
-use gdk::prelude::ContextExt;
+use gdk::prelude::GdkContextExt;
 use gdk_pixbuf;
 use gtk;
 use gtk::prelude::*;
@@ -155,10 +155,7 @@ impl PixbufViewCore {
         self.drawing_area.queue_draw();
     }
 
-    pub fn set_pixbuf_fm_file<P: AsRef<Path>>(
-        &self,
-        file_path: P,
-    ) -> Result<(), gdk_pixbuf::Error> {
+    pub fn set_pixbuf_fm_file<P: AsRef<Path>>(&self, file_path: P) -> Result<(), glib::Error> {
         let pixbuf = gdk_pixbuf::Pixbuf::new_from_file(file_path.as_ref())?;
         self.set_pixbuf(Some(&pixbuf));
         *self.current_file_path.borrow_mut() = Some(file_path.as_ref().to_path_buf());

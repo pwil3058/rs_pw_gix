@@ -1,6 +1,7 @@
 // Copyright 2019 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 use std::{cell::RefCell, rc::Rc};
 
+use glib;
 use gtk;
 use gtk::prelude::*;
 use gtk::{BoxExt, ContainerExt, WidgetExt};
@@ -108,8 +109,8 @@ macro_rules! are_equal_as {
     ( $v1:expr, $v2:expr, $t:ty ) => {{
         assert_eq!($v1.type_(), $v2.type_());
         // TODO: panic if extracted values are None
-        let v1: Option<$t> = $v1.get();
-        let v2: Option<$t> = $v2.get();
+        let v1: Option<$t> = $v1.get().unwrap();
+        let v2: Option<$t> = $v2.get().unwrap();
         v1 == v2
     }};
 }
@@ -117,16 +118,16 @@ macro_rules! are_equal_as {
 macro_rules! are_eq_values {
     ( $v1:expr, $v2:expr ) => {{
         match $v1.type_() {
-            gtk::Type::I8 => are_equal_as!($v1, $v2, i8),
-            gtk::Type::U8 => are_equal_as!($v1, $v2, u8),
-            gtk::Type::Bool => are_equal_as!($v1, $v2, bool),
-            gtk::Type::I32 => are_equal_as!($v1, $v2, i32),
-            gtk::Type::U32 => are_equal_as!($v1, $v2, u32),
-            gtk::Type::I64 => are_equal_as!($v1, $v2, i64),
-            gtk::Type::U64 => are_equal_as!($v1, $v2, u64),
-            gtk::Type::F32 => are_equal_as!($v1, $v2, f32),
-            gtk::Type::F64 => are_equal_as!($v1, $v2, f64),
-            gtk::Type::String => are_equal_as!($v1, $v2, String),
+            glib::Type::I8 => are_equal_as!($v1, $v2, i8),
+            glib::Type::U8 => are_equal_as!($v1, $v2, u8),
+            glib::Type::Bool => are_equal_as!($v1, $v2, bool),
+            glib::Type::I32 => are_equal_as!($v1, $v2, i32),
+            glib::Type::U32 => are_equal_as!($v1, $v2, u32),
+            glib::Type::I64 => are_equal_as!($v1, $v2, i64),
+            glib::Type::U64 => are_equal_as!($v1, $v2, u64),
+            glib::Type::F32 => are_equal_as!($v1, $v2, f32),
+            glib::Type::F64 => are_equal_as!($v1, $v2, f64),
+            glib::Type::String => are_equal_as!($v1, $v2, String),
             _ => panic!("operation not defined for: {:?}", $v1.type_()),
         }
     }};
@@ -148,7 +149,7 @@ macro_rules! are_equal_rows {
 
 fn test_list_store_simple_row_ops() {
     let test_list_store =
-        gtk::ListStore::new(&[gtk::Type::String, gtk::Type::String, gtk::Type::String]);
+        gtk::ListStore::new(&[glib::Type::String, glib::Type::String, glib::Type::String]);
     assert_eq!(test_list_store.len(), 0);
     let row1 = vec!["one".to_value(), "two".to_value(), "three".to_value()];
     let row2 = vec!["four".to_value(), "five".to_value(), "six".to_value()];
@@ -292,9 +293,9 @@ fn test_list_store_row_buffer() {
     buffer.finalise();
     assert!(buffer.is_current());
     let rows = buffer.get_rows();
-    assert_eq!(rows[0][0].get(), Some("one"));
-    assert_eq!(rows[1][0].get(), Some("two"));
-    assert_eq!(rows[2][0].get(), Some("three"));
+    assert_eq!(rows[0][0].get(), Ok(Some("one")));
+    assert_eq!(rows[1][0].get(), Ok(Some("two")));
+    assert_eq!(rows[2][0].get(), Ok(Some("three")));
 }
 
 fn test_colour_attributes() {

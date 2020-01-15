@@ -325,7 +325,7 @@ pub trait PathCompletion: gtk::EntryExt + gtk::EditableSignals {
         entry_completion.set_inline_completion(true);
         entry_completion.set_inline_selection(true);
         entry_completion.set_minimum_key_length(0);
-        let list_store = gtk::ListStore::new(&[gtk::Type::String]);
+        let list_store = gtk::ListStore::new(&[glib::Type::String]);
         entry_completion.set_model(Some(&list_store.clone()));
 
         self.set_completion(Some(&entry_completion));

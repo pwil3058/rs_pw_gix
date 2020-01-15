@@ -84,18 +84,18 @@ pub trait TreeModelRowOps: TreeModelExt {
         get_row_values_from_at!(self, position)
     }
 
-    fn find_row(&self, row: &[gtk::Value]) -> Option<(i32, gtk::TreeIter)> {
+    fn find_row(&self, row: &[glib::Value]) -> Option<(i32, gtk::TreeIter)> {
         self.find_row_where(|list_store, iter| matches_list_row!(row, list_store, iter))
     }
 
-    fn find_row_index(&self, row: &[gtk::Value]) -> Option<i32> {
+    fn find_row_index(&self, row: &[glib::Value]) -> Option<i32> {
         match self.find_row(row) {
             Some((index, _)) => Some(index),
             None => None,
         }
     }
 
-    fn find_row_iter(&self, row: &[gtk::Value]) -> Option<gtk::TreeIter> {
+    fn find_row_iter(&self, row: &[glib::Value]) -> Option<gtk::TreeIter> {
         match self.find_row(row) {
             Some((_, iter)) => Some(iter),
             None => None,

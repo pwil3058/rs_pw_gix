@@ -63,13 +63,13 @@ macro_rules! prepend_row_to_tree {
 pub trait TreeRowOps:
     TreeModelRowOps + gtk::TreeStoreExt + gtk::prelude::TreeStoreExtManual
 {
-    fn append_row(&self, row: &[gtk::Value], parent: Option<&gtk::TreeIter>) -> gtk::TreeIter {
+    fn append_row(&self, row: &[glib::Value], parent: Option<&gtk::TreeIter>) -> gtk::TreeIter {
         append_row_to_tree!(row, self, parent)
     }
 
     fn insert_row(
         &self,
-        row: &[gtk::Value],
+        row: &[glib::Value],
         parent: Option<&gtk::TreeIter>,
         position: i32,
     ) -> gtk::TreeIter {
@@ -78,7 +78,7 @@ pub trait TreeRowOps:
 
     fn insert_row_after(
         &self,
-        row: &[gtk::Value],
+        row: &[glib::Value],
         parent: Option<&gtk::TreeIter>,
         sibling: Option<&gtk::TreeIter>,
     ) -> gtk::TreeIter {
@@ -87,18 +87,18 @@ pub trait TreeRowOps:
 
     fn insert_row_before(
         &self,
-        row: &[gtk::Value],
+        row: &[glib::Value],
         parent: Option<&gtk::TreeIter>,
         sibling: Option<&gtk::TreeIter>,
     ) -> gtk::TreeIter {
         insert_row_in_tree_before!(row, self, parent, sibling)
     }
 
-    fn prepend_row(&self, row: &[gtk::Value], parent: Option<&gtk::TreeIter>) -> gtk::TreeIter {
+    fn prepend_row(&self, row: &[glib::Value], parent: Option<&gtk::TreeIter>) -> gtk::TreeIter {
         prepend_row_to_tree!(row, self, parent)
     }
 
-    fn set_row_values(&self, row: &[gtk::Value], iter: &gtk::TreeIter) {
+    fn set_row_values(&self, row: &[glib::Value], iter: &gtk::TreeIter) {
         set_tree_row_values!(self, iter, row);
     }
 }

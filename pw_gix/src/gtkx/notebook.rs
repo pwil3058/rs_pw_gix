@@ -51,7 +51,7 @@ impl TabRemoveLabelInterface for TabRemoveLabel {
         let image = gtk::Image::new_from_gicon(&icon, gtk::IconSize::Menu.into());
         image.set_tooltip_text(tooltip_text);
         button.add(&image);
-        button.set_name("notebook-tab-remove-button");
+        //button.set_name("notebook-tab-remove-button");
         trl.hbox.pack_start(&button, false, false, 0);
         trl.hbox.show_all();
         let trl_c = trl.clone();
