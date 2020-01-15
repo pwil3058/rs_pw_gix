@@ -10,7 +10,7 @@ use gtk::prelude::*;
 
 use crate::geometry::*;
 
-pub struct XYSelectionCore {
+pub struct XYSelection {
     drawing_area: gtk::DrawingArea,
     start_xy: Cell<Option<Point>>,
     end_xy: Cell<Option<Point>>,
@@ -18,7 +18,7 @@ pub struct XYSelectionCore {
     selection_made_callbacks: RefCell<Vec<Box<dyn Fn()>>>,
 }
 
-impl XYSelectionCore {
+impl XYSelection {
     pub fn in_progress(&self) -> bool {
         !(self.start_xy.get().is_none() || self.selection_made.get())
     }
@@ -76,20 +76,14 @@ impl XYSelectionCore {
     }
 }
 
-pub type XYSelection = Rc<XYSelectionCore>;
-
-pub trait XYSelectionInterface {
-    fn create(drawing_area: &gtk::DrawingArea) -> XYSelection;
-}
-
-impl XYSelectionInterface for XYSelection {
-    fn create(drawing_area: &gtk::DrawingArea) -> XYSelection {
+impl XYSelection {
+    pub fn create(drawing_area: &gtk::DrawingArea) -> Rc<XYSelection> {
         let events = gdk::EventMask::POINTER_MOTION_MASK
             | gdk::EventMask::BUTTON_PRESS_MASK
             | gdk::EventMask::BUTTON_RELEASE_MASK
             | gdk::EventMask::LEAVE_NOTIFY_MASK;
         drawing_area.add_events(events);
-        let xys = Rc::new(XYSelectionCore {
+        let xys = Rc::new(XYSelection {
             drawing_area: drawing_area.clone(),
             start_xy: Cell::new(None),
             end_xy: Cell::new(None),

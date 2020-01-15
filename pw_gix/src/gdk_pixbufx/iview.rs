@@ -98,7 +98,7 @@ pub struct PixbufViewCore {
     copy_selection_item: gtk::MenuItem,
     load_image_item: gtk::MenuItem,
     print_image_item: gtk::MenuItem,
-    xy_selection: XYSelection,
+    xy_selection: Rc<XYSelection>,
     last_allocation: RefCell<Option<Size<f64>>>,
     zoomable: RefCell<Option<Zoomable>>,
     selection_zoom: Cell<f64>,
