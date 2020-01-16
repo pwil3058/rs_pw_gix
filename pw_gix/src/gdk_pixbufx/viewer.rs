@@ -2,6 +2,7 @@
 
 use std::{
     cell::{Cell, RefCell},
+    path::Path,
     rc::Rc,
 };
 
@@ -15,6 +16,7 @@ use crate::gtkx::drawing_area::XYSelection;
 use crate::{
     geometry::{AspectRatio, Rectangle, Size, SizeExt},
     gtkx::menu::{ManagedMenu, ManagedMenuBuilder},
+    recollections,
     wrapper::*,
 };
 
@@ -120,14 +122,21 @@ impl PixbufView {
                     let zoom = zoomable.calc_zooms_for(alloc.into()).length_longest_side();
                     zoomable.set_zoom(zoom);
                 }
-                self.resize_drawing_area();
             } else {
                 panic!("File: {:?} Line: {:?}", file!(), line!())
-            }
+            };
+            self.resize_drawing_area();
         } else {
             *self.zoomable.borrow_mut() = None
         };
         self.drawing_area.queue_draw();
+    }
+
+    fn set_pixbuf_fm_file<P: AsRef<Path>>(&self, file_path: P) -> Result<(), glib::Error> {
+        let file_path = file_path.as_ref();
+        let pixbuf = gdk_pixbuf::Pixbuf::new_from_file(file_path)?;
+        self.set_pixbuf(Some(&pixbuf));
+        Ok(())
     }
 
     fn resize_drawing_area(&self) {
@@ -202,11 +211,20 @@ impl PixbufView {
     }
 }
 
-pub struct PixbufViewBuilder {}
+pub struct PixbufViewBuilder {
+    recollection_key: String,
+}
 
 impl PixbufViewBuilder {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            recollection_key: "image_viewer::last_image_file".to_string(),
+        }
+    }
+
+    pub fn recollection_key(&mut self, recollection_key: &str) -> &Self {
+        self.recollection_key = recollection_key.to_string();
+        self
     }
 
     pub fn build(self) -> Rc<PixbufView> {
@@ -277,6 +295,7 @@ impl PixbufViewBuilder {
                             .zoom_out_adj
                             .set((alloc * PixbufView::ZOOM_OUT_ADJUST).into());
                         *viewer_c.last_allocation.borrow_mut() = Some(alloc);
+                        let mut resize_required = false;
                         if let Some(ref mut zoomable) = *viewer_c.zoomable.borrow_mut() {
                             let delta_alloc = alloc - last_allocation;
                             let zoomed_sizediff = alloc - zoomable.zoomed_size();
@@ -285,7 +304,7 @@ impl PixbufViewBuilder {
                             {
                                 // a small change and same aspect ratio
                                 zoomable.set_zoomed_size(alloc.into());
-                                viewer_c.resize_drawing_area();
+                                resize_required = true;
                             } else if delta_alloc.width >= 0.0 {
                                 if delta_alloc.height >= 0.0 {
                                     // we're getting bigger
@@ -294,7 +313,7 @@ impl PixbufViewBuilder {
                                         let zoom =
                                             zoomable.calc_zooms_for(alloc).length_longest_side();
                                         zoomable.set_zoom(zoom);
-                                        viewer_c.resize_drawing_area();
+                                        resize_required = true;
                                     } else if zoomed_sizediff.width < 0.0
                                         || zoomed_sizediff.height < 0.0
                                     {
@@ -316,7 +335,7 @@ impl PixbufViewBuilder {
                                 if zoomed_sizediff.width > 10.0 || zoomed_sizediff.height > 10.0 {
                                     let zoom = zoomable.calc_zooms_for(alloc).length_longest_side();
                                     zoomable.set_zoom(zoom);
-                                    viewer_c.resize_drawing_area();
+                                    resize_required = true;
                                 } else if zoomed_sizediff.width < -10.0
                                     && zoomed_sizediff.height < -10.0
                                 {
@@ -326,7 +345,7 @@ impl PixbufViewBuilder {
                                         let zoom =
                                             zoomable.calc_zooms_for(alloc).length_longest_side();
                                         zoomable.set_zoom(zoom);
-                                        viewer_c.resize_drawing_area();
+                                        resize_required = true;
                                     }
                                 } else if zoomed_sizediff.width < 0.0
                                     || zoomed_sizediff.height < 0.0
@@ -341,6 +360,9 @@ impl PixbufViewBuilder {
                             } else {
                                 // more uncharted territory
                             }
+                        };
+                        if resize_required {
+                            viewer_c.resize_drawing_area();
                         }
                     }
                 } else {
@@ -486,6 +508,42 @@ impl PixbufViewBuilder {
                     panic!("File: {:?} Line: {:?}", file!(), line!())
                 }
             });
+
+        let viewer_c = viewer.clone();
+        viewer
+            .popup_menu
+            .append_item(
+                "load",
+                "Load",
+                None,
+                "Load an image from a nominated file.",
+                0,
+            )
+            .connect_activate(move |_| {
+                let o_last_file = recollections::recall("image_viewer::last_image_file");
+                let last_file = if let Some(ref text) = o_last_file {
+                    Some(text.as_str())
+                } else {
+                    None
+                };
+                if let Some(path) = viewer_c.ask_file_path(Some("Image File"), last_file, true) {
+                    if let Err(err) = viewer_c.set_pixbuf_fm_file(&path) {
+                        viewer_c.report_error("Failed To Load Image", &err);
+                    } else {
+                        let o_path_str = path.to_str();
+                        if let Some(path_str) = o_path_str {
+                            recollections::remember("image_viewer::last_image_file", path_str);
+                        }
+                    }
+                }
+            });
+
+        let o_last_file = recollections::recall("image_viewer::last_image_file");
+        if let Some(ref last_file_path) = o_last_file {
+            if let Err(err) = viewer.set_pixbuf_fm_file(last_file_path) {
+                viewer.report_error("Failed To Load Previous Image", &err);
+            };
+        };
 
         viewer
     }

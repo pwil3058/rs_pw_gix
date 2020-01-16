@@ -14,11 +14,13 @@ use pw_gix::{
         },
         Colour, RGB,
     },
+    gdk_pixbufx::viewer::*,
     gtkx::{
         check_button::MutuallyExclusiveCheckButtonsBuilder,
         combo_box_text::SortedUnique,
         entry::{RGBEntryInterface, RGBHexEntryBox},
         list_store::*,
+        window::RememberGeometry,
     },
     recollections,
     wrapper::*,
@@ -97,6 +99,10 @@ fn main() {
     let hcv_cads = HueChromaValueCADS::create();
     hcv_cads.set_colour(Some(&Colour::from(RGB::RED)));
     vbox.pack_start(&hcv_cads.pwo(), false, false, 0);
+
+    let button = gtk::Button::new_with_label("Image Viewer");
+    vbox.pack_start(&button, false, false, 0);
+    button.connect_clicked(|_| launch_image_viewer());
 
     vbox.show_all();
     win.add(&vbox);
@@ -316,4 +322,17 @@ fn test_colour_attributes() {
 
     let hcv_cads = HueChromaValueCADS::create();
     hcv_cads.set_colour(Some(&Colour::from(RGB::RED)));
+}
+
+fn launch_image_viewer() {
+    let window = gtk::Window::new(gtk::WindowType::Toplevel);
+    window.set_geometry_from_recollections("image_viewer", (200, 200));
+    window.set_destroy_with_parent(true);
+    window.set_title("component_test_gui: Image Viewer");
+
+    let view = PixbufViewBuilder::new().build();
+    window.add(&view.pwo());
+    window.show_all();
+
+    window.present();
 }
