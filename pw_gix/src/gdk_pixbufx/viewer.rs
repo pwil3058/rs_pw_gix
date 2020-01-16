@@ -11,12 +11,14 @@ use gdk::prelude::GdkContextExt;
 use gdk_pixbuf;
 use gtk::prelude::*;
 
-use crate::geometry::Point;
-use crate::gtkx::drawing_area::XYSelection;
 use crate::{
-    geometry::{AspectRatio, Rectangle, Size, SizeExt},
-    gtkx::menu::{ManagedMenu, ManagedMenuBuilder},
+    geometry::{AspectRatio, Point, Rectangle, Size, SizeExt},
+    gtkx::{
+        drawing_area::XYSelection,
+        menu::{ManagedMenu, ManagedMenuBuilder},
+    },
     recollections,
+    sav_state::{MaskedCondns, SAV_NEXT_CONDN},
     wrapper::*,
 };
 
@@ -110,6 +112,9 @@ impl PixbufView {
     const ZOOM_IN_ADJUST: f64 = (Self::ZOOM_FACTOR - 1.0) / 2.0;
     const ZOOM_OUT_ADJUST: f64 = (1.0 / Self::ZOOM_FACTOR - 1.0) / 2.0;
 
+    const SAV_HAS_IMAGE: u64 = SAV_NEXT_CONDN << 0;
+    const SAV_HAS_SELECTION: u64 = SAV_NEXT_CONDN << 1;
+
     pub fn set_pixbuf(&self, o_pixbuf: Option<&gdk_pixbuf::Pixbuf>) {
         if let Some(pixbuf) = o_pixbuf {
             self.xy_selection.reset();
@@ -126,8 +131,16 @@ impl PixbufView {
                 panic!("File: {:?} Line: {:?}", file!(), line!())
             };
             self.resize_drawing_area();
+            self.popup_menu.update_condns(MaskedCondns {
+                condns: Self::SAV_HAS_IMAGE,
+                mask: Self::SAV_HAS_IMAGE,
+            });
         } else {
-            *self.zoomable.borrow_mut() = None
+            *self.zoomable.borrow_mut() = None;
+            self.popup_menu.update_condns(MaskedCondns {
+                condns: 0,
+                mask: Self::SAV_HAS_IMAGE,
+            });
         };
         self.drawing_area.queue_draw();
     }
@@ -272,6 +285,15 @@ impl PixbufViewBuilder {
                     cairo_context.set_source_rgb(0.0, 0.0, 0.0);
                     cairo_context.set_operator(Operator::Xor);
                     cairo_context.stroke();
+                    viewer_c.popup_menu.update_condns(MaskedCondns {
+                        condns: PixbufView::SAV_HAS_SELECTION,
+                        mask: PixbufView::SAV_HAS_SELECTION,
+                    });
+                } else {
+                    viewer_c.popup_menu.update_condns(MaskedCondns {
+                        condns: 0,
+                        mask: PixbufView::SAV_HAS_SELECTION,
+                    });
                 }
             };
             gtk::Inhibit(false)
@@ -414,7 +436,7 @@ impl PixbufViewBuilder {
             } else {
                 viewer_c.selection_zoom.set(1.0)
             };
-            viewer_c.drawing_area.queue_draw()
+            viewer_c.drawing_area.queue_draw();
         });
 
         // Set up moving image with left button and control key
@@ -489,7 +511,7 @@ impl PixbufViewBuilder {
                 "Copy",
                 None,
                 "Copy the selection to the clipboard",
-                0,
+                PixbufView::SAV_HAS_IMAGE + PixbufView::SAV_HAS_SELECTION,
             )
             .connect_activate(move |_| {
                 if let Some(ref zoomable) = *viewer_c.zoomable.borrow() {
