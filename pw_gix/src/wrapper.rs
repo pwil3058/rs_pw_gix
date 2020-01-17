@@ -230,42 +230,34 @@ mod tests {
 
     #[test]
     fn widget_wrapper_simple() {
+        #[derive(PWO, Wrapper)]
         struct _TestWrapper {
             vbox: gtk::Box,
         }
-
-        impl_widget_wrapper!(vbox: gtk::Box, _TestWrapper);
     }
 
     #[test]
     fn widget_wrapper_simple_expr() {
+        #[derive(PWO, Wrapper)]
         struct _TestWrapper {
             vbox: gtk::Box,
         }
-
-        impl _TestWrapper {
-            fn vbox(&self) -> gtk::Box {
-                self.vbox.clone()
-            }
-        }
-
-        impl_widget_wrapper!(vbox() -> gtk::Box, _TestWrapper);
     }
 
     #[test]
     fn widget_wrapper_generic_simple() {
+        #[derive(PWO, Wrapper)]
         struct _TestWrapper<A, B, C> {
             vbox: gtk::Box,
             _a: A,
             _b: B,
             _c: C,
         }
-
-        impl_widget_wrapper!(vbox: gtk::Box, _TestWrapper<A, B, C>);
     }
 
     #[test]
     fn widget_wrapper_generic_constrained() {
+        #[derive(PWO, Wrapper)]
         struct _TestWrapper<A, B, C>
         where
             A: Eq,
@@ -276,11 +268,6 @@ mod tests {
             _b: B,
             _c: C,
         }
-
-        impl_widget_wrapper!(vbox: gtk::Box, _TestWrapper<A, B, C>
-            where   A: Eq,
-                    C: PartialEq,
-        );
     }
 
     #[test]
@@ -290,6 +277,7 @@ mod tests {
             B: PartialEq,
         {
         }
+        #[derive(PWO, Wrapper)]
         struct _TestWrapper<A, B>
         where
             A: Alpha<B>,
@@ -299,11 +287,5 @@ mod tests {
             _a: A,
             _b: B,
         }
-
-        impl_widget_wrapper!(vbox: gtk::Box, _TestWrapper<A, B>
-            where
-                A: Alpha<B>,
-                B: PartialEq,
-        );
     }
 }

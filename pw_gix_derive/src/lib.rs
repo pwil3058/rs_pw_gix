@@ -30,7 +30,7 @@ pub fn pwo_derive(input: TokenStream) -> TokenStream {
                             return proc_macro::TokenStream::from(tokens);
                         } else {
                             let tokens = quote_spanned! {
-                                field.ty.span()=> compile_error!("'Wrapper': unexpected type")
+                                field.ty.span()=> compile_error!("'PWO': unexpected type")
                             };
                             return proc_macro::TokenStream::from(tokens);
                         }
@@ -40,13 +40,13 @@ pub fn pwo_derive(input: TokenStream) -> TokenStream {
         }
         _ => {
             let tokens = quote_spanned! {
-                struct_name.span()=> compile_error!("'Wrapper' is only derivable for structs")
+                struct_name.span()=> compile_error!("'PWO' is only derivable for structs")
             };
             return proc_macro::TokenStream::from(tokens);
         }
     }
     let tokens = quote_spanned! {
-        struct_name.span()=> compile_error!("'Wrapper' requires at least one named field")
+        struct_name.span()=> compile_error!("'PWO' requires at least one named field")
     };
     proc_macro::TokenStream::from(tokens)
 }

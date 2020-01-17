@@ -9,12 +9,11 @@ use gtk::{BoxExt, ButtonExt, ContainerExt, WidgetExt};
 
 use crate::wrapper::*;
 
+#[derive(PWO)]
 pub struct TabRemoveLabelCore {
     hbox: gtk::Box,
     remove_page_callbacks: RefCell<Vec<Box<dyn Fn()>>>,
 }
-
-impl_widget_wrapper!(hbox: gtk::Box, TabRemoveLabelCore);
 
 impl TabRemoveLabelCore {
     pub fn connect_remove_page<F: 'static + Fn()>(&self, callback: F) {

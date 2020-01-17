@@ -12,20 +12,19 @@ use gtk::prelude::*;
 
 use pw_pathux;
 
-use crate::colour::*;
-use crate::gtkx::coloured::*;
-use crate::gtkx::list_store::*;
-use crate::wrapper::*;
+use crate::{
+    colour::*,
+    gtkx::{coloured::*, list_store::*},
+    wrapper::*,
+};
 
 // Labelled Text Entry
 
-#[derive(Debug)]
+#[derive(Debug, PWO)]
 pub struct LabelledTextEntry {
     h_box: gtk::Box,
     entry: gtk::Entry,
 }
-
-impl_widget_wrapper!(h_box: gtk::Box, LabelledTextEntry);
 
 impl LabelledTextEntry {
     pub fn new(label: &str) -> Rc<Self> {
@@ -53,7 +52,7 @@ pub trait HexEntryInterface {
     fn create_with_max(max_value: u32) -> Self;
 }
 
-//#[derive(Debug)]
+#[derive(PWO)]
 pub struct HexEntryData {
     entry: gtk::Entry,
     value: Cell<u32>,
@@ -63,8 +62,6 @@ pub struct HexEntryData {
     width: usize,
     callbacks: RefCell<Vec<Box<dyn Fn(u32)>>>,
 }
-
-impl_widget_wrapper!(entry: gtk::Entry, HexEntryData);
 
 impl HexEntryData {
     pub fn get_value(&self) -> u32 {
@@ -229,6 +226,7 @@ pub trait RGBEntryInterface {
     fn create() -> Self;
 }
 
+#[derive(PWO)]
 pub struct RGBHexEntryBoxData {
     hbox: gtk::Box,
     red_entry: HexEntry,
@@ -236,8 +234,6 @@ pub struct RGBHexEntryBoxData {
     blue_entry: HexEntry,
     callbacks: RefCell<Vec<Box<dyn Fn(RGB)>>>,
 }
-
-impl_widget_wrapper!(hbox: gtk::Box, RGBHexEntryBoxData);
 
 impl RGBHexEntryBoxData {
     pub fn get_rgb(&self) -> RGB {

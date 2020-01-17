@@ -10,13 +10,11 @@ use gtk::WidgetExt;
 
 use normalised_angles::Degrees;
 
-use crate::cairox::*;
-use crate::colour::*;
-use crate::wrapper::*;
+use crate::{cairox::*, colour::*, wrapper::*};
 
 type ColourStops = Vec<[f64; 4]>;
 
-pub trait ColourAttributeDisplayInterface: WidgetWrapper {
+pub trait ColourAttributeDisplayInterface {
     type CADIType;
 
     fn create() -> Self::CADIType;
@@ -117,7 +115,7 @@ pub trait ColourAttributeDisplayInterface: WidgetWrapper {
 }
 
 // VALUE
-#[derive(Debug)]
+#[derive(Debug, PWO)]
 pub struct ValueCADData {
     drawing_area: gtk::DrawingArea,
     attr_value: Cell<Option<f64>>,
@@ -127,8 +125,6 @@ pub struct ValueCADData {
 }
 
 pub type ValueCAD = Rc<ValueCADData>;
-
-impl_widget_wrapper!(drawing_area: gtk::DrawingArea, ValueCAD);
 
 impl ColourAttributeDisplayInterface for ValueCAD {
     type CADIType = ValueCAD;
@@ -196,7 +192,7 @@ impl ColourAttributeDisplayInterface for ValueCAD {
 }
 
 // WARMTH
-#[derive(Debug)]
+#[derive(Debug, PWO)]
 pub struct WarmthCADData {
     drawing_area: gtk::DrawingArea,
     attr_value: Cell<Option<f64>>,
@@ -206,8 +202,6 @@ pub struct WarmthCADData {
 }
 
 pub type WarmthCAD = Rc<WarmthCADData>;
-
-impl_widget_wrapper!(drawing_area: gtk::DrawingArea, WarmthCAD);
 
 impl ColourAttributeDisplayInterface for WarmthCAD {
     type CADIType = WarmthCAD;
@@ -283,7 +277,7 @@ impl ColourAttributeDisplayInterface for WarmthCAD {
 }
 
 // HUE
-#[derive(Debug)]
+#[derive(Debug, PWO)]
 pub struct HueCADData {
     drawing_area: gtk::DrawingArea,
     value_angle: Cell<Option<Hue>>,
@@ -349,8 +343,6 @@ fn calc_hue_value(hue: Hue, target_hue: Hue) -> f64 {
 }
 
 pub type HueCAD = Rc<HueCADData>;
-
-impl_widget_wrapper!(drawing_area: gtk::DrawingArea, HueCAD);
 
 impl ColourAttributeDisplayInterface for HueCAD {
     type CADIType = HueCAD;
@@ -445,7 +437,7 @@ impl ColourAttributeDisplayInterface for HueCAD {
 }
 
 // CHROMA
-#[derive(Debug)]
+#[derive(Debug, PWO)]
 pub struct ChromaCADData {
     drawing_area: gtk::DrawingArea,
     attr_value: Cell<Option<f64>>,
@@ -490,8 +482,6 @@ impl ChromaCADData {
 }
 
 pub type ChromaCAD = Rc<ChromaCADData>;
-
-impl_widget_wrapper!(drawing_area: gtk::DrawingArea, ChromaCAD);
 
 impl ColourAttributeDisplayInterface for ChromaCAD {
     type CADIType = ChromaCAD;
@@ -579,7 +569,7 @@ impl ColourAttributeDisplayInterface for ChromaCAD {
 }
 
 // GREYNESS
-#[derive(Debug)]
+#[derive(Debug, PWO)]
 pub struct GreynessCADData {
     drawing_area: gtk::DrawingArea,
     attr_value: Cell<Option<f64>>,
@@ -624,8 +614,6 @@ impl GreynessCADData {
 }
 
 pub type GreynessCAD = Rc<GreynessCADData>;
-
-impl_widget_wrapper!(drawing_area: gtk::DrawingArea, GreynessCAD);
 
 impl ColourAttributeDisplayInterface for GreynessCAD {
     type CADIType = GreynessCAD;
@@ -714,13 +702,14 @@ impl ColourAttributeDisplayInterface for GreynessCAD {
 
 // STACK
 
-pub trait ColourAttributeDisplayStackInterface: WidgetWrapper {
+pub trait ColourAttributeDisplayStackInterface {
     fn create() -> Self;
 
     fn set_colour(&self, colour: Option<&Colour>);
     fn set_target_colour(&self, target_colour: Option<&Colour>);
 }
 
+#[derive(PWO)]
 pub struct HueChromaValueCADSData {
     vbox: gtk::Box,
     hue_cad: HueCAD,
@@ -729,8 +718,6 @@ pub struct HueChromaValueCADSData {
 }
 
 pub type HueChromaValueCADS = Rc<HueChromaValueCADSData>;
-
-impl_widget_wrapper!(vbox: gtk::Box, HueChromaValueCADS);
 
 impl ColourAttributeDisplayStackInterface for HueChromaValueCADS {
     fn create() -> HueChromaValueCADS {
@@ -762,6 +749,7 @@ impl ColourAttributeDisplayStackInterface for HueChromaValueCADS {
     }
 }
 
+#[derive(PWO)]
 pub struct HueGreynessValueCADSData {
     vbox: gtk::Box,
     hue_cad: HueCAD,
@@ -770,8 +758,6 @@ pub struct HueGreynessValueCADSData {
 }
 
 pub type HueGreynessValueCADS = Rc<HueGreynessValueCADSData>;
-
-impl_widget_wrapper!(vbox: gtk::Box, HueGreynessValueCADS);
 
 impl ColourAttributeDisplayStackInterface for HueGreynessValueCADS {
     fn create() -> HueGreynessValueCADS {

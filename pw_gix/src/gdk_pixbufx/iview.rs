@@ -1,5 +1,6 @@
 // Copyright 2017 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
+/// Obsolete: use viewer module instead
 use std::cell::{Cell, RefCell};
 use std::convert::From;
 use std::error::Error;
@@ -91,6 +92,7 @@ impl Zoomable {
     }
 }
 
+#[derive(PWO, Wrapper)]
 pub struct PixbufViewCore {
     scrolled_window: gtk::ScrolledWindow,
     drawing_area: gtk::DrawingArea,
@@ -109,8 +111,6 @@ pub struct PixbufViewCore {
     zoom_out_adj: Cell<[f64; 2]>,
     current_file_path: RefCell<Option<PathBuf>>,
 }
-
-impl_widget_wrapper!(scrolled_window: gtk::ScrolledWindow, PixbufViewCore);
 
 pub type PixbufView = Rc<PixbufViewCore>;
 
