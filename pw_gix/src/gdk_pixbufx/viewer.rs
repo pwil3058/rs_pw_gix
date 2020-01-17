@@ -28,8 +28,8 @@ struct Zoomable {
     zoom_factor: f64,
 }
 
-impl From<gdk_pixbuf::Pixbuf> for Zoomable {
-    fn from(pixbuf: gdk_pixbuf::Pixbuf) -> Zoomable {
+impl From<&gdk_pixbuf::Pixbuf> for Zoomable {
+    fn from(pixbuf: &gdk_pixbuf::Pixbuf) -> Zoomable {
         Zoomable {
             unzoomed: pixbuf.clone(),
             zoomed: pixbuf.clone(),
@@ -99,7 +99,7 @@ pub struct PixbufView {
     zoomable: RefCell<Option<Zoomable>>,
     selection_zoom: Cell<f64>,
     ignore_size_alloc: Cell<bool>,
-    last_allocation: RefCell<Option<Size<f64>>>,
+    last_allocation: Cell<Size<f64>>,
     zoom_in_adj: Cell<[f64; 2]>,
     zoom_out_adj: Cell<[f64; 2]>,
     last_xy: Cell<Point>,
@@ -118,18 +118,15 @@ impl PixbufView {
     pub fn set_pixbuf(&self, o_pixbuf: Option<&gdk_pixbuf::Pixbuf>) {
         if let Some(pixbuf) = o_pixbuf {
             self.xy_selection.reset();
-            *self.zoomable.borrow_mut() = Some(Zoomable::from(pixbuf.clone()));
-            if let Some(ref mut zoomable) = *self.zoomable.borrow_mut() {
-                let alloc = self.drawing_area.get_allocation().size();
-                if pixbuf.aspect_ratio_matches_size(alloc.into()) {
-                    zoomable.set_zoomed_size(alloc);
-                } else {
-                    let zoom = zoomable.calc_zooms_for(alloc.into()).length_longest_side();
-                    zoomable.set_zoom(zoom);
-                }
+            let mut zoomable: Zoomable = pixbuf.into();
+            let alloc = self.drawing_area.get_allocation().size();
+            if pixbuf.aspect_ratio_matches_size(alloc.into()) {
+                zoomable.set_zoomed_size(alloc);
             } else {
-                panic!("File: {:?} Line: {:?}", file!(), line!())
+                let zoom = zoomable.calc_zooms_for(alloc.into()).length_longest_side();
+                zoomable.set_zoom(zoom);
             };
+            *self.zoomable.borrow_mut() = Some(zoomable);
             self.resize_drawing_area();
             self.popup_menu.update_condns(MaskedCondns {
                 condns: Self::SAV_HAS_IMAGE,
@@ -195,11 +192,8 @@ impl PixbufView {
     fn zoom_out(&self) {
         if let Some(ref mut zoomable) = *self.zoomable.borrow_mut() {
             let current_zoom = zoomable.zoom_factor();
-            let min_zoom = if let Some(alloc) = *self.last_allocation.borrow() {
-                zoomable.calc_zooms_for(alloc).length_longest_side()
-            } else {
-                1.0
-            };
+            let alloc = self.last_allocation.get();
+            let min_zoom = zoomable.calc_zooms_for(alloc).length_longest_side();
             if current_zoom <= min_zoom {
                 gdk::beep();
                 return;
@@ -252,6 +246,7 @@ impl PixbufViewBuilder {
             )
             .child(&drawing_area)
             .build();
+        let alloc: Size<f64> = drawing_area.get_allocation().size().into();
 
         let viewer = Rc::new(PixbufView {
             scrolled_window,
@@ -260,7 +255,7 @@ impl PixbufViewBuilder {
             zoomable: RefCell::new(None),
             ignore_size_alloc: Cell::new(false),
             selection_zoom: Cell::new(1.0),
-            last_allocation: RefCell::new(None),
+            last_allocation: Cell::new(alloc),
             zoom_in_adj: Cell::new([0.0, 0.0]),
             zoom_out_adj: Cell::new([0.0, 0.0]),
             last_xy: Cell::new(Point(0.0, 0.0)),
@@ -307,68 +302,32 @@ impl PixbufViewBuilder {
                     return;
                 };
                 let alloc = Rectangle::<f64>::from(*allocation).size();
-                let o_last_allocation = *viewer_c.last_allocation.borrow();
-                if let Some(last_allocation) = o_last_allocation {
-                    if last_allocation != alloc {
-                        viewer_c
-                            .zoom_in_adj
-                            .set((alloc * PixbufView::ZOOM_IN_ADJUST).into());
-                        viewer_c
-                            .zoom_out_adj
-                            .set((alloc * PixbufView::ZOOM_OUT_ADJUST).into());
-                        *viewer_c.last_allocation.borrow_mut() = Some(alloc);
-                        let mut resize_required = false;
-                        if let Some(ref mut zoomable) = *viewer_c.zoomable.borrow_mut() {
-                            let delta_alloc = alloc - last_allocation;
-                            let zoomed_sizediff = alloc - zoomable.zoomed_size();
-                            if zoomable.aspect_ratio_matches_size(alloc)
-                                && zoomed_sizediff.width.abs() < 10.0
-                            {
-                                // a small change and same aspect ratio
-                                zoomable.set_zoomed_size(alloc.into());
-                                resize_required = true;
-                            } else if delta_alloc.width >= 0.0 {
-                                if delta_alloc.height >= 0.0 {
-                                    // we're getting bigger
-                                    if zoomed_sizediff.width > 10.0 || zoomed_sizediff.height > 10.0
-                                    {
-                                        let zoom =
-                                            zoomable.calc_zooms_for(alloc).length_longest_side();
-                                        zoomable.set_zoom(zoom);
-                                        resize_required = true;
-                                    } else if zoomed_sizediff.width < 0.0
-                                        || zoomed_sizediff.height < 0.0
-                                    {
-                                        sw.set_policy(
-                                            gtk::PolicyType::Automatic,
-                                            gtk::PolicyType::Automatic,
-                                        )
-                                    } else {
-                                        sw.set_policy(
-                                            gtk::PolicyType::Never,
-                                            gtk::PolicyType::Never,
-                                        )
-                                    }
-                                } else {
-                                    // uncharted territory
-                                }
-                            } else if delta_alloc.height <= 0.0 {
-                                // we're getting smaller
+                let last_allocation = viewer_c.last_allocation.get();
+                if last_allocation != alloc {
+                    viewer_c
+                        .zoom_in_adj
+                        .set((alloc * PixbufView::ZOOM_IN_ADJUST).into());
+                    viewer_c
+                        .zoom_out_adj
+                        .set((alloc * PixbufView::ZOOM_OUT_ADJUST).into());
+                    viewer_c.last_allocation.set(alloc);
+                    let mut resize_required = false;
+                    if let Some(ref mut zoomable) = *viewer_c.zoomable.borrow_mut() {
+                        let delta_alloc = alloc - last_allocation;
+                        let zoomed_sizediff = alloc - zoomable.zoomed_size();
+                        if zoomable.aspect_ratio_matches_size(alloc)
+                            && zoomed_sizediff.width.abs() < 10.0
+                        {
+                            // a small change and same aspect ratio
+                            zoomable.set_zoomed_size(alloc.into());
+                            resize_required = true;
+                        } else if delta_alloc.width >= 0.0 {
+                            if delta_alloc.height >= 0.0 {
+                                // we're getting bigger
                                 if zoomed_sizediff.width > 10.0 || zoomed_sizediff.height > 10.0 {
                                     let zoom = zoomable.calc_zooms_for(alloc).length_longest_side();
                                     zoomable.set_zoom(zoom);
                                     resize_required = true;
-                                } else if zoomed_sizediff.width < -10.0
-                                    && zoomed_sizediff.height < -10.0
-                                {
-                                    if zoomed_sizediff.width > -30.0
-                                        || zoomed_sizediff.height > -30.0
-                                    {
-                                        let zoom =
-                                            zoomable.calc_zooms_for(alloc).length_longest_side();
-                                        zoomable.set_zoom(zoom);
-                                        resize_required = true;
-                                    }
                                 } else if zoomed_sizediff.width < 0.0
                                     || zoomed_sizediff.height < 0.0
                                 {
@@ -380,12 +339,36 @@ impl PixbufViewBuilder {
                                     sw.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Never)
                                 }
                             } else {
-                                // more uncharted territory
+                                // uncharted territory
                             }
-                        };
-                        if resize_required {
-                            viewer_c.resize_drawing_area();
+                        } else if delta_alloc.height <= 0.0 {
+                            // we're getting smaller
+                            if zoomed_sizediff.width > 10.0 || zoomed_sizediff.height > 10.0 {
+                                let zoom = zoomable.calc_zooms_for(alloc).length_longest_side();
+                                zoomable.set_zoom(zoom);
+                                resize_required = true;
+                            } else if zoomed_sizediff.width < -10.0
+                                && zoomed_sizediff.height < -10.0
+                            {
+                                if zoomed_sizediff.width > -30.0 || zoomed_sizediff.height > -30.0 {
+                                    let zoom = zoomable.calc_zooms_for(alloc).length_longest_side();
+                                    zoomable.set_zoom(zoom);
+                                    resize_required = true;
+                                }
+                            } else if zoomed_sizediff.width < 0.0 || zoomed_sizediff.height < 0.0 {
+                                sw.set_policy(
+                                    gtk::PolicyType::Automatic,
+                                    gtk::PolicyType::Automatic,
+                                )
+                            } else {
+                                sw.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Never)
+                            }
+                        } else {
+                            // more uncharted territory
                         }
+                    };
+                    if resize_required {
+                        viewer_c.resize_drawing_area();
                     }
                 } else {
                     viewer_c
@@ -394,7 +377,7 @@ impl PixbufViewBuilder {
                     viewer_c
                         .zoom_out_adj
                         .set((alloc * PixbufView::ZOOM_OUT_ADJUST).into());
-                    *viewer_c.last_allocation.borrow_mut() = Some(alloc);
+                    viewer_c.last_allocation.set(alloc);
                 }
             });
 
