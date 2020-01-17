@@ -220,12 +220,14 @@ impl PixbufView {
 
 pub struct PixbufViewBuilder {
     recollection_key: String,
+    load_last_image: bool,
 }
 
 impl PixbufViewBuilder {
     pub fn new() -> Self {
         Self {
             recollection_key: "image_viewer::last_image_file".to_string(),
+            load_last_image: false,
         }
     }
 
@@ -234,7 +236,12 @@ impl PixbufViewBuilder {
         self
     }
 
-    pub fn build(self) -> Rc<PixbufView> {
+    pub fn load_last_image(&mut self, value: bool) -> &Self {
+        self.load_last_image = value;
+        self
+    }
+
+    pub fn build(&self) -> Rc<PixbufView> {
         let drawing_area = gtk::DrawingAreaBuilder::new().build();
         let xy_selection = XYSelection::create(&drawing_area);
         let scrolled_window = gtk::ScrolledWindowBuilder::new()
@@ -543,10 +550,12 @@ impl PixbufViewBuilder {
                 }
             });
 
-        let o_last_file = recollections::recall("image_viewer::last_image_file");
-        if let Some(ref last_file_path) = o_last_file {
-            if let Err(err) = viewer.set_pixbuf_fm_file(last_file_path) {
-                viewer.report_error("Failed To Load Previous Image", &err);
+        if self.load_last_image {
+            let o_last_file = recollections::recall("image_viewer::last_image_file");
+            if let Some(ref last_file_path) = o_last_file {
+                if let Err(err) = viewer.set_pixbuf_fm_file(last_file_path) {
+                    viewer.report_error("Failed To Load Previous Image", &err);
+                };
             };
         };
 

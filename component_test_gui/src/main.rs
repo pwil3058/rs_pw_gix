@@ -330,7 +330,7 @@ fn launch_image_viewer() {
     window.set_destroy_with_parent(true);
     window.set_title("component_test_gui: Image Viewer");
 
-    let view = PixbufViewBuilder::new().build();
+    let view = PixbufViewBuilder::new().load_last_image(true).build();
     window.add(&view.pwo());
     window.show_all();
 
