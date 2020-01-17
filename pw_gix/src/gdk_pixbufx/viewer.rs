@@ -270,7 +270,7 @@ impl PixbufViewBuilder {
             popup_menu: ManagedMenuBuilder::new().build(),
         });
 
-        let viewer_c = viewer.clone();
+        let viewer_c = Rc::clone(&viewer);
         viewer.drawing_area.connect_draw(move |_, cairo_context| {
             if let Some(ref zoomable) = *viewer_c.zoomable.borrow() {
                 cairo_context.set_source_pixbuf(&zoomable.pixbuf(), 0.0, 0.0);
@@ -301,7 +301,7 @@ impl PixbufViewBuilder {
             gtk::Inhibit(false)
         });
 
-        let viewer_c = viewer.clone();
+        let viewer_c = Rc::clone(&viewer);
         viewer
             .scrolled_window
             .connect_size_allocate(move |sw, allocation| {
@@ -389,7 +389,7 @@ impl PixbufViewBuilder {
             });
 
         // Set zoom using scroll wheel when control key pressed
-        let viewer_c = viewer.clone();
+        let viewer_c = Rc::clone(&viewer);
         viewer
             .scrolled_window
             .connect_scroll_event(move |_, event| {
@@ -419,7 +419,7 @@ impl PixbufViewBuilder {
                 gtk::Inhibit(false)
             });
 
-        let viewer_c = viewer.clone();
+        let viewer_c = Rc::clone(&viewer);
         viewer.xy_selection.connect_selection_made(move || {
             if let Some(ref zoomable) = *viewer_c.zoomable.borrow() {
                 viewer_c.selection_zoom.set(zoomable.zoom_factor())
@@ -430,7 +430,7 @@ impl PixbufViewBuilder {
         });
 
         // Set up moving image with left button and control key
-        let viewer_c = viewer.clone();
+        let viewer_c = Rc::clone(&viewer);
         viewer
             .scrolled_window
             .connect_button_press_event(move |_, event| {
@@ -446,7 +446,7 @@ impl PixbufViewBuilder {
                 };
                 gtk::Inhibit(false)
             });
-        let viewer_c = viewer.clone();
+        let viewer_c = Rc::clone(&viewer);
         viewer
             .scrolled_window
             .connect_button_release_event(move |_, event| {
@@ -456,14 +456,14 @@ impl PixbufViewBuilder {
                 };
                 gtk::Inhibit(false)
             });
-        let viewer_c = viewer.clone();
+        let viewer_c = Rc::clone(&viewer);
         viewer
             .scrolled_window
             .connect_leave_notify_event(move |_, _| {
                 viewer_c.doing_button_motion.set(false);
                 gtk::Inhibit(false)
             });
-        let viewer_c = viewer.clone();
+        let viewer_c = Rc::clone(&viewer);
         viewer
             .scrolled_window
             .connect_motion_notify_event(move |_, event| {
@@ -504,24 +504,19 @@ impl PixbufViewBuilder {
                 PixbufView::SAV_HAS_IMAGE + PixbufView::SAV_HAS_SELECTION,
             )
             .connect_activate(move |_| {
-                if let Some(ref zoomable) = *viewer_c.zoomable.borrow() {
-                    let scale = zoomable.zoom_factor() / viewer_c.selection_zoom.get();
-                    if let Some(rect) = viewer_c.xy_selection.get_selected_rectangle(scale) {
-                        if let Some(pixbuf) = zoomable.subpixbuf(rect.into()) {
-                            let cbd = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
-                            cbd.set_image(&pixbuf);
-                        } else {
-                            panic!("File: {:?} Line: {:?}", file!(), line!())
-                        }
-                    } else {
-                        panic!("File: {:?} Line: {:?}", file!(), line!())
-                    }
-                } else {
-                    panic!("File: {:?} Line: {:?}", file!(), line!())
-                }
+                let zoomable = viewer_c.zoomable.borrow();
+                let zoomable = zoomable.as_ref().expect("SAV_HAS_IMAGE");
+                let scale = zoomable.zoom_factor() / viewer_c.selection_zoom.get();
+                let rect = viewer_c
+                    .xy_selection
+                    .get_selected_rectangle(scale)
+                    .expect("SAV_HAS_SELECTION");
+                let pixbuf = zoomable.subpixbuf(rect.into()).expect("programmer error");
+                let cbd = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
+                cbd.set_image(&pixbuf);
             });
 
-        let viewer_c = viewer.clone();
+        let viewer_c = Rc::clone(&viewer);
         viewer
             .popup_menu
             .append_item(
@@ -547,6 +542,48 @@ impl PixbufViewBuilder {
                             recollections::remember("image_viewer::last_image_file", path_str);
                         }
                     }
+                }
+            });
+
+        let viewer_c = Rc::clone(&viewer);
+        viewer
+            .popup_menu
+            .append_item(
+                "print",
+                "Print",
+                None,
+                "Print the image.",
+                PixbufView::SAV_HAS_IMAGE,
+            )
+            .connect_activate(move |_| {
+                let zoomable = viewer_c.zoomable.borrow();
+                let zoomable = zoomable.as_ref().expect("SAV_HAS_IMAGE");
+                if let Err(ref err) = viewer_c.print_pixbuf(&zoomable.pixbuf()) {
+                    viewer_c.report_error("Print Error", err);
+                }
+            });
+
+        let viewer_c = Rc::clone(&viewer);
+        viewer
+            .popup_menu
+            .append_item(
+                "print selection",
+                "Print Selection",
+                None,
+                "Print the selectef part of the image",
+                PixbufView::SAV_HAS_IMAGE + PixbufView::SAV_HAS_SELECTION,
+            )
+            .connect_activate(move |_| {
+                let zoomable = viewer_c.zoomable.borrow();
+                let zoomable = zoomable.as_ref().expect("SAV_HAS_IMAGE");
+                let scale = zoomable.zoom_factor() / viewer_c.selection_zoom.get();
+                let rect = viewer_c
+                    .xy_selection
+                    .get_selected_rectangle(scale)
+                    .expect("SAV_HAS_SELECTION");
+                let pixbuf = zoomable.subpixbuf(rect.into()).expect("programmer error");
+                if let Err(ref err) = viewer_c.print_pixbuf(&pixbuf) {
+                    viewer_c.report_error("Print Error", err);
                 }
             });
 
