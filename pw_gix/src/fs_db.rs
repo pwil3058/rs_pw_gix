@@ -3,19 +3,13 @@
 //! File system database of the current directory to feed file tree
 //! stores/views
 
-//use std::cell::RefCell;
-//use std::clone::Clone;
-//use std::collections::HashMap;
-//use std::io::Write;
 use std::rc::Rc;
 
 use gtk::TreeIter; //{StaticType, ToValue, TreeIter};
 
-//use crypto_hash::{Algorithm, Hasher};
-
-//use pw_pathux::str_path::*;
 use pw_pathux::UsableDirEntry;
 
+pub use crate::glibx::*;
 pub use crate::gtkx::tree_store::TreeRowOps;
 pub use crate::gtkx::value::Row;
 
@@ -321,66 +315,32 @@ macro_rules! impl_simple_fs_object {
             }
 
             fn row_is_a_dir<S: TreeRowOps>(store: &S, iter: &TreeIter) -> bool {
-                store
-                    .get_value(iter, IS_DIR)
-                    .get::<bool>()
-                    .unwrap()
-                    .unwrap()
+                store.get_value(iter, IS_DIR).get_ok_some::<bool>()
             }
 
             fn row_is_place_holder<S: TreeRowOps>(store: &S, iter: &TreeIter) -> bool {
-                store
-                    .get_value(iter, NAME)
-                    .get::<String>()
-                    .unwrap()
-                    .unwrap()
-                    .as_str()
-                    == "(empty)"
+                store.get_value(iter, NAME).get_ok_some::<String>().as_str() == "(empty)"
             }
 
             fn get_name_from_row<S: TreeRowOps>(store: &S, iter: &TreeIter) -> String {
-                store
-                    .get_value(iter, NAME)
-                    .get::<String>()
-                    .unwrap()
-                    .unwrap()
+                store.get_value(iter, NAME).get_ok_some::<String>()
             }
 
             fn get_path_from_row<S: TreeRowOps>(store: &S, iter: &TreeIter) -> String {
-                store
-                    .get_value(iter, PATH)
-                    .get::<String>()
-                    .unwrap()
-                    .unwrap()
+                store.get_value(iter, PATH).get_ok_some::<String>()
             }
 
             fn update_row_if_required<S: TreeRowOps>(&self, store: &S, iter: &TreeIter) -> bool {
                 assert_eq!(
                     self.name,
-                    store
-                        .get_value(iter, NAME)
-                        .get::<String>()
-                        .unwrap()
-                        .unwrap()
+                    store.get_value(iter, NAME).get_ok_some::<String>()
                 );
                 let mut changed = false;
-                if self.path
-                    != store
-                        .get_value(iter, PATH)
-                        .get::<String>()
-                        .unwrap()
-                        .unwrap()
-                {
+                if self.path != store.get_value(iter, PATH).get_ok_some::<String>() {
                     store.set_value(iter, PATH as u32, &self.path.to_value());
                     changed = true;
                 }
-                if self.is_dir
-                    != store
-                        .get_value(iter, IS_DIR)
-                        .get::<bool>()
-                        .unwrap()
-                        .unwrap()
-                {
+                if self.is_dir != store.get_value(iter, IS_DIR).get_ok_some::<bool>() {
                     store.set_value(iter, IS_DIR as u32, &self.is_dir.to_value());
                     if self.is_dir {
                         store.set_value(iter, ICON as u32, &"stock_directory".to_value());

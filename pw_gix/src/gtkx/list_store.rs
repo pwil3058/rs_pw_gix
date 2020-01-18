@@ -7,6 +7,7 @@ use gtk;
 
 pub use super::tree_model::{self, TreeModelRowOps};
 pub use super::value::Row;
+pub use crate::glibx::*;
 
 // NB: when done with the returned rows their items need to be unset?
 #[macro_export]

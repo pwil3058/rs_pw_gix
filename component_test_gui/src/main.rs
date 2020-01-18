@@ -15,6 +15,7 @@ use pw_gix::{
         Colour, RGB,
     },
     gdk_pixbufx::viewer::*,
+    glibx::*,
     gtkx::{
         check_button::MutuallyExclusiveCheckButtonsBuilder,
         combo_box_text::SortedUnique,
@@ -115,8 +116,8 @@ macro_rules! are_equal_as {
     ( $v1:expr, $v2:expr, $t:ty ) => {{
         assert_eq!($v1.type_(), $v2.type_());
         // TODO: panic if extracted values are None
-        let v1: Option<$t> = $v1.get().unwrap();
-        let v2: Option<$t> = $v2.get().unwrap();
+        let v1: Option<$t> = $v1.get_ok();
+        let v2: Option<$t> = $v2.get_ok();
         v1 == v2
     }};
 }
@@ -299,9 +300,12 @@ fn test_list_store_row_buffer() {
     buffer.finalise();
     assert!(buffer.is_current());
     let rows = buffer.get_rows();
-    assert_eq!(rows[0][0].get(), Ok(Some("one")));
-    assert_eq!(rows[1][0].get(), Ok(Some("two")));
-    assert_eq!(rows[2][0].get(), Ok(Some("three")));
+    assert_eq!(rows[0][0].get_ok(), Some("one"));
+    assert_eq!(rows[1][0].get_ok(), Some("two"));
+    assert_eq!(rows[2][0].get_ok(), Some("three"));
+    assert_eq!(rows[0][0].get_ok_some::<String>(), "one".to_string());
+    assert_eq!(rows[1][0].get_ok_some::<&str>(), "two");
+    assert_eq!(rows[2][0].get_ok_some::<&str>(), "three");
 }
 
 fn test_colour_attributes() {

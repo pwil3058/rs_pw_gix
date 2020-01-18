@@ -4,6 +4,7 @@ use gtk;
 use gtk::prelude::*;
 
 pub use super::value::Row;
+pub use crate::glibx::*;
 
 // NB: when done with the returned row it's items need to be unset?
 #[macro_export]

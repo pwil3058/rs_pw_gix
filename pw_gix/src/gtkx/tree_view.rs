@@ -11,10 +11,7 @@ macro_rules! get_row_item_for_event {
             if let Some(path) = location.0 {
                 if let Some(store) = $view.get_model() {
                     if let Some(iter) = store.get_iter(&path) {
-                        result = store
-                            .get_value(&iter, $index)
-                            .get::<$type>()
-                            .expect("wrong type");
+                        result = store.get_value(&iter, $index).get_ok::<$type>()
                     }
                 }
             }
@@ -29,10 +26,7 @@ macro_rules! get_row_item_for_tree_path {
         let mut result: Option<$type> = None;
         if let Some(store) = $view.get_model() {
             if let Some(iter) = store.get_iter(&$tree_path) {
-                result = store
-                    .get_value(&iter, $index)
-                    .get::<$type>()
-                    .expect("wrong type");
+                result = store.get_value(&iter, $index).get_ok::<$type>()
             }
         }
         result

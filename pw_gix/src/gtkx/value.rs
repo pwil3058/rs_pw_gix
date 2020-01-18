@@ -1,12 +1,14 @@
 // Copyright 2017 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
+pub use crate::glibx::*;
+
 #[macro_export]
 macro_rules! are_equal_as {
     ( $v1:expr, $v2:expr, $t:ty ) => {{
         assert_eq!($v1.type_(), $v2.type_());
         // TODO: panic if extracted values are None
-        let v1: Option<$t> = $v1.get().unwrap();
-        let v2: Option<$t> = $v2.get().unwrap();
+        let v1: Option<$t> = $v1.get_ok();
+        let v2: Option<$t> = $v2.get_ok();
         v1 == v2
     }};
 }
