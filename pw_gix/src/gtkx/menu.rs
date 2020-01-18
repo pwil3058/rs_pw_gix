@@ -165,6 +165,34 @@ impl WrappedMenu {
     }
 }
 
+pub struct WrappedMenuBuilder<'a> {
+    items: &'a [(&'a str, &'a str, &'a str)],
+}
+
+impl<'a> WrappedMenuBuilder<'a> {
+    pub fn new() -> Self {
+        Self { items: &[] }
+    }
+
+    pub fn items(&mut self, items: &'a [(&'a str, &'a str, &'a str)]) -> &Self {
+        self.items = items;
+        self
+    }
+
+    pub fn build(self) -> WrappedMenu {
+        let pm = WrappedMenu {
+            menu: gtk::Menu::new(),
+            items: RefCell::new(HashMap::<String, gtk::MenuItem>::new()),
+        };
+        for &(name, label_text, tooltip_text) in self.items.iter() {
+            pm.append_item(name, label_text, tooltip_text);
+        }
+        pm.menu.show_all();
+
+        pm
+    }
+}
+
 pub struct ManagedMenu {
     menu: gtk::Menu,
     items: Rc<ConditionalWidgetGroups<gtk::MenuItem>>,
@@ -308,19 +336,20 @@ impl ManagedMenu {
     }
 }
 
-pub struct ManagedMenuBuilder<'a, 'b> {
+pub struct ManagedMenuBuilder<'a, 'b, 'c> {
     wsc: WidgetStatesControlled,
     selection: Option<&'a gtk::TreeSelection>,
     change_notifier: Option<&'b Rc<ChangedCondnsNotifier>>,
-    //    items: &[(&str, &str, Option<&gtk::Image>, &str, u64)],
+    items: &'c [(&'c str, &'c str, Option<&'c gtk::Image>, &'c str, u64)],
 }
 
-impl<'a, 'b> ManagedMenuBuilder<'a, 'b> {
+impl<'a, 'b, 'c> ManagedMenuBuilder<'a, 'b, 'c> {
     pub fn new() -> Self {
         Self {
             wsc: WidgetStatesControlled::Sensitivity,
             selection: None,
             change_notifier: None,
+            items: &[],
         }
     }
 
@@ -339,6 +368,14 @@ impl<'a, 'b> ManagedMenuBuilder<'a, 'b> {
         self
     }
 
+    pub fn items(
+        &mut self,
+        items: &'c [(&'c str, &'c str, Option<&'c gtk::Image>, &'c str, u64)],
+    ) -> &Self {
+        self.items = items;
+        self
+    }
+
     pub fn build(self) -> ManagedMenu {
         let menu = gtk::MenuBuilder::new().build();
         let items = ConditionalWidgetGroups::<gtk::MenuItem>::new(
@@ -347,9 +384,9 @@ impl<'a, 'b> ManagedMenuBuilder<'a, 'b> {
             self.change_notifier,
         );
         let mm = ManagedMenu { menu, items };
-        //        for &(name, label_text, image, tooltip_text, condns) in self.items.iter() {
-        //            mm.append_item(name, label_text, image, tooltip_text, condns);
-        //        }
+        for &(name, label_text, image, tooltip_text, condns) in self.items.iter() {
+            mm.append_item(name, label_text, image, tooltip_text, condns);
+        }
         mm.menu.show_all();
 
         mm
@@ -541,5 +578,80 @@ impl DualManagedMenu {
         if self.sensitivity.len() > 0 {
             self.menu.popup_easy(event.get_button(), event.get_time());
         }
+    }
+}
+
+pub struct DualManagedMenuBuilder<'a, 'b, 'c> {
+    wsc: WidgetStatesControlled,
+    selection: Option<&'a gtk::TreeSelection>,
+    change_notifier: Option<&'b Rc<ChangedCondnsNotifier>>,
+    items: &'c [(&'c str, &'c str, Option<&'c gtk::Image>, &'c str, u64, u64)],
+}
+
+impl<'a, 'b, 'c> DualManagedMenuBuilder<'a, 'b, 'c> {
+    pub fn new() -> Self {
+        Self {
+            wsc: WidgetStatesControlled::Sensitivity,
+            selection: None,
+            change_notifier: None,
+            items: &[],
+        }
+    }
+
+    pub fn states_controlled(&mut self, wsc: WidgetStatesControlled) -> &Self {
+        self.wsc = wsc;
+        self
+    }
+
+    pub fn selection(&mut self, selection: &'a gtk::TreeSelection) -> &Self {
+        self.selection = Some(selection);
+        self
+    }
+
+    pub fn change_notifier(&mut self, change_notifier: &'b Rc<ChangedCondnsNotifier>) -> &Self {
+        self.change_notifier = Some(change_notifier);
+        self
+    }
+
+    pub fn items(
+        &mut self,
+        items: &'c [(&'c str, &'c str, Option<&'c gtk::Image>, &'c str, u64, u64)],
+    ) -> &Self {
+        self.items = items;
+        self
+    }
+
+    pub fn build(self) -> DualManagedMenu {
+        let menu = gtk::MenuBuilder::new().build();
+        let sensitivity = ConditionalWidgetGroups::<gtk::MenuItem>::new(
+            self.wsc,
+            self.selection,
+            self.change_notifier,
+        );
+        let visibility = ConditionalWidgetGroups::<gtk::MenuItem>::new(
+            self.wsc,
+            self.selection,
+            self.change_notifier,
+        );
+        let mm = DualManagedMenu {
+            menu,
+            sensitivity,
+            visibility,
+        };
+        for &(name, label_text, image, tooltip_text, sensitivity_condns, visibility_condns) in
+            self.items.iter()
+        {
+            mm.append_item(
+                name,
+                label_text,
+                image,
+                tooltip_text,
+                sensitivity_condns,
+                visibility_condns,
+            );
+        }
+        mm.menu.show_all();
+
+        mm
     }
 }
