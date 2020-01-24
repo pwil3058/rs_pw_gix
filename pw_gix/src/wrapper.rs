@@ -15,22 +15,6 @@ use crate::printer::*;
 
 pub use pw_gix_derive::*;
 
-#[macro_export]
-macro_rules! define_gtkw_using_pwo {
-    () => (
-        fn get_toplevel_gtk_window(&self) -> Option<gtk::Window> {
-            if let Some(widget) = self.pwo().get_toplevel() {
-                if widget.is_toplevel() {
-                    if let Ok(window) = widget.dynamic_cast::<gtk::Window>() {
-                        return Some(window)
-                    }
-                }
-            };
-            None
-        }
-    )
-}
-
 pub trait PackableWidgetObject {
     type PWT: glib::IsA<gtk::Widget> + WidgetExt;
 
