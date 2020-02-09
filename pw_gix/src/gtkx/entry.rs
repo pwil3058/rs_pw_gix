@@ -142,8 +142,6 @@ impl HexEntryData {
     }
 }
 
-type HexEntry = Rc<HexEntryData>;
-
 fn sig_hex_digits(mut max_value: u32) -> usize {
     let mut width: usize = 0;
     while max_value != 0 {
@@ -153,12 +151,12 @@ fn sig_hex_digits(mut max_value: u32) -> usize {
     width
 }
 
-impl HexEntryInterface for HexEntry {
-    fn create() -> HexEntry {
+impl HexEntryData {
+    pub fn create() -> Rc<HexEntryData> {
         Self::create_with_max(u32::max_value())
     }
 
-    fn create_with_max(max_value: u32) -> HexEntry {
+    pub fn create_with_max(max_value: u32) -> Rc<HexEntryData> {
         let entry = gtk::Entry::new();
         let value: Cell<u32> = Cell::new(0);
         let width = sig_hex_digits(max_value);
@@ -229,9 +227,9 @@ pub trait RGBEntryInterface {
 #[derive(PWO)]
 pub struct RGBHexEntryBoxData {
     hbox: gtk::Box,
-    red_entry: HexEntry,
-    green_entry: HexEntry,
-    blue_entry: HexEntry,
+    red_entry: Rc<HexEntryData>,
+    green_entry: Rc<HexEntryData>,
+    blue_entry: Rc<HexEntryData>,
     callbacks: RefCell<Vec<Box<dyn Fn(RGB)>>>,
 }
 
@@ -274,13 +272,13 @@ impl RGBEntryInterface for RGBHexEntryBox {
         let max_value = u16::max_value() as u32;
         let red_label = gtk::Label::new(Some("Red"));
         red_label.set_widget_colour_rgb(RGB::RED);
-        let red_entry = HexEntry::create_with_max(max_value);
+        let red_entry = HexEntryData::create_with_max(max_value);
         let green_label = gtk::Label::new(Some("Green"));
         green_label.set_widget_colour_rgb(RGB::GREEN);
-        let green_entry = HexEntry::create_with_max(max_value);
+        let green_entry = HexEntryData::create_with_max(max_value);
         let blue_label = gtk::Label::new(Some("Blue"));
         blue_label.set_widget_colour_rgb(RGB::BLUE);
-        let blue_entry = HexEntry::create_with_max(max_value);
+        let blue_entry = HexEntryData::create_with_max(max_value);
         hbox.pack_start(&red_label, true, true, 0);
         hbox.pack_start(&red_entry.pwo(), true, true, 0);
         hbox.pack_start(&green_label, true, true, 0);
