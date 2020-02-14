@@ -193,6 +193,53 @@ impl<'a> WrappedMenuBuilder<'a> {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct MenuItemSpec {
+    name: String,
+    label: String,
+    image: Option<gtk::Image>,
+    tooltip: String,
+    condns: u64,
+}
+
+impl MenuItemSpec {
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn label(&self) -> &str {
+        &self.label
+    }
+
+    pub fn image(&self) -> Option<&gtk::Image> {
+        if let Some(ref image) = self.image {
+            Some(image)
+        } else {
+            None
+        }
+    }
+
+    pub fn tooltip(&self) -> &str {
+        &self.tooltip
+    }
+
+    pub fn condns(&self) -> u64 {
+        self.condns
+    }
+}
+
+impl From<(&str, &str, Option<gtk::Image>, &str, u64)> for MenuItemSpec {
+    fn from(tuple_: (&str, &str, Option<gtk::Image>, &str, u64)) -> Self {
+        Self {
+            name: tuple_.0.to_string(),
+            label: tuple_.1.to_string(),
+            image: tuple_.2,
+            tooltip: tuple_.3.to_string(),
+            condns: tuple_.4,
+        }
+    }
+}
+
 pub struct ManagedMenu {
     menu: gtk::Menu,
     items: Rc<ConditionalWidgetGroups<gtk::MenuItem>>,
