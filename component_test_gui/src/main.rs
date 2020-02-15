@@ -12,7 +12,7 @@ use pw_gix::{
             ChromaCAD, ColourAttributeDisplayInterface, ColourAttributeDisplayStackInterface,
             HueCAD, HueChromaValueCADS, ValueCAD,
         },
-        Colour, RGB,
+        Colour, HueConstants, RGBConstants, RGB,
     },
     gdk_pixbufx::viewer::*,
     glibx::*,
