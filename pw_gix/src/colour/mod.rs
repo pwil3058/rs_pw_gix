@@ -14,4 +14,3 @@ pub fn rgba_from_rgb(rgb: RGB) -> gdk::RGBA {
     }
 }
 
-pub mod attributes;

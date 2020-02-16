@@ -7,13 +7,7 @@ use gtk::prelude::*;
 use gtk::{BoxExt, ContainerExt, WidgetExt};
 
 use pw_gix::{
-    colour::{
-        attributes::{
-            ChromaCAD, ColourAttributeDisplayInterface, ColourAttributeDisplayStackInterface,
-            HueCAD, HueChromaValueCADS, ValueCAD,
-        },
-        Colour, HueConstants, RGBConstants, RGB,
-    },
+    colour::*,
     gdk_pixbufx::viewer::*,
     glibx::*,
     gtkx::{
@@ -37,7 +31,6 @@ fn main() {
 
     test_list_store_simple_row_ops();
     test_list_store_row_buffer();
-    test_colour_attributes();
 
     let vbox = gtk::Box::new(gtk::Orientation::Vertical, 0);
 
@@ -96,10 +89,6 @@ fn main() {
     println!("{:?} {:?}", rgb, RGB::BLACK);
     assert_eq!(rgb, RGB::BLACK);
     vbox.pack_start(&rgb_entry_box.pwo(), false, false, 0);
-
-    let hcv_cads = HueChromaValueCADS::create();
-    hcv_cads.set_colour(Some(&Colour::from(RGB::RED)));
-    vbox.pack_start(&hcv_cads.pwo(), false, false, 0);
 
     let button = gtk::Button::new_with_label("Image Viewer");
     vbox.pack_start(&button, false, false, 0);
@@ -306,26 +295,6 @@ fn test_list_store_row_buffer() {
     assert_eq!(rows[0][0].get_ok_some::<String>(), "one".to_string());
     assert_eq!(rows[1][0].get_ok_some::<&str>(), "two");
     assert_eq!(rows[2][0].get_ok_some::<&str>(), "three");
-}
-
-fn test_colour_attributes() {
-    let vcad = ValueCAD::create();
-
-    vcad.set_colour(Some(&Colour::from(RGB::RED)));
-    vcad.set_target_colour(Some(&Colour::from(RGB::BLUE)));
-
-    let hcad = HueCAD::create();
-
-    hcad.set_colour(Some(&Colour::from(RGB::RED)));
-    hcad.set_target_colour(Some(&Colour::from(RGB::BLUE)));
-
-    let ccad = ChromaCAD::create();
-
-    ccad.set_colour(Some(&Colour::from(RGB::RED)));
-    ccad.set_target_colour(Some(&Colour::from(RGB::BLUE)));
-
-    let hcv_cads = HueChromaValueCADS::create();
-    hcv_cads.set_colour(Some(&Colour::from(RGB::RED)));
 }
 
 fn launch_image_viewer() {
