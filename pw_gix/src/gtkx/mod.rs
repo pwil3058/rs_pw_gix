@@ -12,7 +12,6 @@ pub mod tree_store;
 pub mod tree_view;
 
 pub mod check_button;
-pub mod coloured;
 pub mod combo_box_text;
 pub mod dialog;
 pub mod drawing_area;
