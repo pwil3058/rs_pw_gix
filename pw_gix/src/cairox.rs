@@ -6,8 +6,6 @@ use cairo;
 use gdk::prelude::GdkContextExt;
 use gdk_pixbuf::Pixbuf;
 
-use crate::colour::*;
-
 pub use crate::geometry::*;
 
 /// Direction in which to draw indicators
@@ -27,8 +25,6 @@ pub trait Draw {
     fn draw_indicator(&self, position: Point, dirn: Dirn, size: f64);
     fn move_to_point(&self, point: Point);
     fn line_to_point(&self, point: Point);
-    fn set_source_colour(&self, rgb: &Colour);
-    fn set_source_colour_rgb(&self, rgb: RGB);
     fn set_source_surface_at(&self, surface: &cairo::Surface, position: Point);
     fn set_source_pixbuf_at(&self, pixbuf: &Pixbuf, position: Point);
 }
@@ -125,14 +121,6 @@ impl Draw for cairo::Context {
 
     fn line_to_point(&self, point: Point) {
         self.line_to(point.0, point.1);
-    }
-
-    fn set_source_colour(&self, colour: &Colour) {
-        self.set_source_colour_rgb(colour.rgb())
-    }
-
-    fn set_source_colour_rgb(&self, rgb: RGB) {
-        self.set_source_rgb(rgb[0], rgb[1], rgb[2])
     }
 
     fn set_source_surface_at(&self, surface: &cairo::Surface, position: Point) {

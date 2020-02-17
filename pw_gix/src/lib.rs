@@ -22,7 +22,6 @@ pub mod fs_db;
 pub mod wrapper;
 
 pub mod cairox;
-pub mod colour;
 pub mod file_tree;
 pub mod gdk_pixbufx;
 pub mod gdkx;
