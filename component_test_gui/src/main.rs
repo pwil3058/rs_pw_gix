@@ -7,15 +7,11 @@ use gtk::prelude::*;
 use gtk::{BoxExt, ContainerExt, WidgetExt};
 
 use pw_gix::{
-    colour::*,
     gdk_pixbufx::viewer::*,
     glibx::*,
     gtkx::{
-        check_button::MutuallyExclusiveCheckButtonsBuilder,
-        combo_box_text::SortedUnique,
-        entry::{RGBEntryInterface, RGBHexEntryBox},
-        list_store::*,
-        window::RememberGeometry,
+        check_button::MutuallyExclusiveCheckButtonsBuilder, combo_box_text::SortedUnique,
+        entry::HexEntryBuilder, list_store::*, window::RememberGeometry,
     },
     recollections,
     wrapper::*,
@@ -84,11 +80,8 @@ fn main() {
     );
     vbox.pack_start(&cbt, false, false, 0);
 
-    let rgb_entry_box = RGBHexEntryBox::create();
-    let rgb = rgb_entry_box.get_rgb();
-    println!("{:?} {:?}", rgb, RGB::BLACK);
-    assert_eq!(rgb, RGB::BLACK);
-    vbox.pack_start(&rgb_entry_box.pwo(), false, false, 0);
+    let hex_entry = HexEntryBuilder::<u8>::new().editable(true).build();
+    vbox.pack_start(&hex_entry.pwo(), false, false, 0);
 
     let button = gtk::Button::new_with_label("Image Viewer");
     vbox.pack_start(&button, false, false, 0);
