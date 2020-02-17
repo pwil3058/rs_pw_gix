@@ -21,7 +21,6 @@ pub mod fs_db;
 #[macro_use]
 pub mod wrapper;
 
-pub mod cairox;
 pub mod file_tree;
 pub mod gdk_pixbufx;
 pub mod gdkx;
