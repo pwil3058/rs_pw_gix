@@ -10,13 +10,12 @@ use std::clone::Clone;
 use std::collections::HashMap;
 use std::ops::BitOr;
 use std::rc::Rc;
-use std::sync::Mutex;
 
 use gtk::{TreeSelection, TreeSelectionExt, WidgetExt};
 
 /// A struct that enables the state of a subset of the conditions to
 /// be specified withoit effecting the othet conditions.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct MaskedCondns {
     pub condns: u64,
     pub mask: u64,
@@ -110,20 +109,19 @@ impl MaskedCondnProvider for TreeSelection {
     }
 }
 
+#[derive(Default)]
 pub struct ChangedCondnsNotifier {
     // TODO: remove mutexes: Gtk is single threaded
-    callbacks: Mutex<RefCell<Vec<(u64, Box<dyn Fn(MaskedCondns)>)>>>,
-    next_token: Mutex<Cell<u64>>,
+    callbacks: RefCell<Vec<(u64, Box<dyn Fn(MaskedCondns)>)>>,
+    next_token: Cell<u64>,
     current_condns: Cell<u64>,
 }
 
 impl ChangedCondnsNotifier {
     pub fn new(initial_condns: u64) -> Rc<Self> {
-        Rc::new(Self {
-            callbacks: Mutex::new(RefCell::new(Vec::new())),
-            next_token: Mutex::new(Cell::new(0)),
-            current_condns: Cell::new(initial_condns),
-        })
+        let ccn = Self::default();
+        ccn.current_condns.set(initial_condns);
+        Rc::new(ccn)
     }
 
     pub fn current_condns(&self) -> u64 {
@@ -131,27 +129,23 @@ impl ChangedCondnsNotifier {
     }
 
     pub fn register_callback(&self, callback: Box<dyn Fn(MaskedCondns)>) -> u64 {
-        let next_token = self.next_token.lock().unwrap();
-        let token = next_token.get();
-        next_token.set(token + 1);
+        let token = self.next_token.get();
+        self.next_token.set(token + 1);
 
-        let callbacks = self.callbacks.lock().unwrap();
-        callbacks.borrow_mut().push((token, callback));
+        self.callbacks.borrow_mut().push((token, callback));
 
         token
     }
 
     pub fn deregister_callback(&self, token: u64) {
-        let callbacks = self.callbacks.lock().unwrap();
-        let position = callbacks.borrow().iter().position(|x| x.0 == token);
+        let position = self.callbacks.borrow().iter().position(|x| x.0 == token);
         if let Some(position) = position {
-            let _ = callbacks.borrow_mut().remove(position);
+            let _ = self.callbacks.borrow_mut().remove(position);
         }
     }
 
     pub fn notify_changed_condns(&self, masked_condns: MaskedCondns) {
-        let callbacks = self.callbacks.lock().unwrap();
-        for (_, callback) in callbacks.borrow().iter() {
+        for (_, callback) in self.callbacks.borrow().iter() {
             callback(masked_condns)
         }
         self.current_condns
@@ -164,6 +158,12 @@ pub enum WidgetStatesControlled {
     Sensitivity,
     Visibility,
     Both,
+}
+
+impl Default for WidgetStatesControlled {
+    fn default() -> Self {
+        Self::Sensitivity
+    }
 }
 
 use self::WidgetStatesControlled::*;
@@ -182,8 +182,8 @@ impl<W> ConditionalWidgetGroup<W>
 where
     W: WidgetExt + Clone + PartialEq,
 {
-    fn new(wsc: WidgetStatesControlled) -> ConditionalWidgetGroup<W> {
-        ConditionalWidgetGroup::<W> {
+    fn new(wsc: WidgetStatesControlled) -> Self {
+        Self {
             widget_states_controlled: wsc,
             widgets: HashMap::new(),
             is_on: false,
@@ -265,7 +265,7 @@ where
         wsc: WidgetStatesControlled,
         selection: Option<&gtk::TreeSelection>,
         change_notifier: Option<&Rc<ChangedCondnsNotifier>>,
-    ) -> Rc<ConditionalWidgetGroups<W>> {
+    ) -> Rc<Self> {
         let change_notifier = if let Some(change_notifier) = change_notifier {
             Rc::clone(&change_notifier)
         } else {
