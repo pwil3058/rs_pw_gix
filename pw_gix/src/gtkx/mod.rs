@@ -17,6 +17,7 @@ pub mod dialog;
 pub mod drawing_area;
 pub mod entry;
 pub mod menu;
+pub mod menu_ng;
 pub mod notebook;
 pub mod paned;
 pub mod tree_view_column;

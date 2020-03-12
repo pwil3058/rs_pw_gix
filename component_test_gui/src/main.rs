@@ -11,7 +11,8 @@ use pw_gix::{
     glibx::*,
     gtkx::{
         check_button::MutuallyExclusiveCheckButtonsBuilder, combo_box_text::SortedUnique,
-        entry::HexEntryBuilder, list_store::*, window::RememberGeometry,
+        entry::HexEntryBuilder, list_store::*, menu_ng::ManagedMenuBuilder,
+        window::RememberGeometry,
     },
     recollections,
     wrapper::*,
@@ -86,6 +87,26 @@ fn main() {
     let button = gtk::Button::new_with_label("Image Viewer");
     vbox.pack_start(&button, false, false, 0);
     button.connect_clicked(|_| launch_image_viewer());
+
+    let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    vbox.pack_start(&hbox, false, false, 0);
+    let menu_bar = gtk::MenuBarBuilder::new().build();
+    menu_bar.show();
+    hbox.pack_start(&menu_bar, true, true, 0);
+    let menu_item = gtk::MenuItemBuilder::new().label("Menu").build();
+    let menu1 = ManagedMenuBuilder::new()
+        .items(&[("remove", "Remove", None, "help help", 0)])
+        .build();
+    menu_item.set_submenu(Some(&menu1.pwo()));
+    menu_bar.add(&menu_item);
+    menu1
+        .append_item("add", "Add", None, "help message", 0)
+        .connect_activate(|_| println!("add"));
+    menu1
+        .menu_item("remove")
+        .expect("unknown item")
+        .connect_activate(|_| println!("remove"));
+    menu_bar.show_all();
 
     vbox.show_all();
     win.add(&vbox);
