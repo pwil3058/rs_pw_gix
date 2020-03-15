@@ -38,14 +38,6 @@ impl BitOr for MaskedCondns {
     }
 }
 
-impl BitOr<u64> for MaskedCondns {
-    type Output = u64;
-
-    fn bitor(self, rhs: u64) -> u64 {
-        self.condns | (rhs & !self.mask)
-    }
-}
-
 /// A trait that we can use to add a function to existing objects to
 /// determine their states,
 pub trait MaskedCondnProvider {
@@ -363,7 +355,7 @@ where
 
     pub fn update_condns(&self, changed_condns: MaskedCondns) {
         assert!(changed_condns.is_consistent());
-        let new_condns = changed_condns.condns | self.current_condns.get();
+        let new_condns = changed_condns.condns | (self.current_condns.get() & !changed_condns.mask);
         for (key_condns, group) in self.groups.borrow_mut().iter_mut() {
             if changed_condns.mask & key_condns != 0 {
                 group.set_state((key_condns & new_condns) == *key_condns);
