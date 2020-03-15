@@ -15,7 +15,7 @@ use crate::{
     geometry::{AspectRatio, Point, Rectangle, Size, SizeExt},
     gtkx::{
         drawing_area::XYSelection,
-        menu::{ManagedMenu, ManagedMenuBuilder},
+        menu_ng::{ManagedMenu, ManagedMenuBuilder},
     },
     recollections,
     sav_state::{MaskedCondns, SAV_NEXT_CONDN},
@@ -498,9 +498,7 @@ impl PixbufViewBuilder {
             .popup_menu
             .append_item(
                 "copy",
-                "Copy",
-                None,
-                "Copy the selection to the clipboard",
+                &("Copy", None, Some("Copy the selection to the clipboard")).into(),
                 PixbufView::SAV_HAS_IMAGE + PixbufView::SAV_HAS_SELECTION,
             )
             .connect_activate(move |_| {
@@ -521,9 +519,7 @@ impl PixbufViewBuilder {
             .popup_menu
             .append_item(
                 "load",
-                "Load",
-                None,
-                "Load an image from a nominated file.",
+                &("Load", None, Some("Load an image from a nominated file.")).into(),
                 0,
             )
             .connect_activate(move |_| {
@@ -550,9 +546,7 @@ impl PixbufViewBuilder {
             .popup_menu
             .append_item(
                 "print",
-                "Print",
-                None,
-                "Print the image.",
+                &("Print", None, Some("Print the image.")).into(),
                 PixbufView::SAV_HAS_IMAGE,
             )
             .connect_activate(move |_| {
@@ -568,9 +562,12 @@ impl PixbufViewBuilder {
             .popup_menu
             .append_item(
                 "print selection",
-                "Print Selection",
-                None,
-                "Print the selectef part of the image",
+                &(
+                    "Print Selection",
+                    None,
+                    Some("Print the selectef part of the image"),
+                )
+                    .into(),
                 PixbufView::SAV_HAS_IMAGE + PixbufView::SAV_HAS_SELECTION,
             )
             .connect_activate(move |_| {
