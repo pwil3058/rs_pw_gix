@@ -95,12 +95,15 @@ fn main() {
     hbox.pack_start(&menu_bar, true, true, 0);
     let menu_item = gtk::MenuItemBuilder::new().label("Menu").build();
     let menu1 = ManagedMenuBuilder::new()
-        .items(&[("remove", "Remove", None, "help help", 0)])
+        .items(&[
+            ("remove", ("Remove", None, Some("help help")).into(), 0),
+            ("delete", ("Delete", None, None).into(), 0),
+        ])
         .build();
     menu_item.set_submenu(Some(&menu1.pwo()));
     menu_bar.add(&menu_item);
     menu1
-        .append_item("add", "Add", None, "help message", 0)
+        .append_item("add", &("Add", None, Some("help message")).into(), 0)
         .connect_activate(|_| println!("add"));
     menu1
         .menu_item("remove")

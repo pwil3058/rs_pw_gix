@@ -102,7 +102,7 @@ mod recollect {
                 file.unlock()
                     .unwrap_or_else(|err| panic!("{:?}: line {:?}: {:?}", file!(), line!(), err));
                 match hash_map.get(name) {
-                    Some(ref s) => Some(s.to_string()),
+                    Some(s) => Some(s.to_string()),
                     None => None,
                 }
             } else {

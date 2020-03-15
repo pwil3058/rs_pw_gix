@@ -8,6 +8,48 @@ use gtk::prelude::*;
 
 use crate::{sav_state::*, wrapper::*};
 
+#[derive(Debug, Clone)]
+pub struct MenuItemSpec {
+    label: String,
+    image: Option<gtk::Image>,
+    tooltip_text: Option<String>,
+}
+
+impl From<(&str, Option<gtk::Image>, Option<&str>)> for MenuItemSpec {
+    fn from(tuple_: (&str, Option<gtk::Image>, Option<&str>)) -> Self {
+        Self {
+            label: tuple_.0.to_string(),
+            image: tuple_.1,
+            tooltip_text: if let Some(text) = tuple_.2 {
+                Some(text.to_string())
+            } else {
+                None
+            },
+        }
+    }
+}
+
+impl From<&MenuItemSpec> for gtk::MenuItem {
+    fn from(menu_item_spec: &MenuItemSpec) -> Self {
+        let item = gtk::MenuItem::new();
+        let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        if let Some(image) = &menu_item_spec.image {
+            h_box.pack_start(image, false, false, 0);
+        }
+        let label = gtk::Label::new(Some(&menu_item_spec.label));
+        label.set_xalign(0.0);
+        h_box.pack_start(&label, true, true, 0);
+        item.add(&h_box);
+        item.set_tooltip_text(if let Some(string) = &menu_item_spec.tooltip_text {
+            Some(string)
+        } else {
+            None
+        });
+
+        item
+    }
+}
+
 #[derive(PWO)]
 pub struct ManagedMenu {
     menu: gtk::Menu,
@@ -47,35 +89,13 @@ impl ManagedMenu {
         self.menu.show_all();
     }
 
-    fn new_item(
-        &self,
-        label_text: &str,
-        image: Option<&gtk::Image>,
-        tooltip_text: &str,
-    ) -> gtk::MenuItem {
-        let item = gtk::MenuItem::new();
-        let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-        if let Some(image) = image {
-            h_box.pack_start(image, false, false, 0);
-        }
-        let label = gtk::Label::new(Some(label_text));
-        label.set_xalign(0.0);
-        h_box.pack_start(&label, true, true, 0);
-        item.add(&h_box);
-        item.set_tooltip_text(Some(tooltip_text));
-
-        item
-    }
-
     pub fn append_item(
         &self,
         name: &'static str,
-        label_text: &str,
-        image: Option<&gtk::Image>,
-        tooltip_text: &str,
+        menu_item_spec: &MenuItemSpec,
         condns: u64,
     ) -> gtk::MenuItem {
-        let item = self.new_item(label_text, image, tooltip_text);
+        let item = menu_item_spec.into();
         self.append_menu_item(name, &item, condns);
 
         item
@@ -84,13 +104,11 @@ impl ManagedMenu {
     pub fn insert_item(
         &self,
         name: &'static str,
-        label_text: &str,
-        image: Option<&gtk::Image>,
-        tooltip_text: &str,
+        menu_item_spec: &MenuItemSpec,
         condns: u64,
         position: i32,
     ) -> gtk::MenuItem {
-        let item = self.new_item(label_text, image, tooltip_text);
+        let item = menu_item_spec.into();
         self.insert_menu_item(name, &item, condns, position);
 
         item
@@ -99,12 +117,10 @@ impl ManagedMenu {
     pub fn prepend_item(
         &self,
         name: &'static str,
-        label_text: &str,
-        image: Option<&gtk::Image>,
-        tooltip_text: &str,
+        menu_item_spec: &MenuItemSpec,
         condns: u64,
     ) -> gtk::MenuItem {
-        let item = self.new_item(label_text, image, tooltip_text);
+        let item = menu_item_spec.into();
         self.prepend_menu_item(name, &item, condns);
 
         item
@@ -140,17 +156,15 @@ impl ManagedMenu {
     }
 }
 
-pub struct ManagedMenuBuilder<'c> {
+#[derive(Default)]
+pub struct ManagedMenuBuilder {
     conditional_widgets_builder: ConditionalWidgetsBuilder,
-    items: &'c [(&'static str, &'c str, Option<&'c gtk::Image>, &'c str, u64)],
+    items: Vec<(&'static str, MenuItemSpec, u64)>,
 }
 
-impl<'c> ManagedMenuBuilder<'c> {
+impl ManagedMenuBuilder {
     pub fn new() -> Self {
-        Self {
-            conditional_widgets_builder: ConditionalWidgetsBuilder::new(),
-            items: &[],
-        }
+        Self::default()
     }
 
     pub fn widget_states_controlled(
@@ -173,11 +187,8 @@ impl<'c> ManagedMenuBuilder<'c> {
         self
     }
 
-    pub fn items(
-        &mut self,
-        items: &'c [(&'static str, &'c str, Option<&'c gtk::Image>, &'c str, u64)],
-    ) -> &Self {
-        self.items = items;
+    pub fn items(&mut self, items: &[(&'static str, MenuItemSpec, u64)]) -> &Self {
+        self.items = items.to_vec();
         self
     }
 
@@ -187,8 +198,8 @@ impl<'c> ManagedMenuBuilder<'c> {
             .conditional_widgets_builder
             .build::<&'static str, gtk::MenuItem>();
         let mm = ManagedMenu { menu, items };
-        for &(name, label_text, image, tooltip_text, condns) in self.items.iter() {
-            mm.append_item(name, label_text, image, tooltip_text, condns);
+        for (name, menu_item_spec, condns) in self.items.iter() {
+            mm.append_item(*name, menu_item_spec, *condns);
         }
         mm.menu.show_all();
 
