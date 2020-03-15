@@ -541,7 +541,7 @@ where
 
     pub fn update_condns(&self, changed_condns: MaskedCondns) {
         debug_assert!(changed_condns.is_consistent());
-        let new_condns = changed_condns.condns | self.current_condns.get();
+        let new_condns = changed_condns.condns | (self.current_condns.get() & !changed_condns.mask);
         for (key_condns, group) in self.groups.borrow_mut().iter_mut() {
             if changed_condns.mask & key_condns != 0 {
                 group.set_state((key_condns & new_condns) == *key_condns);
