@@ -47,7 +47,7 @@ impl TabRemoveLabelInterface for TabRemoveLabel {
         button.set_relief(gtk::ReliefStyle::None);
         button.set_focus_on_click(false);
         let icon = gio::ThemedIcon::new_with_default_fallbacks("window-close-symbolic");
-        let image = gtk::Image::new_from_gicon(&icon, gtk::IconSize::Menu.into());
+        let image = gtk::Image::new_from_gicon(&icon, gtk::IconSize::Menu);
         image.set_tooltip_text(tooltip_text);
         button.add(&image);
         //button.set_name("notebook-tab-remove-button");

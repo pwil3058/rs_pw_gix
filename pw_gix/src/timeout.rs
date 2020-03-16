@@ -5,11 +5,13 @@ use std::rc::Rc;
 
 use gtk::{self, CheckMenuItemExt};
 
+pub type NumberedCallbacks = Vec<(u32, Box<dyn Fn()>)>;
+
 pub struct ControlledTimeoutCycle {
     interval_secs: Cell<u32>,
     stopped: Cell<bool>, // Help try to stop multiple timeouts being in play
     check_menu_item: gtk::CheckMenuItem,
-    callbacks: RefCell<Vec<(u32, Box<dyn Fn()>)>>,
+    callbacks: RefCell<NumberedCallbacks>,
     next_cb_id: Cell<u32>,
 }
 

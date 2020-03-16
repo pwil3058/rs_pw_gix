@@ -163,7 +163,7 @@ pub mod recollections {
     /// `main()` function e.g.
     ///
     /// ```no_run
-    /// fn main() {
+    /// fn main_() {
     ///     use std::env;
     ///     use pw_gix::recollections;
     ///

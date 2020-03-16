@@ -75,12 +75,7 @@ pub struct PrintError(Option<glib::Error>);
 
 impl fmt::Display for PrintError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "PrintError({}): {:?}.",
-            self.description(),
-            self.source()
-        )?;
+        write!(f, "PrintError({}): {:?}.", self.to_string(), self.source())?;
         Ok(())
     }
 }
@@ -169,7 +164,7 @@ impl MarkupPrinterInterface for Rc<MarkupPrinterCore> {
                         panic!("File: {} Line: {}", file!(), line!());
                     }
                 }
-                if page.len() > 0 {
+                if !page.is_empty() {
                     mp_c.pages.borrow_mut().push(page);
                 };
                 pr_op.set_n_pages(mp_c.pages.borrow().len() as i32);

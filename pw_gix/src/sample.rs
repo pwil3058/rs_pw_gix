@@ -2,7 +2,7 @@
 
 use std::clone;
 use std::convert;
-use std::error::{self, Error};
+use std::error;
 use std::fmt;
 use std::io;
 use std::process::Command;
@@ -42,7 +42,7 @@ impl clone::Clone for FailureReason {
             FailureReason::KeyboardGrabFailed(status) => FailureReason::KeyboardGrabFailed(status),
             FailureReason::IOError(ref error) => {
                 let kind = error.kind();
-                let description = error.description().clone();
+                let description = error.to_string();
                 let cloned_error = io::Error::new(kind, description);
                 FailureReason::IOError(cloned_error)
             }
@@ -69,7 +69,7 @@ impl Failure {
             FailureReason::KeyboardNotFound => "Keyboard not found".to_string(),
             FailureReason::KeyboardGrabFailed(_) => "Keyboard grab failed".to_string(),
             FailureReason::IOError(ref error) => {
-                let description = error.description().clone();
+                let description = error.to_string();
                 format!("I/O Error: {}", description)
             }
         };

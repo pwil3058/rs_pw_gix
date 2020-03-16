@@ -17,7 +17,9 @@ pub trait RememberGeometry: gtk::WidgetExt + gtk::GtkWindowExt {
                 self.move_(x, y);
             } else {
                 let msg = format!("Error parsing \"{}\"\n", key);
-                io::stderr().write(msg.as_bytes()).unwrap();
+                io::stderr()
+                    .write_all(msg.as_bytes())
+                    .expect("nowhere to go");
                 self.set_default_size(default_size.0, default_size.1)
             }
         } else {

@@ -635,14 +635,20 @@ pub struct DualManagedMenuBuilder<'a, 'b, 'c> {
     items: &'c [(&'c str, &'c str, Option<&'c gtk::Image>, &'c str, u64, u64)],
 }
 
-impl<'a, 'b, 'c> DualManagedMenuBuilder<'a, 'b, 'c> {
-    pub fn new() -> Self {
+impl<'a, 'b, 'c> Default for DualManagedMenuBuilder<'a, 'b, 'c> {
+    fn default() -> Self {
         Self {
             wsc: WidgetStatesControlled::Sensitivity,
             selection: None,
             change_notifier: None,
             items: &[],
         }
+    }
+}
+
+impl<'a, 'b, 'c> DualManagedMenuBuilder<'a, 'b, 'c> {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn states_controlled(&mut self, wsc: WidgetStatesControlled) -> &Self {

@@ -3,7 +3,6 @@
 /// Obsolete: use viewer module instead
 use std::cell::{Cell, RefCell};
 use std::convert::From;
-use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -172,7 +171,7 @@ impl PixbufViewCore {
         let o_last_file = recollections::recall("image_viewer::last_image_file");
         if let Some(ref last_file_path) = o_last_file {
             if let Err(err) = self.set_pixbuf_fm_file(last_file_path) {
-                self.inform_user("Failed To Load Previous Image", Some(err.description()));
+                self.inform_user("Failed To Load Previous Image", Some(&err.to_string()));
             };
         };
     }
@@ -545,7 +544,7 @@ impl PixbufViewInterface for PixbufView {
             };
             if let Some(path) = pbv_c.ask_file_path(Some("Image File"), last_file, true) {
                 if let Err(err) = pbv_c.set_pixbuf_fm_file(path) {
-                    pbv_c.inform_user("Failed To Load Image", Some(err.description()));
+                    pbv_c.inform_user("Failed To Load Image", Some(&err.to_string()));
                 }
             }
         });

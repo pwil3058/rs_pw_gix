@@ -21,7 +21,7 @@ pub trait RememberPosition: gtk::WidgetExt + gtk::PanedExt {
                 return last_position;
             } else {
                 let msg = format!("Error parsing \"{}\"\n", key);
-                io::stderr().write(msg.as_bytes()).unwrap();
+                io::stderr().write_all(msg.as_bytes()).unwrap();
             }
         };
         default

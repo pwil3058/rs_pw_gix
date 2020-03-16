@@ -14,7 +14,7 @@ use std::rc::Rc;
 use gtk::{TreeSelection, TreeSelectionExt, WidgetExt};
 
 /// A struct that enables the state of a subset of the conditions to
-/// be specified withoit effecting the othet conditions.
+/// be specified without effecting the other conditions.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct MaskedCondns {
     pub condns: u64,
@@ -48,7 +48,7 @@ pub trait MaskedCondnProvider {
 pub const SAV_DONT_CARE: u64 = 0;
 /// Interesting conditions for a TreeSelection that are useful for
 /// tailoring pop up menus.
-pub const SAV_SELN_NONE: u64 = 1 << 0;
+pub const SAV_SELN_NONE: u64 = 1; // << 0;
 pub const SAV_SELN_MADE: u64 = 1 << 1;
 pub const SAV_SELN_UNIQUE: u64 = 1 << 2;
 pub const SAV_SELN_PAIR: u64 = 1 << 3;
@@ -109,10 +109,12 @@ impl MaskedCondnProvider for TreeSelection {
     }
 }
 
+pub type NumberedChangeCallback = (u64, Box<dyn Fn(MaskedCondns)>);
+
 #[derive(Default)]
 pub struct ChangedCondnsNotifier {
     // TODO: remove mutexes: Gtk is single threaded
-    callbacks: RefCell<Vec<(u64, Box<dyn Fn(MaskedCondns)>)>>,
+    callbacks: RefCell<Vec<NumberedChangeCallback>>,
     next_token: Cell<u64>,
     current_condns: Cell<u64>,
 }
@@ -216,7 +218,7 @@ where
                 widget.set_visible(self.is_on);
             }
         }
-        self.widgets.insert(name.to_string(), widget.clone());
+        self.widgets.insert(name.to_string(), widget);
     }
 
     fn set_state(&mut self, on: bool) {
@@ -293,6 +295,10 @@ where
         cwg.change_notifier
             .register_callback(Box::new(move |condns| cwg_clone.update_condns(condns)));
         cwg
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     pub fn len(&self) -> usize {
@@ -477,6 +483,10 @@ where
     W: WidgetExt + Clone + PartialEq,
     K: Eq + std::hash::Hash + std::fmt::Debug,
 {
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn len(&self) -> usize {
         let mut len = 0;
         for group in self.groups.borrow().values() {
