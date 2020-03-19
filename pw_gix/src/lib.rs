@@ -30,6 +30,7 @@ pub mod glibx;
 pub mod gtkx;
 pub mod printer;
 pub mod sample;
+pub mod sav;
 pub mod sav_state;
 pub mod timeout;
 
