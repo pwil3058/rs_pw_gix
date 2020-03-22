@@ -18,6 +18,10 @@ use pw_gix::{
     wrapper::*,
 };
 
+mod sav_test;
+
+use sav_test::SavTest;
+
 fn main() {
     recollections::init("./.recollections");
     if gtk::init().is_err() {
@@ -110,6 +114,9 @@ fn main() {
         .expect("unknown item")
         .connect_activate(|_| println!("remove"));
     menu_bar.show_all();
+
+    let sav_test = SavTest::new();
+    vbox.pack_start(&sav_test.pwo(), false, false, 0);
 
     vbox.show_all();
     win.add(&vbox);

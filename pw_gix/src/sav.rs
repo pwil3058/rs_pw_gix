@@ -5,6 +5,7 @@
 //! Up to 128 conditions can be used to describe a state.
 
 use std::{
+    cell::{Cell, RefCell},
     collections::HashMap,
     ops::{Add, BitAnd, BitOr, Not},
 };
@@ -13,7 +14,7 @@ use gtk::prelude::*;
 
 /// Set of boolean flags representing conditions that define a state
 #[derive(Debug, Default, PartialOrd, PartialEq, Ord, Eq, Clone, Copy)]
-pub struct Condns(u128);
+pub struct Condns(pub u128);
 
 pub const DONT_CARE: Condns = Condns(0);
 
@@ -71,7 +72,7 @@ impl Add<&Change> for Condns {
 /// The first member of the pair specifies which conditions should be changed and the second
 /// specifies the values that they should be given.
 #[derive(Debug, Default, PartialOrd, PartialEq, Ord, Eq, Clone, Copy)]
-pub struct Change(Condns, Condns);
+pub struct Change(pub Condns, pub Condns);
 
 impl Change {
     #[inline]
@@ -90,7 +91,7 @@ impl Change {
 }
 
 pub trait ApplyChange {
-    fn apply_changed_condns(&mut self, change: &Change);
+    fn apply_changed_condns(&self, change: &Change);
 }
 
 /// Conditions for a `Widget` to be sensitive, visible and/or both.
@@ -103,15 +104,35 @@ pub enum Policy {
 
 #[derive(Debug, Default)]
 pub struct Enforcer {
-    widget_policy: HashMap<gtk::Widget, Policy>,
-    current_condns: Condns,
+    widget_policy: RefCell<HashMap<gtk::Widget, Policy>>,
+    current_condns: Cell<Condns>,
+}
+
+impl Enforcer {
+    pub fn add_widget<W: IsA<gtk::Widget>>(&self, w: &W, policy: Policy) {
+        let widget = w.clone().upcast::<gtk::Widget>();
+        match &policy {
+            Policy::Sensitivity(condns) => {
+                widget.set_sensitive(self.current_condns.get().is_superset_of(condns))
+            }
+            Policy::Visibility(condns) => {
+                widget.set_visible(self.current_condns.get().is_superset_of(condns))
+            }
+            Policy::Both(s_condns, v_condns) => {
+                widget.set_sensitive(self.current_condns.get().is_superset_of(s_condns));
+                widget.set_visible(self.current_condns.get().is_superset_of(v_condns))
+            }
+        }
+        let result = self.widget_policy.borrow_mut().insert(widget, policy);
+        debug_assert!(result.is_none());
+    }
 }
 
 impl ApplyChange for Enforcer {
-    fn apply_changed_condns(&mut self, change: &Change) {
+    fn apply_changed_condns(&self, change: &Change) {
         debug_assert!(change.is_valid());
-        let new_condns = self.current_condns + change;
-        for (widget, policy) in self.widget_policy.iter() {
+        let new_condns = self.current_condns.get() + change;
+        for (widget, policy) in self.widget_policy.borrow().iter() {
             match policy {
                 Policy::Sensitivity(condns) => {
                     widget.set_sensitive(new_condns.is_superset_of(condns))
@@ -123,7 +144,7 @@ impl ApplyChange for Enforcer {
                 }
             }
         }
-        self.current_condns = new_condns;
+        self.current_condns.set(new_condns);
     }
 }
 
