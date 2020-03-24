@@ -30,8 +30,17 @@ impl Default for SavTest {
 }
 
 impl SavTest {
+    pub fn with_initial_condns(init_condns: Condns) -> Self {
+        Self {
+            vbox: gtk::Box::new(gtk::Orientation::Vertical, 0),
+            enforcer: Rc::new(Enforcer::with_initial_condns(init_condns)),
+        }
+    }
+}
+
+impl SavTest {
     pub fn new() -> Self {
-        let sav_test = Self::default();
+        let sav_test = Self::with_initial_condns(SAV_A_INACTIVE | SAV_B_INACTIVE);
 
         let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         sav_test.vbox.pack_start(&hbox, false, false, 0);
@@ -41,6 +50,13 @@ impl SavTest {
         sav_test
             .enforcer
             .add_widget(&button_a, Policy::Sensitivity(SAV_A_ACTIVE));
+
+        let check_button_b = gtk::CheckButtonBuilder::new().label("B not A").build();
+        hbox.pack_start(&check_button_b, false, false, 0);
+        sav_test.enforcer.add_widget(
+            &check_button_b,
+            Policy::Sensitivity(SAV_A_INACTIVE | SAV_B_ACTIVE),
+        );
 
         let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         sav_test.vbox.pack_start(&hbox, false, false, 0);

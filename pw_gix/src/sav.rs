@@ -109,6 +109,12 @@ pub struct Enforcer {
 }
 
 impl Enforcer {
+    pub fn with_initial_condns(init_condns: Condns) -> Self {
+        let enforcer = Enforcer::default();
+        enforcer.current_condns.set(init_condns);
+        enforcer
+    }
+
     pub fn add_widget<W: IsA<gtk::Widget>>(&self, w: &W, policy: Policy) {
         let widget = w.clone().upcast::<gtk::Widget>();
         match &policy {
