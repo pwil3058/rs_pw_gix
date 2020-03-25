@@ -90,6 +90,73 @@ impl Change {
     }
 }
 
+/// Interesting conditions for a TreeSelection that are useful for
+/// tailoring pop up menus.
+pub const SELN_NONE: Condns = Condns(1); // << 0;
+pub const SELN_MADE: Condns = Condns(1 << 1);
+pub const SELN_UNIQUE: Condns = Condns(1 << 2);
+pub const SELN_PAIR: Condns = Condns(1 << 3);
+pub const SELN_MADE_OR_HOVER_OK: Condns = Condns(1 << 4);
+pub const SELN_UNIQUE_OR_HOVER_OK: Condns = Condns(1 << 5);
+pub const SELN_CONDITIONS: Condns = Condns((1 << 6) - 1);
+/// Conditions for mouse hovering over a row in a TreeView or an area of interest in a DrawingArea
+pub const HOVER_OK: Condns = Condns(1 << 6);
+pub const HOVER_NOT_OK: Condns = Condns(1 << 7);
+pub const HOVER_CONDITIONS: Condns = Condns(HOVER_OK.0 | HOVER_NOT_OK.0);
+pub const NEXT_FLAG: u128 = 1 << 8;
+
+pub fn hover_change(hover_ok: bool) -> Change {
+    if hover_ok {
+        Change(HOVER_CONDITIONS, HOVER_OK)
+    } else {
+        Change(HOVER_CONDITIONS, HOVER_NOT_OK)
+    }
+}
+
+/// A trait that we can use to add a function to existing objects to
+/// determine the state of the subset of conditions that they are responsible
+/// for monitoring.
+pub trait ConditionSource {
+    fn conditions_subset(&self) -> Change;
+    fn conditions_subset_with_hover_ok(&self, hover_ok: bool) -> Change;
+}
+
+impl ConditionSource for gtk::TreeSelection {
+    fn conditions_subset(&self) -> Change {
+        match self.count_selected_rows() {
+            0 => Change(SELN_CONDITIONS, SELN_NONE),
+            1 => Change(SELN_CONDITIONS, SELN_MADE | SELN_UNIQUE),
+            2 => Change(SELN_CONDITIONS, SELN_MADE | SELN_PAIR),
+            _ => Change(SELN_CONDITIONS, SELN_MADE),
+        }
+    }
+
+    fn conditions_subset_with_hover_ok(&self, hover_ok: bool) -> Change {
+        let rel_condns = SELN_CONDITIONS | HOVER_CONDITIONS;
+        if hover_ok {
+            match self.count_selected_rows() {
+                0 => Change(rel_condns, SELN_NONE | HOVER_OK),
+                1 => Change(
+                    rel_condns,
+                    SELN_MADE | SELN_UNIQUE | HOVER_OK | SELN_UNIQUE_OR_HOVER_OK,
+                ),
+                2 => Change(
+                    rel_condns,
+                    SELN_MADE | SELN_PAIR | HOVER_OK | SELN_MADE_OR_HOVER_OK,
+                ),
+                _ => Change(rel_condns, SELN_MADE | HOVER_OK | SELN_MADE_OR_HOVER_OK),
+            }
+        } else {
+            match self.count_selected_rows() {
+                0 => Change(rel_condns, SELN_NONE | HOVER_NOT_OK),
+                1 => Change(rel_condns, SELN_MADE | SELN_UNIQUE | HOVER_NOT_OK),
+                2 => Change(rel_condns, SELN_MADE | SELN_PAIR | HOVER_NOT_OK),
+                _ => Change(rel_condns, SELN_MADE | HOVER_NOT_OK),
+            }
+        }
+    }
+}
+
 pub trait ApplyChange {
     fn apply_changed_condns(&self, change: &Change);
 }
