@@ -50,6 +50,10 @@ impl SavTest {
         sav_test
             .enforcer
             .add_widget(&button_a, Policy::Sensitivity(SAV_A_ACTIVE));
+        assert!(sav_test.enforcer.remove_widget(&button_a).is_ok());
+        sav_test
+            .enforcer
+            .add_widget(&button_a, Policy::Sensitivity(SAV_A_ACTIVE));
 
         let check_button_b = gtk::CheckButtonBuilder::new().label("B not A").build();
         hbox.pack_start(&check_button_b, false, false, 0);

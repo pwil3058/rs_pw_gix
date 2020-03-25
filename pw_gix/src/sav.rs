@@ -199,6 +199,14 @@ impl Enforcer {
         let result = self.widget_policy.borrow_mut().insert(widget, policy);
         debug_assert!(result.is_none());
     }
+
+    pub fn remove_widget<W: IsA<gtk::Widget>>(&self, w: &W) -> Result<(), &'static str> {
+        let widget = w.clone().upcast::<gtk::Widget>();
+        if let None = self.widget_policy.borrow_mut().remove(&widget) {
+            return Err("Widget not found");
+        };
+        Ok(())
+    }
 }
 
 impl ApplyChange for Enforcer {
