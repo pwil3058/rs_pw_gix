@@ -176,12 +176,6 @@ pub struct Enforcer {
 }
 
 impl Enforcer {
-    pub fn with_initial_condns(init_condns: Condns) -> Self {
-        let enforcer = Enforcer::default();
-        enforcer.current_condns.set(init_condns);
-        enforcer
-    }
-
     pub fn add_widget<W: IsA<gtk::Widget>>(&self, w: &W, policy: Policy) {
         let widget = w.clone().upcast::<gtk::Widget>();
         match &policy {
@@ -226,6 +220,28 @@ impl ApplyChange for Enforcer {
             }
         }
         self.current_condns.set(new_condns);
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct EnforcerBuilder {
+    initial_condns: Condns,
+}
+
+impl EnforcerBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn initial_condns(&mut self, initial_condns: Condns) -> &mut Self {
+        self.initial_condns = initial_condns;
+        self
+    }
+
+    pub fn build(&self) -> Enforcer {
+        let enforcer = Enforcer::default();
+        enforcer.current_condns.set(self.initial_condns);
+        enforcer
     }
 }
 

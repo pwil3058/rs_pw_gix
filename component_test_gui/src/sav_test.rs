@@ -3,7 +3,7 @@
 use std::rc::Rc;
 
 use pw_gix::{
-    sav::{ApplyChange, Change, Condns, Enforcer, Policy},
+    sav::{ApplyChange, Change, Condns, Enforcer, EnforcerBuilder, Policy},
     wrapper::*,
 };
 
@@ -33,7 +33,7 @@ impl SavTest {
     pub fn with_initial_condns(init_condns: Condns) -> Self {
         Self {
             vbox: gtk::Box::new(gtk::Orientation::Vertical, 0),
-            enforcer: Rc::new(Enforcer::with_initial_condns(init_condns)),
+            enforcer: Rc::new(EnforcerBuilder::new().initial_condns(init_condns).build()),
         }
     }
 }
