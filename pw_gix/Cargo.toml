@@ -35,4 +35,4 @@ serde_json = "1.0"
 which = "1.0.3"
 
 [features]
-default = ["gtk/v3_18"]
+default = ["gtk/v3_18", "gio/v2_44"]
