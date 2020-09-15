@@ -20,7 +20,7 @@ impl ControlledTimeoutCycle {
         let ct = Rc::new(Self {
             interval_secs: Cell::new(interval_secs),
             stopped: Cell::new(true),
-            check_menu_item: gtk::CheckMenuItem::new_with_label(label),
+            check_menu_item: gtk::CheckMenuItem::with_label(label),
             callbacks: RefCell::new(Vec::new()),
             next_cb_id: Cell::new(0),
         });
@@ -30,7 +30,7 @@ impl ControlledTimeoutCycle {
             if t.get_active() && ct_clone.stopped.get() {
                 let interval_secs = ct_clone.interval_secs.get();
                 let ct_clone_clone = Rc::clone(&ct_clone);
-                gtk::timeout_add_seconds(interval_secs, move || {
+                glib::source::timeout_add_seconds_local(interval_secs, move || {
                     for (_, callback) in ct_clone_clone.callbacks.borrow().iter() {
                         callback()
                     }

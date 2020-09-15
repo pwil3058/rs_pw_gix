@@ -152,7 +152,7 @@ pub mod recollections {
 
     lazy_static! {
         static ref RECOLLECTIONS: MutStatic<Recollections> =
-            { MutStatic::from(Recollections::new(None)) };
+            MutStatic::from(Recollections::new(None));
     }
 
     /// Initialise the mechanism by providing the path of the file

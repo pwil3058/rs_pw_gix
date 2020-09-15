@@ -144,7 +144,7 @@ impl PixbufView {
 
     fn set_pixbuf_fm_file<P: AsRef<Path>>(&self, file_path: P) -> Result<(), glib::Error> {
         let file_path = file_path.as_ref();
-        let pixbuf = gdk_pixbuf::Pixbuf::new_from_file(file_path)?;
+        let pixbuf = gdk_pixbuf::Pixbuf::from_file(file_path)?;
         self.set_pixbuf(Some(&pixbuf));
         Ok(())
     }

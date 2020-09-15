@@ -49,27 +49,28 @@ pub trait WidgetWrapper: PackableWidgetObject + DialogUser {
     }
 
     fn new_cursor(&self, cursor_type: gdk::CursorType) -> Option<gdk::Cursor> {
-        if let Some(ref display) = self.pwo().get_display() {
-            Some(gdk::Cursor::new_for_display(display, cursor_type))
-        } else {
-            None
-        }
+        // if let Some(ref display) = self.pwo().get_display() {
+        //     Some(gdk::Cursor::new_for_display(display, cursor_type))
+        // } else {
+        //     None
+        // }
+        Some(gdk::Cursor::new_for_display(
+            &self.pwo().get_display(),
+            cursor_type,
+        ))
     }
 
     fn new_cursor_from_name(&self, name: &str) -> Option<gdk::Cursor> {
-        if let Some(ref display) = self.pwo().get_display() {
-            gdk::Cursor::new_from_name(display, name)
-        } else {
-            None
-        }
+        gdk::Cursor::from_name(&self.pwo().get_display(), name)
     }
 
     fn new_cursor_from_pixbuf(&self, pixbuf: &Pixbuf, x: i32, y: i32) -> Option<gdk::Cursor> {
-        if let Some(ref display) = self.pwo().get_display() {
-            Some(gdk::Cursor::new_from_pixbuf(display, pixbuf, x, y))
-        } else {
-            None
-        }
+        Some(gdk::Cursor::from_pixbuf(
+            &self.pwo().get_display(),
+            pixbuf,
+            x,
+            y,
+        ))
     }
 
     fn new_cursor_from_spec(&self, spec: CursorSpec<'_>) -> Option<gdk::Cursor> {

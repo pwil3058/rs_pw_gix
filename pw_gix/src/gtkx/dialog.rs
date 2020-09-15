@@ -7,10 +7,14 @@ use gtk;
 use crate::gdkx::*;
 use crate::recollections;
 
-pub trait AutoDestroy: gtk::DialogExt + gtk::GtkWindowExt + gtk::WidgetExt {
+pub trait AutoDestroy:
+    gtk::DialogExt + gtk::GtkWindowExt + gtk::WidgetExt + gtk::prelude::WidgetExtManual
+{
     fn enable_auto_destroy(&self) {
-        self.connect_close(|d| d.destroy());
-        self.connect_response(|d, _| d.destroy());
+        unsafe {
+            self.connect_close(|d| d.destroy());
+            self.connect_response(|d, _| d.destroy());
+        }
     }
 }
 
@@ -111,7 +115,7 @@ pub mod dialog_user {
         };
         if gtk::ResponseType::from(dialog.run()) == gtk::ResponseType::Ok {
             if let Some(file_path) = dialog.get_filename() {
-                dialog.destroy();
+                unsafe { dialog.destroy() };
                 if absolute {
                     return Some(pw_pathux::absolute_path_buf(&file_path));
                 } else {
@@ -119,7 +123,7 @@ pub mod dialog_user {
                 }
             };
         };
-        dialog.destroy();
+        unsafe { dialog.destroy() };
         None
     }
 
@@ -186,7 +190,7 @@ pub mod dialog_user {
             flags: gtk::DialogFlags,
             buttons: &[(&str, gtk::ResponseType)],
         ) -> gtk::Dialog {
-            let dialog = gtk::Dialog::new_with_buttons(title, parent_none(), flags, buttons);
+            let dialog = gtk::Dialog::with_buttons(title, parent_none(), flags, buttons);
             self.set_transient_for_and_icon_on(&dialog);
             dialog
         }
@@ -331,7 +335,7 @@ pub mod dialog_user {
             };
             //dialog.enable_auto_destroy();
             let response = dialog.run();
-            dialog.destroy();
+            unsafe { dialog.destroy() };
             response
             //gtk::ResponseType::from(dialog.run())
         }
@@ -356,13 +360,10 @@ pub mod dialog_user {
             dialog.show_all();
             entry.set_activates_default(true);
             let response = gtk::ResponseType::from(dialog.run());
-            dialog.destroy();
+            unsafe { dialog.destroy() };
             if response == gtk::ResponseType::Ok {
-                if let Some(gtext) = entry.get_text() {
-                    (response, Some(gtext.to_string()))
-                } else {
-                    (response, None)
-                }
+                let gtext = entry.get_text();
+                (response, Some(gtext.to_string()))
             } else {
                 (response, None)
             }
@@ -403,7 +404,7 @@ pub mod dialog_user {
                 gtk::DialogFlags::DESTROY_WITH_PARENT,
                 CANCEL_OK_BUTTONS,
             );
-            dialog.connect_close(|d| d.destroy());
+            dialog.connect_close(|d| unsafe { d.destroy() });
             let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 1);
             dialog.get_content_area().pack_start(&hbox, false, false, 0);
 
@@ -431,7 +432,7 @@ pub mod dialog_user {
             };
             hbox.pack_start(&entry, true, true, 0);
 
-            let button = gtk::Button::new_with_label("Browse");
+            let button = gtk::Button::with_label("Browse");
             hbox.pack_start(&button, false, false, 0);
             hbox.show_all();
             let b_prompt = if let Some(prompt_text) = prompt {
@@ -445,13 +446,8 @@ pub mod dialog_user {
                 // NB: following gymnastics need to satisfy lifetime  checks
                 //let text = &entry_c.get_text().unwrap_or("".to_string());
                 //let suggestion: Option<&str> = if text.len() > 0 { Some(text) } else { None };
-                let suggestion_str: String;
-                let suggestion: Option<&str> = if let Some(gtext) = entry_c.get_text() {
-                    suggestion_str = String::from(gtext);
-                    Some(&suggestion_str)
-                } else {
-                    None
-                };
+                let suggestion_str = String::from(entry_c.get_text());
+                let suggestion: Option<&str> = Some(&suggestion_str);
                 if let Some(path) =
                     browse_path(Some(&dialog_c), Some(&b_prompt), suggestion, action, false)
                 {
@@ -462,15 +458,11 @@ pub mod dialog_user {
 
             dialog.set_default_response(gtk::ResponseType::Ok);
             if gtk::ResponseType::from(dialog.run()) == gtk::ResponseType::Ok {
-                let o_text = entry.get_text();
-                dialog.destroy();
-                if let Some(text) = o_text {
-                    Some(PathBuf::from(&String::from(text)))
-                } else {
-                    Some(PathBuf::new())
-                }
+                let text = String::from(entry.get_text());
+                unsafe { dialog.destroy() };
+                Some(PathBuf::from(&String::from(text)))
             } else {
-                dialog.destroy();
+                unsafe { dialog.destroy() };
                 None
             }
         }

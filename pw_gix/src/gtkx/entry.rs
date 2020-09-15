@@ -216,14 +216,15 @@ where
         hex_entry
             .entry
             .connect_key_press_event(move |entry, event| {
-                use gdk::enums::key::*;
+                use gdk::keys::constants::*;
                 let key = event.get_keyval();
                 match key {
                     Return | Tab | ISO_Left_Tab => {
-                        if let Some(text) = entry.get_text() {
-                            hex_entry_c.set_value_from_text(&text);
-                        } else {
+                        let text = entry.get_text();
+                        if text.is_empty() {
                             hex_entry_c.reset_entry_text();
+                        } else {
+                            hex_entry_c.set_value_from_text(&text);
                         }
                         // NB: this will nobble the "activate" signal
                         // but let the Tab key move the focus
@@ -246,7 +247,7 @@ where
 
         let hex_entry_c = Rc::clone(&hex_entry);
         hex_entry.entry.connect_key_release_event(move |_, event| {
-            use gdk::enums::key::*;
+            use gdk::keys::constants::*;
             match event.get_keyval() {
                 Up | Down => {
                     hex_entry_c.reset_current_step();
@@ -275,9 +276,9 @@ pub trait PathCompletion: gtk::EntryExt + gtk::EditableSignals {
 
         self.set_completion(Some(&entry_completion));
         self.connect_changed(move |editable| {
-            let dir_path_txt = match editable.get_text() {
-                Some(text) => pw_pathux::dir_path_text(&text).to_string(),
-                None => "".to_string(),
+            let dir_path_txt = {
+                let text = editable.get_text();
+                pw_pathux::dir_path_text(&text).to_string()
             };
             list_store.clear();
             let dir_path = pw_pathux::expand_home_dir_or_mine(&PathBuf::from(&dir_path_txt));

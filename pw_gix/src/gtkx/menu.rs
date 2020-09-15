@@ -82,7 +82,7 @@ impl WrappedMenu {
     }
 
     fn new_item(&self, label_text: &str, tooltip_text: &str) -> gtk::MenuItem {
-        let item = gtk::MenuItem::new_with_label(label_text);
+        let item = gtk::MenuItem::with_label(label_text);
         item.set_tooltip_text(Some(tooltip_text));
 
         item

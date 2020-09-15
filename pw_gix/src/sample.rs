@@ -225,7 +225,7 @@ pub mod area_selection {
         }
 
         fn finish(&self) -> Result<gdk::Rectangle, Failure> {
-            self.window.destroy();
+            unsafe { self.window.destroy() };
             if let Some(start_position) = self.start_position.get() {
                 if let Some(end_position) = self.end_position.get() {
                     let i_start: IntPoint = start_position.into();
@@ -299,7 +299,7 @@ pub mod area_selection {
 
             let sad_c = sad.clone();
             sad.window.connect_key_press_event(move |_, event| {
-                if event.get_keyval() == gdk::enums::key::Escape {
+                if event.get_keyval() == gdk::keys::constants::Escape {
                     sad_c.start_position.set(None);
                     sad_c.current_position.set(None);
                     sad_c.end_position.set(None);

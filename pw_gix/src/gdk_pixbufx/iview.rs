@@ -155,7 +155,7 @@ impl PixbufViewCore {
     }
 
     pub fn set_pixbuf_fm_file<P: AsRef<Path>>(&self, file_path: P) -> Result<(), glib::Error> {
-        let pixbuf = gdk_pixbuf::Pixbuf::new_from_file(file_path.as_ref())?;
+        let pixbuf = gdk_pixbuf::Pixbuf::from_file(file_path.as_ref())?;
         self.set_pixbuf(Some(&pixbuf));
         *self.current_file_path.borrow_mut() = Some(file_path.as_ref().to_path_buf());
         if let Some(current_file_path) = self.current_file_path() {
@@ -271,13 +271,13 @@ impl PixbufViewInterface for PixbufView {
         let xy_selection = XYSelection::create(&drawing_area);
 
         let menu = gtk::Menu::new();
-        let copy_selection_item = gtk::MenuItem::new_with_label("Copy");
+        let copy_selection_item = gtk::MenuItem::with_label("Copy");
         copy_selection_item.set_tooltip_text(Some("Copy the selection to the clipboard"));
         menu.append(&copy_selection_item.clone());
-        let load_image_item = gtk::MenuItem::new_with_label("Load");
+        let load_image_item = gtk::MenuItem::with_label("Load");
         load_image_item.set_tooltip_text(Some("Load an image from a file"));
         menu.append(&load_image_item.clone());
-        let print_image_item = gtk::MenuItem::new_with_label("Print");
+        let print_image_item = gtk::MenuItem::with_label("Print");
         print_image_item.set_tooltip_text(Some("Print the image"));
         menu.append(&print_image_item.clone());
         menu.show_all();

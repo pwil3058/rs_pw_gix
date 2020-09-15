@@ -88,7 +88,7 @@ fn main() {
     let hex_entry = HexEntryBuilder::<u8>::new().editable(true).build();
     vbox.pack_start(&hex_entry.pwo(), false, false, 0);
 
-    let button = gtk::Button::new_with_label("Image Viewer");
+    let button = gtk::Button::with_label("Image Viewer");
     vbox.pack_start(&button, false, false, 0);
     button.connect_clicked(|_| launch_image_viewer());
 

@@ -42,7 +42,7 @@ impl RememberedPrinterSettings {
 
 lazy_static! {
     static ref REMEMBERED_PRINTER_SETTINGS: MutStatic<RememberedPrinterSettings> =
-        { MutStatic::from(RememberedPrinterSettings { o_file_path: None }) };
+        MutStatic::from(RememberedPrinterSettings { o_file_path: None });
 }
 
 pub fn init_printer(file_path: &path::Path) {
