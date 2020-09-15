@@ -48,36 +48,23 @@ pub trait WidgetWrapper: PackableWidgetObject + DialogUser {
         }
     }
 
-    fn new_cursor(&self, cursor_type: gdk::CursorType) -> Option<gdk::Cursor> {
-        // if let Some(ref display) = self.pwo().get_display() {
-        //     Some(gdk::Cursor::new_for_display(display, cursor_type))
-        // } else {
-        //     None
-        // }
-        Some(gdk::Cursor::new_for_display(
-            &self.pwo().get_display(),
-            cursor_type,
-        ))
+    fn new_cursor(&self, cursor_type: gdk::CursorType) -> gdk::Cursor {
+        gdk::Cursor::new_for_display(&self.pwo().get_display(), cursor_type)
     }
 
     fn new_cursor_from_name(&self, name: &str) -> Option<gdk::Cursor> {
         gdk::Cursor::from_name(&self.pwo().get_display(), name)
     }
 
-    fn new_cursor_from_pixbuf(&self, pixbuf: &Pixbuf, x: i32, y: i32) -> Option<gdk::Cursor> {
-        Some(gdk::Cursor::from_pixbuf(
-            &self.pwo().get_display(),
-            pixbuf,
-            x,
-            y,
-        ))
+    fn new_cursor_from_pixbuf(&self, pixbuf: &Pixbuf, x: i32, y: i32) -> gdk::Cursor {
+        gdk::Cursor::from_pixbuf(&self.pwo().get_display(), pixbuf, x, y)
     }
 
     fn new_cursor_from_spec(&self, spec: CursorSpec<'_>) -> Option<gdk::Cursor> {
         match spec {
-            CursorSpec::Type(cursor_type) => self.new_cursor(cursor_type),
+            CursorSpec::Type(cursor_type) => Some(self.new_cursor(cursor_type)),
             CursorSpec::Name(name) => self.new_cursor_from_name(name),
-            CursorSpec::Pixbuf(pbd) => self.new_cursor_from_pixbuf(pbd.0, pbd.1, pbd.2),
+            CursorSpec::Pixbuf(pbd) => Some(self.new_cursor_from_pixbuf(pbd.0, pbd.1, pbd.2)),
         }
     }
 
