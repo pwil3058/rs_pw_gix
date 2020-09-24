@@ -34,6 +34,19 @@ pub mod sav;
 pub mod sav_state;
 pub mod timeout;
 
+/// Gtk-rs components
+pub use atk;
+pub use cairo;
+pub use gdk;
+pub use gdk_pixbuf;
+pub use gdkx11;
+pub use gio;
+pub use glib;
+pub use gtk;
+pub use pango;
+pub use pangocairo;
+pub use sourceview;
+
 mod recollect {
     use std::collections::HashMap;
     use std::fs;

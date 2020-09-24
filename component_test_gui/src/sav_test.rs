@@ -3,11 +3,10 @@
 use std::rc::Rc;
 
 use pw_gix::{
+    gtk::{self, prelude::*},
     sav::{ApplyChange, Change, Condns, Enforcer, EnforcerBuilder, Policy},
     wrapper::*,
 };
-
-use gtk::prelude::*;
 
 #[derive(PWO)]
 pub struct SavTest {

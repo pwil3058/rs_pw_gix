@@ -1,14 +1,11 @@
 // Copyright 2019 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 use std::{cell::RefCell, rc::Rc};
 
-use glib;
-use gtk;
-use gtk::prelude::*;
-use gtk::{BoxExt, ContainerExt, WidgetExt};
-
 use pw_gix::{
     gdk_pixbufx::viewer::*,
+    glib,
     glibx::*,
+    gtk::{self, prelude::*, BoxExt, ContainerExt, WidgetExt},
     gtkx::{
         check_button::MutuallyExclusiveCheckButtonsBuilder, combo_box_text::SortedUnique,
         entry::HexEntryBuilder, list_store::*, menu_ng::ManagedMenuBuilder,
