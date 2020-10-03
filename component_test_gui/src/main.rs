@@ -2,6 +2,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use pw_gix::{
+    //cairo,
     gdk_pixbufx::viewer::*,
     glib,
     glibx::*,
@@ -29,6 +30,7 @@ fn main() {
 
     test_list_store_simple_row_ops();
     test_list_store_row_buffer();
+    //let surface = cairo::ImageSurface::create_from_png(&mut reader).unwrap();
 
     let vbox = gtk::Box::new(gtk::Orientation::Vertical, 0);
 
