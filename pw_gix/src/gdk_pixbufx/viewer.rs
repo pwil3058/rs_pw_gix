@@ -24,16 +24,16 @@ use crate::{
 
 struct Zoomable {
     unzoomed: gdk_pixbuf::Pixbuf,
-    zoomed: gdk_pixbuf::Pixbuf,
-    zoom_factor: f64,
+    zoomed: RefCell<gdk_pixbuf::Pixbuf>,
+    zoom_factor: Cell<f64>,
 }
 
 impl From<&gdk_pixbuf::Pixbuf> for Zoomable {
     fn from(pixbuf: &gdk_pixbuf::Pixbuf) -> Zoomable {
         Zoomable {
             unzoomed: pixbuf.clone(),
-            zoomed: pixbuf.clone(),
-            zoom_factor: 1.0,
+            zoomed: RefCell::new(pixbuf.clone()),
+            zoom_factor: Cell::new(1.0),
         }
     }
 }
@@ -45,44 +45,46 @@ impl AspectRatio for Zoomable {
 }
 
 impl Zoomable {
-    pub fn pixbuf(&self) -> &gdk_pixbuf::Pixbuf {
-        &self.zoomed
+    pub fn pixbuf(&self) -> gdk_pixbuf::Pixbuf {
+        self.zoomed.borrow().clone()
     }
 
     pub fn subpixbuf(&self, rect: Rectangle<i32>) -> Option<gdk_pixbuf::Pixbuf> {
         self.zoomed
+            .borrow()
             .new_subpixbuf(rect.x, rect.y, rect.width, rect.height)
     }
 
     pub fn zoom_factor(&self) -> f64 {
-        self.zoom_factor
+        self.zoom_factor.get()
     }
 
     pub fn zoomed_size(&self) -> Size<f64> {
-        self.zoomed.size().into()
+        self.zoomed.borrow().size().into()
     }
 
-    pub fn set_zoom(&mut self, zoom_factor: f64) {
+    pub fn set_zoom(&self, zoom_factor: f64) {
         let new_size = self.unzoomed.size() * zoom_factor;
         if let Some(new_pixbuf) = self.unzoomed.scale_simple(
             new_size.width,
             new_size.height,
             gdk_pixbuf::InterpType::Bilinear,
         ) {
-            self.zoomed = new_pixbuf;
-            self.zoom_factor = zoom_factor;
+            *self.zoomed.borrow_mut() = new_pixbuf;
+            self.zoom_factor.set(zoom_factor);
         } //TODO: do something about failure
     }
 
-    pub fn set_zoomed_size(&mut self, new_zsize: Size<i32>) {
+    pub fn set_zoomed_size(&self, new_zsize: Size<i32>) {
         assert!(self.aspect_ratio_matches_size(new_zsize.into()));
         if let Some(new_pixbuf) = self.unzoomed.scale_simple(
             new_zsize.width,
             new_zsize.height,
             gdk_pixbuf::InterpType::Bilinear,
         ) {
-            self.zoomed = new_pixbuf;
-            self.zoom_factor = self.zoomed.scale_versus(&self.unzoomed);
+            *self.zoomed.borrow_mut() = new_pixbuf;
+            self.zoom_factor
+                .set(self.zoomed.borrow().scale_versus(&self.unzoomed));
         } //TODO: do something about failure
     }
 
@@ -118,7 +120,7 @@ impl PixbufView {
     pub fn set_pixbuf(&self, o_pixbuf: Option<&gdk_pixbuf::Pixbuf>) {
         if let Some(pixbuf) = o_pixbuf {
             self.xy_selection.reset();
-            let mut zoomable: Zoomable = pixbuf.into();
+            let zoomable: Zoomable = pixbuf.into();
             let alloc = self.drawing_area.get_allocation().size();
             if pixbuf.aspect_ratio_matches_size(alloc.into()) {
                 zoomable.set_zoomed_size(alloc);
@@ -169,7 +171,7 @@ impl PixbufView {
     }
 
     fn zoom_in(&self) {
-        if let Some(ref mut zoomable) = *self.zoomable.borrow_mut() {
+        if let Some(ref zoomable) = *self.zoomable.borrow() {
             let current_zoom = zoomable.zoom_factor();
             zoomable.set_zoom(current_zoom * Self::ZOOM_FACTOR);
             self.resize_drawing_area();
@@ -190,7 +192,7 @@ impl PixbufView {
     }
 
     fn zoom_out(&self) {
-        if let Some(ref mut zoomable) = *self.zoomable.borrow_mut() {
+        if let Some(ref zoomable) = *self.zoomable.borrow() {
             let current_zoom = zoomable.zoom_factor();
             let alloc = self.last_allocation.get();
             let min_zoom = zoomable.calc_zooms_for(alloc).length_longest_side();
@@ -319,7 +321,7 @@ impl PixbufViewBuilder {
                         .set((alloc * PixbufView::ZOOM_OUT_ADJUST).into());
                     viewer_c.last_allocation.set(alloc);
                     let mut resize_required = false;
-                    if let Some(ref mut zoomable) = *viewer_c.zoomable.borrow_mut() {
+                    if let Some(ref zoomable) = *viewer_c.zoomable.borrow() {
                         let delta_alloc = alloc - last_allocation;
                         let zoomed_sizediff = alloc - zoomable.zoomed_size();
                         if zoomable.aspect_ratio_matches_size(alloc)
