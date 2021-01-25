@@ -185,12 +185,6 @@ impl PixbufView {
                     adj.set_value(new_val);
                 }
             }
-            println!(
-                "SZ IN: {:?}, {:?}, {:?}",
-                current_zoom,
-                zoomable.zoom_factor(),
-                current_zoom / zoomable.zoom_factor()
-            );
         }
     }
 
@@ -218,12 +212,6 @@ impl PixbufView {
                     adj.set_value(new_val.max(0.0));
                 }
             }
-            println!(
-                "SZ OUT: {:?}, {:?}, {:?}",
-                current_zoom,
-                zoomable.zoom_factor(),
-                current_zoom / zoomable.zoom_factor()
-            );
         }
     }
 }
@@ -393,7 +381,10 @@ impl PixbufViewBuilder {
         viewer
             .scrolled_window
             .connect_scroll_event(move |_, event| {
-                if event.get_state().contains(gdk::ModifierType::CONTROL_MASK) {
+                if !event
+                    .get_state()
+                    .intersects(gdk::ModifierType::CONTROL_MASK | gdk::ModifierType::SHIFT_MASK)
+                {
                     match event.get_direction() {
                         gdk::ScrollDirection::Up => {
                             viewer_c.zoom_in();
