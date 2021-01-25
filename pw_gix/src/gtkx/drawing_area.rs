@@ -16,6 +16,7 @@ pub struct XYSelection {
     end_xy: Cell<Option<Point>>,
     selection_made: Cell<bool>,
     selection_made_callbacks: RefCell<Vec<Box<dyn Fn()>>>,
+    allocation: Cell<Size<f64>>,
 }
 
 impl XYSelection {
@@ -38,11 +39,9 @@ impl XYSelection {
         //self.emit("status-changed", False)
     }
 
-    pub fn get_selected_rectangle(&self, scale: f64) -> Option<Rectangle<f64>> {
-        if let Some(raw_start) = self.start_xy.get() {
-            if let Some(raw_end) = self.end_xy.get() {
-                let start = raw_start * scale;
-                let end = raw_end * scale;
+    pub fn get_selected_rectangle(&self) -> Option<Rectangle<f64>> {
+        if let Some(start) = self.start_xy.get() {
+            if let Some(end) = self.end_xy.get() {
                 let delta = end - start;
                 // width and height have to be positive
                 let (x, width) = if delta.x() >= 0.0 {
@@ -83,12 +82,14 @@ impl XYSelection {
             | gdk::EventMask::BUTTON_RELEASE_MASK
             | gdk::EventMask::LEAVE_NOTIFY_MASK;
         drawing_area.add_events(events);
+        let allocation = Cell::new(Rectangle::from(drawing_area.get_allocation()).size());
         let xys = Rc::new(XYSelection {
             drawing_area: drawing_area.clone(),
             start_xy: Cell::new(None),
             end_xy: Cell::new(None),
             selection_made: Cell::new(false),
             selection_made_callbacks: RefCell::new(Vec::new()),
+            allocation,
         });
         let xys_c = xys.clone();
         xys.drawing_area
@@ -148,6 +149,25 @@ impl XYSelection {
             };
             gtk::Inhibit(false)
         });
+        let xys_c = xys.clone();
+        xys.drawing_area
+            .connect_size_allocate(move |_da, allocation| {
+                let new_size = Rectangle::from(*allocation).size();
+                let cur_size = xys_c.allocation.get();
+                if cur_size.width > 0.0 && cur_size.height > 0.0 {
+                    let x_scale = new_size.width / cur_size.width;
+                    let y_scale = new_size.height / cur_size.height;
+                    if let Some(start_xy) = xys_c.start_xy.get() {
+                        let new_start_xy = Point(start_xy.0 * x_scale, start_xy.1 * y_scale);
+                        xys_c.start_xy.set(Some(new_start_xy));
+                    }
+                    if let Some(end_xy) = xys_c.end_xy.get() {
+                        let new_end_xy = Point(end_xy.0 * x_scale, end_xy.1 * y_scale);
+                        xys_c.end_xy.set(Some(new_end_xy));
+                    }
+                }
+                xys_c.allocation.set(new_size);
+            });
 
         xys
     }

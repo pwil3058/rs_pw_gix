@@ -99,7 +99,6 @@ pub struct PixbufView {
     drawing_area: gtk::DrawingArea,
     xy_selection: Rc<XYSelection>,
     zoomable: RefCell<Option<Zoomable>>,
-    selection_zoom: Cell<f64>,
     ignore_size_alloc: Cell<bool>,
     last_allocation: Cell<Size<f64>>,
     zoom_in_adj: Cell<[f64; 2]>,
@@ -166,7 +165,6 @@ impl PixbufView {
                     .set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic)
             };
             self.ignore_size_alloc.set(false);
-            self.selection_zoom.set(zoomable.zoom_factor())
         }
     }
 
@@ -187,7 +185,12 @@ impl PixbufView {
                     adj.set_value(new_val);
                 }
             }
-            self.selection_zoom.set(zoomable.zoom_factor())
+            println!(
+                "SZ IN: {:?}, {:?}, {:?}",
+                current_zoom,
+                zoomable.zoom_factor(),
+                current_zoom / zoomable.zoom_factor()
+            );
         }
     }
 
@@ -215,7 +218,12 @@ impl PixbufView {
                     adj.set_value(new_val.max(0.0));
                 }
             }
-            self.selection_zoom.set(zoomable.zoom_factor())
+            println!(
+                "SZ OUT: {:?}, {:?}, {:?}",
+                current_zoom,
+                zoomable.zoom_factor(),
+                current_zoom / zoomable.zoom_factor()
+            );
         }
     }
 }
@@ -263,7 +271,6 @@ impl PixbufViewBuilder {
             xy_selection,
             zoomable: RefCell::new(None),
             ignore_size_alloc: Cell::new(false),
-            selection_zoom: Cell::new(1.0),
             last_allocation: Cell::new(alloc),
             zoom_in_adj: Cell::new([0.0, 0.0]),
             zoom_out_adj: Cell::new([0.0, 0.0]),
@@ -278,8 +285,7 @@ impl PixbufViewBuilder {
                 cairo_context.set_source_pixbuf(&zoomable.pixbuf(), 0.0, 0.0);
                 cairo_context.paint();
                 if viewer_c.xy_selection.is_drawable() {
-                    let scale = zoomable.zoom_factor() / viewer_c.selection_zoom.get();
-                    let rect = viewer_c.xy_selection.get_selected_rectangle(scale).unwrap();
+                    let rect = viewer_c.xy_selection.get_selected_rectangle().unwrap();
                     if viewer_c.xy_selection.selection_made() {
                         cairo_context.set_dash(&[], 0.0)
                     } else {
@@ -415,11 +421,6 @@ impl PixbufViewBuilder {
 
         let viewer_c = Rc::clone(&viewer);
         viewer.xy_selection.connect_selection_made(move || {
-            if let Some(ref zoomable) = *viewer_c.zoomable.borrow() {
-                viewer_c.selection_zoom.set(zoomable.zoom_factor())
-            } else {
-                viewer_c.selection_zoom.set(1.0)
-            };
             viewer_c.drawing_area.queue_draw();
         });
 
@@ -498,10 +499,9 @@ impl PixbufViewBuilder {
             .connect_activate(move |_| {
                 let zoomable = viewer_c.zoomable.borrow();
                 let zoomable = zoomable.as_ref().expect("SAV_HAS_IMAGE");
-                let scale = zoomable.zoom_factor() / viewer_c.selection_zoom.get();
                 let rect = viewer_c
                     .xy_selection
-                    .get_selected_rectangle(scale)
+                    .get_selected_rectangle()
                     .expect("SAV_HAS_SELECTION");
                 let pixbuf = zoomable.subpixbuf(rect.into()).expect("programmer error");
                 let cbd = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
@@ -567,10 +567,9 @@ impl PixbufViewBuilder {
             .connect_activate(move |_| {
                 let zoomable = viewer_c.zoomable.borrow();
                 let zoomable = zoomable.as_ref().expect("SAV_HAS_IMAGE");
-                let scale = zoomable.zoom_factor() / viewer_c.selection_zoom.get();
                 let rect = viewer_c
                     .xy_selection
-                    .get_selected_rectangle(scale)
+                    .get_selected_rectangle()
                     .expect("SAV_HAS_SELECTION");
                 let pixbuf = zoomable.subpixbuf(rect.into()).expect("programmer error");
                 if let Err(ref err) = viewer_c.print_pixbuf(&pixbuf) {

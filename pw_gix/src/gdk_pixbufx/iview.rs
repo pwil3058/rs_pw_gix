@@ -102,7 +102,6 @@ pub struct PixbufViewCore {
     xy_selection: Rc<XYSelection>,
     last_allocation: RefCell<Option<Size<f64>>>,
     zoomable: RefCell<Option<Zoomable>>,
-    selection_zoom: Cell<f64>,
     ignore_size_alloc: Cell<bool>,
     doing_button_motion: Cell<bool>,
     last_xy: Cell<Point>,
@@ -198,7 +197,6 @@ impl PixbufViewCore {
                     .set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic)
             };
             self.ignore_size_alloc.set(false);
-            self.selection_zoom.set(zoomable.zoom_factor())
         }
     }
 
@@ -220,7 +218,6 @@ impl PixbufViewCore {
                     adj.set_value(new_val);
                 }
             }
-            self.selection_zoom.set(zoomable.zoom_factor())
         }
     }
 
@@ -251,7 +248,6 @@ impl PixbufViewCore {
                     adj.set_value(new_val.max(0.0));
                 }
             }
-            self.selection_zoom.set(zoomable.zoom_factor())
         }
     }
 }
@@ -292,7 +288,6 @@ impl PixbufViewInterface for PixbufView {
             xy_selection: xy_selection,
             last_allocation: RefCell::new(None),
             zoomable: RefCell::new(None),
-            selection_zoom: Cell::new(1.0),
             ignore_size_alloc: Cell::new(false),
             doing_button_motion: Cell::new(false),
             last_xy: Cell::new(Point(0.0, 0.0)),
@@ -306,8 +301,7 @@ impl PixbufViewInterface for PixbufView {
                 cairo_context.set_source_pixbuf(&zoomable.get_pixbuf(), 0.0, 0.0);
                 cairo_context.paint();
                 if pbv_c.xy_selection.is_drawable() {
-                    let scale = zoomable.zoom_factor() / pbv_c.selection_zoom.get();
-                    let rect = pbv_c.xy_selection.get_selected_rectangle(scale).unwrap();
+                    let rect = pbv_c.xy_selection.get_selected_rectangle().unwrap();
                     if pbv_c.xy_selection.selection_made() {
                         cairo_context.set_dash(&[], 0.0)
                     } else {
@@ -443,14 +437,8 @@ impl PixbufViewInterface for PixbufView {
             gtk::Inhibit(false)
         });
         let pbv_c = pbv.clone();
-        pbv.xy_selection.connect_selection_made(move || {
-            if let Some(ref zoomable) = *pbv_c.zoomable.borrow() {
-                pbv_c.selection_zoom.set(zoomable.zoom_factor())
-            } else {
-                pbv_c.selection_zoom.set(1.0)
-            };
-            pbv_c.drawing_area.queue_draw()
-        });
+        pbv.xy_selection
+            .connect_selection_made(move || pbv_c.drawing_area.queue_draw());
         // Set up moving image with left button and control key
         let pbv_c = pbv.clone();
         pbv.scrolled_window
@@ -522,8 +510,7 @@ impl PixbufViewInterface for PixbufView {
         let pbv_c = pbv.clone();
         pbv.copy_selection_item.clone().connect_activate(move |_| {
             if let Some(ref zoomable) = *pbv_c.zoomable.borrow() {
-                let scale = zoomable.zoom_factor() / pbv_c.selection_zoom.get();
-                if let Some(rect) = pbv_c.xy_selection.get_selected_rectangle(scale) {
+                if let Some(rect) = pbv_c.xy_selection.get_selected_rectangle() {
                     let pixbuf = zoomable.get_subpixbuf(rect.into());
                     let cbd = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
                     cbd.set_image(&pixbuf);
