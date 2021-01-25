@@ -330,27 +330,21 @@ impl PixbufViewBuilder {
                             // a small change and same aspect ratio
                             zoomable.set_zoomed_size(alloc.into());
                             resize_required = true;
-                        } else if delta_alloc.width >= 0.0 {
-                            if delta_alloc.height >= 0.0 {
-                                // we're getting bigger
-                                if zoomed_sizediff.width > 10.0 || zoomed_sizediff.height > 10.0 {
-                                    let zoom = zoomable.calc_zooms_for(alloc).length_longest_side();
-                                    zoomable.set_zoom(zoom);
-                                    resize_required = true;
-                                } else if zoomed_sizediff.width < 0.0
-                                    || zoomed_sizediff.height < 0.0
-                                {
-                                    sw.set_policy(
-                                        gtk::PolicyType::Automatic,
-                                        gtk::PolicyType::Automatic,
-                                    )
-                                } else {
-                                    sw.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Never)
-                                }
+                        } else if delta_alloc.width >= 0.0 || delta_alloc.height >= 0.0 {
+                            // we're getting bigger
+                            if zoomed_sizediff.width > 10.0 || zoomed_sizediff.height > 10.0 {
+                                let zoom = zoomable.calc_zooms_for(alloc).length_longest_side();
+                                zoomable.set_zoom(zoom);
+                                resize_required = true;
+                            } else if zoomed_sizediff.width < 0.0 || zoomed_sizediff.height < 0.0 {
+                                sw.set_policy(
+                                    gtk::PolicyType::Automatic,
+                                    gtk::PolicyType::Automatic,
+                                )
                             } else {
-                                // uncharted territory
+                                sw.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Never)
                             }
-                        } else if delta_alloc.height <= 0.0 {
+                        } else {
                             // we're getting smaller
                             if zoomed_sizediff.width > 10.0 || zoomed_sizediff.height > 10.0 {
                                 let zoom = zoomable.calc_zooms_for(alloc).length_longest_side();
@@ -372,8 +366,6 @@ impl PixbufViewBuilder {
                             } else {
                                 sw.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Never)
                             }
-                        } else {
-                            // more uncharted territory
                         }
                     };
                     if resize_required {
