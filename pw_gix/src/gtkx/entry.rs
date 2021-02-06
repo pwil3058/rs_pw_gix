@@ -51,7 +51,7 @@ where
         + Ord
         + Copy
         + num_traits_plus::NumberConstants
-        + num_traits_plus::num_traits::Num
+        + num_traits::Num
         + std::fmt::UpperHex
         + std::ops::Shr<u8, Output = U>
         + 'static,
@@ -69,7 +69,7 @@ where
         + Ord
         + Copy
         + num_traits_plus::NumberConstants
-        + num_traits_plus::num_traits::Num
+        + num_traits::Num
         + std::fmt::UpperHex
         + std::ops::Shr<u8, Output = U>
         + 'static,
@@ -159,7 +159,7 @@ where
         + Ord
         + Copy
         + num_traits_plus::NumberConstants
-        + num_traits_plus::num_traits::Num
+        + num_traits::Num
         + std::fmt::UpperHex
         + std::ops::Shr<u8, Output = U>
         + 'static,
@@ -174,7 +174,7 @@ where
         + Ord
         + Copy
         + num_traits_plus::NumberConstants
-        + num_traits_plus::num_traits::Num
+        + num_traits::Num
         + std::fmt::UpperHex
         + std::ops::Shr<u8, Output = U>
         + 'static,
