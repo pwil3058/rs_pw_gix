@@ -8,8 +8,12 @@ use pw_gix::{
     glibx::*,
     gtk::{self, prelude::*, BoxExt, ContainerExt, WidgetExt},
     gtkx::{
-        check_button::MutuallyExclusiveCheckButtonsBuilder, combo_box_text::SortedUnique,
-        entry::HexEntryBuilder, list_store::*, menu_ng::ManagedMenuBuilder,
+        check_button::MutuallyExclusiveCheckButtonsBuilder,
+        combo_box_text::SortedUnique,
+        entry::HexEntryBuilder,
+        list::{ListViewSpec, ListViewWithPopUpMenuBuilder},
+        list_store::*,
+        menu_ng::ManagedMenuBuilder,
         window::RememberGeometry,
     },
     recollections,
@@ -18,7 +22,44 @@ use pw_gix::{
 
 mod sav_test;
 
+use pw_gix::sav_state::SAV_HOVER_OK;
 use sav_test::SavTest;
+
+struct TestListSpec;
+
+impl ListViewSpec for TestListSpec {
+    fn column_types(&self) -> Vec<glib::Type> {
+        vec![glib::Type::String, glib::Type::String]
+    }
+
+    fn columns(&self) -> Vec<gtk::TreeViewColumn> {
+        let mut cols = vec![];
+
+        let col = gtk::TreeViewColumnBuilder::new()
+            .title("Id")
+            .resizable(false)
+            .sort_column_id(0)
+            .sort_indicator(true)
+            .build();
+        let cell = gtk::CellRendererTextBuilder::new().editable(false).build();
+        col.pack_start(&cell, false);
+        col.add_attribute(&cell, "text", 0);
+        cols.push(col);
+
+        let col = gtk::TreeViewColumnBuilder::new()
+            .title("Name")
+            .resizable(true)
+            .sort_column_id(3)
+            .sort_indicator(true)
+            .build();
+        let cell = gtk::CellRendererTextBuilder::new().editable(false).build();
+        col.pack_start(&cell, false);
+        col.add_attribute(&cell, "text", 1);
+        cols.push(col);
+
+        cols
+    }
+}
 
 fn main() {
     recollections::init("./.recollections");
@@ -116,6 +157,24 @@ fn main() {
 
     let sav_test = SavTest::new();
     vbox.pack_start(&sav_test.pwo(), false, false, 0);
+    let list = ListViewWithPopUpMenuBuilder::new()
+        .menu_item((
+            "edit",
+            ("Edit", None, Some("Edit the indicated paint.")).into(),
+            SAV_HOVER_OK,
+        ))
+        .menu_item((
+            "remove",
+            ("Remove", None, Some("Remove the indicated row.")).into(),
+            SAV_HOVER_OK,
+        ))
+        .id_field(1)
+        .build(&TestListSpec);
+    vbox.pack_start(&list.pwo(), true, true, 0);
+    list.connect_popup_menu_item("edit", |s| println!("edit: {:?}", s));
+    list.connect_popup_menu_item("remove", |s| println!("remove: {:?}", s));
+    list.add_row(&vec!["one".to_value(), "two".to_value()]);
+    list.add_row(&vec!["three".to_value(), "four".to_value()]);
 
     vbox.show_all();
     win.add(&vbox);
