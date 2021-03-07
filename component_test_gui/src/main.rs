@@ -49,7 +49,7 @@ impl ListViewSpec for TestListSpec {
         let col = gtk::TreeViewColumnBuilder::new()
             .title("Name")
             .resizable(true)
-            .sort_column_id(3)
+            .sort_column_id(1)
             .sort_indicator(true)
             .build();
         let cell = gtk::CellRendererTextBuilder::new().editable(false).build();

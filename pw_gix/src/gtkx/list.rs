@@ -113,6 +113,13 @@ impl ListViewWithPopUpMenuBuilder {
         self
     }
 
+    pub fn menu_items(&mut self, menu_items: Vec<(&'static str, MenuItemSpec, u64)>) -> &mut Self {
+        for menu_item in menu_items.iter() {
+            self.menu_items.push(menu_item.clone());
+        }
+        self
+    }
+
     pub fn id_field(&mut self, id_field: i32) -> &mut Self {
         self.id_field = id_field;
         self
