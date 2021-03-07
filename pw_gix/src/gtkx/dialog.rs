@@ -423,7 +423,7 @@ pub mod dialog_user {
                 gtk::FileChooserAction::SelectFolder | gtk::FileChooserAction::CreateFolder => {
                     entry.enable_dir_path_completion();
                 }
-                _ => panic!("File: {} Line: {}: must specify a (useful) action"),
+                _ => panic!("Must specify a (useful) action"),
             };
             entry.set_activates_default(true);
             entry.set_width_chars(32);

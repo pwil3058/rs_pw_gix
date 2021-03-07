@@ -77,10 +77,3 @@ pub fn wrapper_derive(input: TokenStream) -> TokenStream {
     };
     proc_macro::TokenStream::from(tokens)
 }
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
