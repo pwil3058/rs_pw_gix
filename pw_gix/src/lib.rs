@@ -44,6 +44,7 @@ pub use gio;
 pub use glib;
 pub use gtk;
 pub use pango;
+pub use pango_sys;
 pub use pangocairo;
 pub use sourceview;
 
