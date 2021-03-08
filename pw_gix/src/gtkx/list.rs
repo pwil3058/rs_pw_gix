@@ -14,7 +14,7 @@ use crate::{
     wrapper::*,
 };
 
-type PopupCallback = Box<dyn Fn(&str)>;
+type PopupCallback = Box<dyn Fn(Option<String>, Option<Vec<String>>)>;
 
 #[derive(PWO)]
 pub struct ListViewWithPopUpMenu {
@@ -55,7 +55,11 @@ impl ListViewWithPopUpMenu {
         self.popup_menu.update_condns(changed_condns)
     }
 
-    pub fn connect_popup_menu_item<F: Fn(&str) + 'static>(&self, name: &str, callback: F) {
+    pub fn connect_popup_menu_item<F: Fn(Option<String>, Option<Vec<String>>) + 'static>(
+        &self,
+        name: &str,
+        callback: F,
+    ) {
         self.callbacks
             .borrow_mut()
             .get_mut(name)
@@ -64,7 +68,35 @@ impl ListViewWithPopUpMenu {
     }
 
     fn menu_item_selected(&self, name: &str) {
-        if let Some(ref id) = *self.selected_id.borrow() {
+        let hovered_id = if let Some(ref id) = *self.selected_id.borrow() {
+            Some(id.to_string())
+        } else {
+            None
+        };
+        let selection = self.view.get_selection();
+        let (tree_paths, store) = selection.get_selected_rows();
+        let selected_ids: Option<Vec<String>> = if tree_paths.len() > 0 {
+            let mut vector = vec![];
+            for tree_path in tree_paths.iter() {
+                if let Some(iter) = store.get_iter(&tree_path) {
+                    if let Some(id) = store
+                        .get_value(&iter, self.id_field)
+                        .get::<String>()
+                        .unwrap()
+                    {
+                        vector.push(id);
+                    }
+                }
+            }
+            if vector.is_empty() {
+                None
+            } else {
+                Some(vector)
+            }
+        } else {
+            None
+        };
+        if hovered_id.is_some() || selected_ids.is_some() {
             for callback in self
                 .callbacks
                 .borrow()
@@ -72,7 +104,7 @@ impl ListViewWithPopUpMenu {
                 .expect("invalid name")
                 .iter()
             {
-                callback(&id)
+                callback(hovered_id.clone(), selected_ids.clone())
             }
         }
     }
@@ -97,10 +129,20 @@ impl ListViewWithPopUpMenu {
     }
 }
 
-#[derive(Default)]
 pub struct ListViewWithPopUpMenuBuilder {
     menu_items: Vec<(&'static str, MenuItemSpec, u64)>,
     id_field: i32,
+    selection_mode: gtk::SelectionMode,
+}
+
+impl Default for ListViewWithPopUpMenuBuilder {
+    fn default() -> Self {
+        Self {
+            menu_items: vec![],
+            id_field: 0,
+            selection_mode: gtk::SelectionMode::None,
+        }
+    }
 }
 
 impl ListViewWithPopUpMenuBuilder {
@@ -125,11 +167,16 @@ impl ListViewWithPopUpMenuBuilder {
         self
     }
 
+    pub fn selection_mode(&mut self, selection_mode: gtk::SelectionMode) -> &mut Self {
+        self.selection_mode = selection_mode;
+        self
+    }
+
     pub fn build(&self, spec: &impl ListViewSpec) -> Rc<ListViewWithPopUpMenu> {
         let list_store = gtk::ListStore::new(&spec.column_types());
         let view = gtk::TreeViewBuilder::new().headers_visible(true).build();
         view.set_model(Some(&list_store));
-        view.get_selection().set_mode(gtk::SelectionMode::None);
+        view.get_selection().set_mode(self.selection_mode);
 
         for col in spec.columns() {
             view.append_column(&col);

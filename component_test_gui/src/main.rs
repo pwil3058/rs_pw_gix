@@ -158,6 +158,7 @@ fn main() {
     let sav_test = SavTest::new();
     vbox.pack_start(&sav_test.pwo(), false, false, 0);
     let list = ListViewWithPopUpMenuBuilder::new()
+        .selection_mode(gtk::SelectionMode::Multiple)
         .menu_item((
             "edit",
             ("Edit", None, Some("Edit the indicated paint.")).into(),
@@ -171,8 +172,8 @@ fn main() {
         .id_field(1)
         .build(&TestListSpec);
     vbox.pack_start(&list.pwo(), true, true, 0);
-    list.connect_popup_menu_item("edit", |s| println!("edit: {:?}", s));
-    list.connect_popup_menu_item("remove", |s| println!("remove: {:?}", s));
+    list.connect_popup_menu_item("edit", |s, l| println!("edit: {:?} : {:?}", s, l));
+    list.connect_popup_menu_item("remove", |s, l| println!("remove: {:?} : {:?}", s, l));
     list.add_row(&vec!["one".to_value(), "two".to_value()]);
     list.add_row(&vec!["three".to_value(), "four".to_value()]);
 
