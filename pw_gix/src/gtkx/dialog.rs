@@ -113,7 +113,7 @@ pub mod dialog_user {
         if let Some(suggestion) = o_suggestion {
             dialog.set_filename(suggestion);
         };
-        if gtk::ResponseType::from(dialog.run()) == gtk::ResponseType::Ok {
+        if dialog.run() == gtk::ResponseType::Ok {
             if let Some(file_path) = dialog.get_filename() {
                 unsafe { dialog.destroy() };
                 if absolute {
@@ -176,6 +176,78 @@ pub mod dialog_user {
                     window.set_icon(Some(icon));
                 }
             };
+        }
+
+        fn new_colour_chooser_dialog_builder(&self) -> gtk::ColorChooserDialogBuilder {
+            let mut dialog_builder = gtk::ColorChooserDialogBuilder::new();
+            if let Some(tlw) = self.get_toplevel_gtk_window() {
+                if let Some(icon) = tlw.get_icon() {
+                    dialog_builder = dialog_builder.icon(&icon);
+                }
+                dialog_builder = dialog_builder.parent(&tlw);
+            };
+
+            dialog_builder
+        }
+
+        fn new_dialog_builder(&self) -> gtk::DialogBuilder {
+            let mut dialog_builder = gtk::DialogBuilder::new();
+            if let Some(tlw) = self.get_toplevel_gtk_window() {
+                if let Some(icon) = tlw.get_icon() {
+                    dialog_builder = dialog_builder.icon(&icon);
+                }
+                dialog_builder = dialog_builder.parent(&tlw);
+            };
+
+            dialog_builder
+        }
+
+        fn new_file_chooser_dialog_builder(&self) -> gtk::FileChooserDialogBuilder {
+            let mut dialog_builder = gtk::FileChooserDialogBuilder::new();
+            if let Some(tlw) = self.get_toplevel_gtk_window() {
+                if let Some(icon) = tlw.get_icon() {
+                    dialog_builder = dialog_builder.icon(&icon);
+                }
+                dialog_builder = dialog_builder.parent(&tlw);
+            };
+
+            dialog_builder
+        }
+
+        fn new_font_chooser_dialog_builder(&self) -> gtk::FontChooserDialogBuilder {
+            let mut dialog_builder = gtk::FontChooserDialogBuilder::new();
+            if let Some(tlw) = self.get_toplevel_gtk_window() {
+                if let Some(icon) = tlw.get_icon() {
+                    dialog_builder = dialog_builder.icon(&icon);
+                }
+                dialog_builder = dialog_builder.parent(&tlw);
+            };
+
+            dialog_builder
+        }
+
+        fn new_message_dialog_builder(&self) -> gtk::MessageDialogBuilder {
+            let mut dialog_builder = gtk::MessageDialogBuilder::new();
+            if let Some(tlw) = self.get_toplevel_gtk_window() {
+                if let Some(icon) = tlw.get_icon() {
+                    dialog_builder = dialog_builder.icon(&icon);
+                }
+                dialog_builder = dialog_builder.parent(&tlw);
+            };
+
+            dialog_builder
+        }
+
+        fn new_recent_chooser_dialog_builder(&self) -> gtk::RecentChooserDialogBuilder {
+            let mut dialog_builder = gtk::RecentChooserDialogBuilder::new();
+            if let Some(tlw) = self.get_toplevel_gtk_window() {
+                if let Some(icon) = tlw.get_icon() {
+                    dialog_builder = dialog_builder.icon(&icon);
+                }
+                dialog_builder = dialog_builder.parent(&tlw);
+            };
+
+            dialog_builder
         }
 
         fn new_dialog(&self) -> gtk::Dialog {
@@ -359,7 +431,7 @@ pub mod dialog_user {
             dialog.get_content_area().pack_start(&h_box, true, true, 0);
             dialog.show_all();
             entry.set_activates_default(true);
-            let response = gtk::ResponseType::from(dialog.run());
+            let response = dialog.run();
             unsafe { dialog.destroy() };
             if response == gtk::ResponseType::Ok {
                 let gtext = entry.get_text();
@@ -457,7 +529,7 @@ pub mod dialog_user {
             });
 
             dialog.set_default_response(gtk::ResponseType::Ok);
-            if gtk::ResponseType::from(dialog.run()) == gtk::ResponseType::Ok {
+            if dialog.run() == gtk::ResponseType::Ok {
                 let text = String::from(entry.get_text());
                 unsafe { dialog.destroy() };
                 Some(PathBuf::from(&String::from(text)))
