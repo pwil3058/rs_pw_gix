@@ -336,17 +336,19 @@ pub mod dialog_user {
             &self,
             question: &str,
             expln: Option<&str>,
-            buttons: gtk::ButtonsType,
+            buttons: &[(&'static str, gtk::ResponseType)],
         ) -> gtk::ResponseType {
             let mut builder = self.new_message_dialog_builder();
             if let Some(expln) = expln {
                 builder = builder.secondary_text(expln);
             };
             let dialog = builder
-                .buttons(buttons)
                 .message_type(gtk::MessageType::Question)
                 .text(question)
                 .build();
+            for button in buttons {
+                dialog.add_button(button.0, button.1);
+            }
             dialog.enable_auto_destroy();
             let response = dialog.run();
             dialog.hide();
@@ -354,7 +356,7 @@ pub mod dialog_user {
         }
 
         fn ask_confirm_action(&self, msg: &str, expln: Option<&str>) -> bool {
-            self.ask_question(msg, expln, gtk::ButtonsType::OkCancel) == gtk::ResponseType::Ok
+            self.ask_question(msg, expln, &Self::CANCEL_OK_BUTTONS) == gtk::ResponseType::Ok
         }
 
         fn ask_string_cancel_or_ok(&self, question: &str) -> (gtk::ResponseType, Option<String>) {
