@@ -82,6 +82,14 @@ pub mod dialog_user {
     implement_tgw_for_widget!(Widget);
     implement_tgw_for_widget!(Window);
     implement_tgw_for_widget!(ApplicationWindow);
+    implement_tgw_for_widget!(Dialog);
+    implement_tgw_for_widget!(AboutDialog);
+    implement_tgw_for_widget!(AppChooserDialog);
+    implement_tgw_for_widget!(ColorChooserDialog);
+    implement_tgw_for_widget!(FileChooserDialog);
+    implement_tgw_for_widget!(FontChooserDialog);
+    implement_tgw_for_widget!(MessageDialog);
+    implement_tgw_for_widget!(RecentChooserDialog);
 
     pub fn parent_none() -> Option<&'static gtk::Window> {
         let none: Option<&gtk::Window> = None;
@@ -92,40 +100,6 @@ pub mod dialog_user {
         ("Cancel", gtk::ResponseType::Cancel),
         ("Ok", gtk::ResponseType::Ok),
     ];
-
-    fn browse_path<P: IsA<gtk::Window> + gtk::GtkWindowExt>(
-        dialog_parent: Option<&P>,
-        o_prompt: Option<&str>,
-        o_suggestion: Option<&str>,
-        action: gtk::FileChooserAction,
-        absolute: bool,
-    ) -> Option<PathBuf> {
-        let dialog = gtk::FileChooserDialog::new(o_prompt, dialog_parent, action);
-        if let Some(parent) = dialog_parent {
-            if let Some(ref icon) = parent.get_icon() {
-                dialog.set_icon(Some(icon))
-            }
-        };
-        for button in CANCEL_OK_BUTTONS {
-            dialog.add_button(button.0, button.1);
-        }
-        dialog.set_default_response(gtk::ResponseType::Ok);
-        if let Some(suggestion) = o_suggestion {
-            dialog.set_filename(suggestion);
-        };
-        if dialog.run() == gtk::ResponseType::Ok {
-            if let Some(file_path) = dialog.get_filename() {
-                unsafe { dialog.destroy() };
-                if absolute {
-                    return Some(pw_pathux::absolute_path_buf(&file_path));
-                } else {
-                    return Some(pw_pathux::relative_path_buf_or_mine(&file_path));
-                }
-            };
-        };
-        unsafe { dialog.destroy() };
-        None
-    }
 
     fn markup_cmd_fail(cmd: &str) -> String {
         format!(
@@ -169,6 +143,13 @@ pub mod dialog_user {
     }
 
     pub trait DialogUser: TopGtkWindow {
+        const CLOSE_BUTTONS: [(&'static str, gtk::ResponseType); 1] =
+            [("Close", gtk::ResponseType::Close)];
+        const CANCEL_OK_BUTTONS: [(&'static str, gtk::ResponseType); 2] = [
+            ("Cancel", gtk::ResponseType::Cancel),
+            ("Ok", gtk::ResponseType::Ok),
+        ];
+
         fn set_transient_for_and_icon_on<W: gtk::GtkWindowExt>(&self, window: &W) {
             if let Some(tlw) = self.get_toplevel_gtk_window() {
                 window.set_transient_for(Some(&tlw));
@@ -250,68 +231,31 @@ pub mod dialog_user {
             dialog_builder
         }
 
-        fn new_dialog(&self) -> gtk::Dialog {
-            let dialog = gtk::Dialog::new();
-            self.set_transient_for_and_icon_on(&dialog);
-            dialog
-        }
-
-        fn new_dialog_with_buttons(
-            &self,
-            title: Option<&str>,
-            flags: gtk::DialogFlags,
-            buttons: &[(&str, gtk::ResponseType)],
-        ) -> gtk::Dialog {
-            let dialog = gtk::Dialog::with_buttons(title, parent_none(), flags, buttons);
-            self.set_transient_for_and_icon_on(&dialog);
-            dialog
-        }
-
-        fn new_message_dialog(
-            &self,
-            flags: gtk::DialogFlags,
-            type_: gtk::MessageType,
-            buttons: &[(&str, gtk::ResponseType)],
-            message: &str,
-        ) -> gtk::MessageDialog {
-            let dialog = gtk::MessageDialog::new(
-                parent_none(),
-                flags,
-                type_,
-                gtk::ButtonsType::None,
-                message,
-            );
-            for button in buttons {
-                dialog.add_button(button.0, button.1);
-            }
-            self.set_transient_for_and_icon_on(&dialog);
-            dialog
-        }
-
-        fn new_inform_user_dialog(
+        fn message_and_explanation(
             &self,
             msg: &str,
-            o_expln: Option<&str>,
-            problem_type: gtk::MessageType,
-        ) -> gtk::MessageDialog {
-            let buttons = &[("Close", gtk::ResponseType::Close)];
-            let dialog =
-                self.new_message_dialog(gtk::DialogFlags::empty(), problem_type, buttons, msg);
-            if let Some(expln) = o_expln {
-                dialog.set_property_secondary_text(Some(expln));
+            expln: Option<&str>,
+            msg_type: gtk::MessageType,
+        ) {
+            let mut builder = self.new_message_dialog_builder();
+            if let Some(expln) = expln {
+                builder = builder.secondary_text(expln);
             };
+            let dialog = builder
+                .text(msg)
+                .message_type(msg_type)
+                .buttons(gtk::ButtonsType::Close)
+                .build();
             dialog.enable_auto_destroy();
-            dialog
+            dialog.run();
         }
 
-        fn inform_user(&self, msg: &str, o_expln: Option<&str>) {
-            self.new_inform_user_dialog(msg, o_expln, gtk::MessageType::Info)
-                .run();
+        fn inform_user(&self, msg: &str, expln: Option<&str>) {
+            self.message_and_explanation(msg, expln, gtk::MessageType::Info)
         }
 
-        fn warn_user(&self, msg: &str, o_expln: Option<&str>) {
-            self.new_inform_user_dialog(msg, o_expln, gtk::MessageType::Warning)
-                .run();
+        fn warn_user(&self, msg: &str, expln: Option<&str>) {
+            self.message_and_explanation(msg, expln, gtk::MessageType::Warning)
         }
 
         fn report_error<E: Error>(&self, msg: &str, error: &E) {
@@ -319,34 +263,31 @@ pub mod dialog_user {
             if let Some(source) = error.source() {
                 expln += &format!("\nCaused by: {}.", source);
             };
-            self.new_inform_user_dialog(msg, Some(&expln), gtk::MessageType::Error)
-                .run();
+            self.message_and_explanation(msg, Some(&expln), gtk::MessageType::Error)
         }
 
         fn report_command_result(&self, cmd: &str, result: &io::Result<process::Output>) {
             match result {
                 Ok(output) => {
-                    let dialog = self.new_message_dialog(
-                        gtk::DialogFlags::empty(),
-                        gtk::MessageType::Info,
-                        &[("Close", gtk::ResponseType::Close)],
-                        "",
-                    );
-                    dialog.enable_auto_destroy();
-                    if !output.status.success() {
-                        dialog.set_property_message_type(gtk::MessageType::Error);
-                        dialog.set_markup(&markup_cmd_fail(cmd));
+                    let (msg_type, markup) = if !output.status.success() {
+                        (gtk::MessageType::Error, markup_cmd_fail(cmd))
                     } else if output.stderr.len() > 0 {
-                        dialog.set_property_message_type(gtk::MessageType::Warning);
-                        dialog.set_markup(&markup_cmd_warn(cmd));
+                        (gtk::MessageType::Warning, markup_cmd_warn(cmd))
                     } else {
-                        dialog.set_property_message_type(gtk::MessageType::Info);
-                        dialog.set_markup(&markup_cmd_ok(cmd));
-                    }
+                        (gtk::MessageType::Info, markup_cmd_ok(cmd))
+                    };
+                    let mut builder = self.new_message_dialog_builder();
                     if let Some(markup) = markup_output(&output) {
-                        dialog.set_property_secondary_use_markup(true);
-                        dialog.set_property_secondary_text(Some(markup.as_str()));
+                        builder = builder
+                            .secondary_use_markup(true)
+                            .secondary_text(markup.as_str());
                     }
+                    let dialog = builder
+                        .message_type(msg_type)
+                        .buttons(gtk::ButtonsType::Close)
+                        .text(&markup)
+                        .build();
+                    dialog.enable_auto_destroy();
                     dialog.run();
                 }
                 Err(err) => {
@@ -363,24 +304,25 @@ pub mod dialog_user {
                         // Nothing to report
                         return;
                     }
-                    let dialog = self.new_message_dialog(
-                        gtk::DialogFlags::empty(),
-                        gtk::MessageType::Info,
-                        &[("Close", gtk::ResponseType::Close)],
-                        "",
-                    );
-                    dialog.enable_auto_destroy();
-                    if !output.status.success() {
-                        dialog.set_property_message_type(gtk::MessageType::Error);
-                        dialog.set_markup(&markup_cmd_fail(cmd));
+                    let (msg_type, markup) = if !output.status.success() {
+                        (gtk::MessageType::Error, markup_cmd_fail(cmd))
+                    } else if output.stderr.len() > 0 {
+                        (gtk::MessageType::Warning, markup_cmd_warn(cmd))
                     } else {
-                        dialog.set_property_message_type(gtk::MessageType::Warning);
-                        dialog.set_markup(&markup_cmd_warn(cmd));
-                    }
+                        (gtk::MessageType::Info, markup_cmd_ok(cmd))
+                    };
+                    let mut builder = self.new_message_dialog_builder();
                     if let Some(markup) = markup_output(&output) {
-                        dialog.set_property_secondary_use_markup(true);
-                        dialog.set_property_secondary_text(Some(markup.as_str()));
+                        builder = builder
+                            .secondary_use_markup(true)
+                            .secondary_text(markup.as_str());
                     }
+                    let dialog = builder
+                        .message_type(msg_type)
+                        .buttons(gtk::ButtonsType::Close)
+                        .text(&markup)
+                        .build();
+                    dialog.enable_auto_destroy();
                     dialog.run();
                 }
                 Err(err) => {
@@ -393,36 +335,30 @@ pub mod dialog_user {
         fn ask_question(
             &self,
             question: &str,
-            o_expln: Option<&str>,
-            buttons: &[(&str, gtk::ResponseType)],
+            expln: Option<&str>,
+            buttons: gtk::ButtonsType,
         ) -> gtk::ResponseType {
-            let dialog = self.new_message_dialog(
-                gtk::DialogFlags::empty(),
-                gtk::MessageType::Question,
-                buttons,
-                question,
-            );
-            if let Some(expln) = o_expln {
-                dialog.set_property_secondary_text(Some(expln));
+            let mut builder = self.new_message_dialog_builder();
+            if let Some(expln) = expln {
+                builder = builder.secondary_text(expln);
             };
-            //dialog.enable_auto_destroy();
+            let dialog = builder
+                .buttons(buttons)
+                .message_type(gtk::MessageType::Question)
+                .text(question)
+                .build();
+            dialog.enable_auto_destroy();
             let response = dialog.run();
-            unsafe { dialog.destroy() };
+            dialog.hide();
             response
-            //gtk::ResponseType::from(dialog.run())
         }
 
         fn ask_confirm_action(&self, msg: &str, expln: Option<&str>) -> bool {
-            let response = self.ask_question(msg, expln, CANCEL_OK_BUTTONS);
-            response == gtk::ResponseType::Ok
+            self.ask_question(msg, expln, gtk::ButtonsType::OkCancel) == gtk::ResponseType::Ok
         }
 
         fn ask_string_cancel_or_ok(&self, question: &str) -> (gtk::ResponseType, Option<String>) {
-            let dialog = self.new_dialog_with_buttons(
-                None,
-                gtk::DialogFlags::DESTROY_WITH_PARENT,
-                CANCEL_OK_BUTTONS,
-            );
+            let dialog = self.new_dialog_builder().destroy_with_parent(true).build();
             dialog.set_default_response(gtk::ResponseType::Ok);
             let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
             h_box.pack_start(&gtk::Label::new(Some(question)), false, false, 2);
@@ -431,8 +367,9 @@ pub mod dialog_user {
             dialog.get_content_area().pack_start(&h_box, true, true, 0);
             dialog.show_all();
             entry.set_activates_default(true);
+            dialog.enable_auto_destroy();
             let response = dialog.run();
-            unsafe { dialog.destroy() };
+            dialog.hide();
             if response == gtk::ResponseType::Ok {
                 let gtext = entry.get_text();
                 (response, Some(gtext.to_string()))
@@ -453,15 +390,39 @@ pub mod dialog_user {
 
         fn browse_path(
             &self,
-            o_prompt: Option<&str>,
-            o_suggestion: Option<&str>,
+            prompt: Option<&str>,
+            suggestion: Option<&str>,
             action: gtk::FileChooserAction,
             absolute: bool,
         ) -> Option<PathBuf> {
-            if let Some(tlw) = self.get_toplevel_gtk_window() {
-                browse_path(Some(&tlw), o_prompt, o_suggestion, action, absolute)
+            let mut builder = self.new_file_chooser_dialog_builder();
+            if let Some(prompt) = prompt {
+                builder = builder.title(prompt);
+            }
+            let dialog = builder.action(action).build();
+            //let dialog = gtk::FileChooserDialog::new(o_prompt, dialog_parent, action);
+            for button in CANCEL_OK_BUTTONS {
+                dialog.add_button(button.0, button.1);
+            }
+            dialog.set_default_response(gtk::ResponseType::Ok);
+            if let Some(suggestion) = suggestion {
+                dialog.set_filename(suggestion);
+            };
+            if dialog.run() == gtk::ResponseType::Ok {
+                if let Some(file_path) = dialog.get_filename() {
+                    dialog.hide();
+                    if absolute {
+                        Some(pw_pathux::absolute_path_buf(&file_path))
+                    } else {
+                        Some(pw_pathux::relative_path_buf_or_mine(&file_path))
+                    }
+                } else {
+                    dialog.hide();
+                    None
+                }
             } else {
-                browse_path(parent_none(), o_prompt, o_suggestion, action, absolute)
+                dialog.hide();
+                None
             }
         }
 
@@ -471,11 +432,10 @@ pub mod dialog_user {
             suggestion: Option<&str>,
             action: gtk::FileChooserAction,
         ) -> Option<PathBuf> {
-            let dialog = self.new_dialog_with_buttons(
-                None,
-                gtk::DialogFlags::DESTROY_WITH_PARENT,
-                CANCEL_OK_BUTTONS,
-            );
+            let dialog = self.new_dialog_builder().destroy_with_parent(true).build();
+            for button in Self::CANCEL_OK_BUTTONS.iter() {
+                dialog.add_button(button.0, button.1);
+            }
             dialog.connect_close(|d| unsafe { d.destroy() });
             let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 1);
             dialog.get_content_area().pack_start(&hbox, false, false, 0);
@@ -521,7 +481,8 @@ pub mod dialog_user {
                 let suggestion_str = String::from(entry_c.get_text());
                 let suggestion: Option<&str> = Some(&suggestion_str);
                 if let Some(path) =
-                    browse_path(Some(&dialog_c), Some(&b_prompt), suggestion, action, false)
+                    //browse_path(Some(&dialog_c), Some(&b_prompt), suggestion, action, false)
+                    dialog_c.browse_path(Some(&b_prompt), suggestion, action, false)
                 {
                     let text = pw_pathux::path_to_string(&path);
                     entry_c.set_text(&text);
@@ -624,6 +585,14 @@ pub mod dialog_user {
     impl DialogUser for gtk::TreeView {}
     impl DialogUser for gtk::Window {}
     impl DialogUser for gtk::ApplicationWindow {}
+    impl DialogUser for gtk::Dialog {}
+    impl DialogUser for gtk::AboutDialog {}
+    impl DialogUser for gtk::AppChooserDialog {}
+    impl DialogUser for gtk::ColorChooserDialog {}
+    impl DialogUser for gtk::FileChooserDialog {}
+    impl DialogUser for gtk::FontChooserDialog {}
+    impl DialogUser for gtk::MessageDialog {}
+    impl DialogUser for gtk::RecentChooserDialog {}
 }
 
 fn get_dialog_size_corrn() -> (i32, i32) {
