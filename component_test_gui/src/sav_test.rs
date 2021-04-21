@@ -8,7 +8,7 @@ use pw_gix::{
     wrapper::*,
 };
 
-#[derive(PWO)]
+#[derive(PWO, Wrapper)]
 pub struct SavTest {
     vbox: gtk::Box,
     enforcer: Rc<Enforcer>,

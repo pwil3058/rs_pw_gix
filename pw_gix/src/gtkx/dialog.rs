@@ -13,7 +13,7 @@ pub trait AutoDestroy:
     fn enable_auto_destroy(&self) {
         unsafe {
             self.connect_close(|d| d.destroy());
-            self.connect_response(|d, _| d.destroy());
+            //self.connect_response(|d, _| d.destroy());
         }
     }
 }

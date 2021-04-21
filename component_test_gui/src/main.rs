@@ -155,8 +155,16 @@ fn main() {
         .connect_activate(|_| println!("remove"));
     menu_bar.show_all();
 
-    let sav_test = SavTest::new();
+    let sav_test = Rc::new(SavTest::new());
     vbox.pack_start(&sav_test.pwo(), false, false, 0);
+
+    let button = gtk::Button::with_label("Cancel/Ok Question");
+    vbox.pack_start(&button, false, false, 0);
+    let sav_test_c = Rc::clone(&sav_test);
+    button.connect_clicked(move |_| {
+        let result = sav_test_c.ask_confirm_action("Do you really want to?", None);
+    });
+
     let list = ListViewWithPopUpMenuBuilder::new()
         .selection_mode(gtk::SelectionMode::Multiple)
         .menu_item((
