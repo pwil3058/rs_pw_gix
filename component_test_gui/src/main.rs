@@ -162,7 +162,9 @@ fn main() {
     vbox.pack_start(&button, false, false, 0);
     let sav_test_c = Rc::clone(&sav_test);
     button.connect_clicked(move |_| {
-        let result = sav_test_c.ask_confirm_action("Do you really want to?", None);
+        let response = sav_test_c.ask_confirm_action("Do you really want to?", None);
+        let msg = format!("Response: {:?}", response);
+        sav_test_c.inform_user(&msg, None);
     });
 
     let list = ListViewWithPopUpMenuBuilder::new()

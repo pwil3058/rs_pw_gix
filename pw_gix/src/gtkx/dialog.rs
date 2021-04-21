@@ -7,26 +7,6 @@ use gtk;
 use crate::gdkx::*;
 use crate::recollections;
 
-pub trait AutoDestroy:
-    gtk::DialogExt + gtk::GtkWindowExt + gtk::WidgetExt + gtk::prelude::WidgetExtManual
-{
-    fn enable_auto_destroy(&self) {
-        unsafe {
-            self.connect_close(|d| d.destroy());
-            //self.connect_response(|d, _| d.destroy());
-        }
-    }
-}
-
-impl AutoDestroy for gtk::Dialog {}
-impl AutoDestroy for gtk::AboutDialog {}
-impl AutoDestroy for gtk::AppChooserDialog {}
-impl AutoDestroy for gtk::ColorChooserDialog {}
-impl AutoDestroy for gtk::FileChooserDialog {}
-impl AutoDestroy for gtk::FontChooserDialog {}
-impl AutoDestroy for gtk::MessageDialog {}
-impl AutoDestroy for gtk::RecentChooserDialog {}
-
 pub mod dialog_user {
     use std::error::Error;
     use std::io;
@@ -39,7 +19,6 @@ pub mod dialog_user {
 
     use pw_pathux;
 
-    use super::AutoDestroy;
     use crate::gtkx::entry::PathCompletion;
 
     pub trait TopGtkWindow {
@@ -246,8 +225,8 @@ pub mod dialog_user {
                 .message_type(msg_type)
                 .buttons(gtk::ButtonsType::Close)
                 .build();
-            dialog.enable_auto_destroy();
             dialog.run();
+            dialog.close();
         }
 
         fn inform_user(&self, msg: &str, expln: Option<&str>) {
@@ -287,8 +266,8 @@ pub mod dialog_user {
                         .buttons(gtk::ButtonsType::Close)
                         .text(&markup)
                         .build();
-                    dialog.enable_auto_destroy();
                     dialog.run();
+                    dialog.close();
                 }
                 Err(err) => {
                     let msg = format!("{}: blew up!", cmd);
@@ -322,8 +301,8 @@ pub mod dialog_user {
                         .buttons(gtk::ButtonsType::Close)
                         .text(&markup)
                         .build();
-                    dialog.enable_auto_destroy();
                     dialog.run();
+                    dialog.close();
                 }
                 Err(err) => {
                     let msg = format!("{}: blew up!", cmd);
@@ -349,7 +328,6 @@ pub mod dialog_user {
             for button in buttons {
                 dialog.add_button(button.0, button.1);
             }
-            dialog.enable_auto_destroy();
             let response = dialog.run();
             dialog.hide();
             response
@@ -369,7 +347,6 @@ pub mod dialog_user {
             dialog.get_content_area().pack_start(&h_box, true, true, 0);
             dialog.show_all();
             entry.set_activates_default(true);
-            dialog.enable_auto_destroy();
             let response = dialog.run();
             dialog.hide();
             if response == gtk::ResponseType::Ok {
