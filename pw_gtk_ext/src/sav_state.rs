@@ -118,13 +118,53 @@ impl MaskedCondnProvider for TreeSelection {
 pub type NumberedChangeCallback = (u64, Box<dyn Fn(MaskedCondns)>);
 
 #[derive(Default)]
-pub struct ChangedCondnsNotifier {
+pub struct ChangedCondnsNotifierCore {
     callbacks: RefCell<Vec<NumberedChangeCallback>>,
     next_token: Cell<u64>,
     current_condns: Cell<u64>,
 }
 
+#[derive(Default, Clone)]
+pub struct ChangedCondnsNotifier(Rc<ChangedCondnsNotifierCore>);
+
 impl ChangedCondnsNotifier {
+    pub fn new(initial_condns: u64) -> Self {
+        let ccn = ChangedCondnsNotifierCore::default();
+        ccn.current_condns.set(initial_condns);
+        Self(Rc::new(ccn))
+    }
+
+    pub fn current_condns(&self) -> u64 {
+        self.0.current_condns.get()
+    }
+
+    pub fn register_callback(&self, callback: Box<dyn Fn(MaskedCondns)>) -> u64 {
+        let token = self.0.next_token.get();
+        self.0.next_token.set(token + 1);
+
+        self.0.callbacks.borrow_mut().push((token, callback));
+
+        token
+    }
+
+    pub fn deregister_callback(&self, token: u64) {
+        let position = self.0.callbacks.borrow().iter().position(|x| x.0 == token);
+        if let Some(position) = position {
+            let _ = self.0.callbacks.borrow_mut().remove(position);
+        }
+    }
+
+    pub fn notify_changed_condns(&self, masked_condns: MaskedCondns) {
+        for (_, callback) in self.0.callbacks.borrow().iter() {
+            callback(masked_condns)
+        }
+        self.0
+            .current_condns
+            .set(masked_condns.condns | (self.0.current_condns.get() & !masked_condns.mask));
+    }
+}
+
+impl ChangedCondnsNotifierCore {
     pub fn new(initial_condns: u64) -> Rc<Self> {
         let ccn = Self::default();
         ccn.current_condns.set(initial_condns);
@@ -283,7 +323,7 @@ where
     widget_states_controlled: WidgetStatesControlled,
     groups: RefCell<HashMap<u64, ConditionalWidgetGroup<W>>>,
     current_condns: Cell<u64>,
-    change_notifier: Rc<ChangedCondnsNotifier>,
+    change_notifier: ChangedCondnsNotifier,
     selection: Option<gtk::TreeSelection>,
 }
 
@@ -291,7 +331,7 @@ where
 pub struct ConditionalWidgetGroupsBuilder {
     widget_states_controlled: WidgetStatesControlled,
     selection: Option<gtk::TreeSelection>,
-    change_notifier: Option<Rc<ChangedCondnsNotifier>>,
+    change_notifier: Option<ChangedCondnsNotifier>,
 }
 
 impl ConditionalWidgetGroupsBuilder {
@@ -309,8 +349,8 @@ impl ConditionalWidgetGroupsBuilder {
         self
     }
 
-    pub fn change_notifier(&mut self, change_notifier: &Rc<ChangedCondnsNotifier>) -> &mut Self {
-        self.change_notifier = Some(Rc::clone(change_notifier));
+    pub fn change_notifier(&mut self, change_notifier: &ChangedCondnsNotifier) -> &mut Self {
+        self.change_notifier = Some(change_notifier.clone());
         self
     }
 
@@ -319,7 +359,7 @@ impl ConditionalWidgetGroupsBuilder {
         W: WidgetExt + Clone + PartialEq,
     {
         let change_notifier = if let Some(change_notifier) = &self.change_notifier {
-            Rc::clone(&change_notifier)
+            change_notifier.clone()
         } else {
             ChangedCondnsNotifier::new(0)
         };
@@ -352,40 +392,6 @@ impl<W> ConditionalWidgetGroups<W>
 where
     W: WidgetExt + Clone + PartialEq,
 {
-    pub fn new(
-        wsc: WidgetStatesControlled,
-        selection: Option<&gtk::TreeSelection>,
-        change_notifier: Option<&Rc<ChangedCondnsNotifier>>,
-    ) -> Rc<Self> {
-        let change_notifier = if let Some(change_notifier) = change_notifier {
-            Rc::clone(&change_notifier)
-        } else {
-            ChangedCondnsNotifier::new(0)
-        };
-        let initial_condns = change_notifier.current_condns();
-        let cwg = Rc::new(ConditionalWidgetGroups::<W> {
-            widget_states_controlled: wsc,
-            groups: RefCell::new(HashMap::new()),
-            current_condns: Cell::new(initial_condns),
-            change_notifier: change_notifier,
-            selection: if let Some(selection) = selection {
-                Some(selection.clone())
-            } else {
-                None
-            },
-        });
-        if let Some(selection) = selection {
-            cwg.update_condns(selection.get_masked_conditions());
-            let cwg_clone = Rc::clone(&cwg);
-            selection
-                .connect_changed(move |seln| cwg_clone.update_condns(seln.get_masked_conditions()));
-        }
-        let cwg_clone = Rc::clone(&cwg);
-        cwg.change_notifier
-            .register_callback(Box::new(move |condns| cwg_clone.update_condns(condns)));
-        cwg
-    }
-
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -402,7 +408,7 @@ where
         self.current_condns.get()
     }
 
-    pub fn change_notifier(&self) -> &Rc<ChangedCondnsNotifier> {
+    pub fn change_notifier(&self) -> &ChangedCondnsNotifier {
         &self.change_notifier
     }
 
@@ -565,7 +571,7 @@ where
     widget_states_controlled: WidgetStatesControlled,
     groups: RefCell<HashMap<u64, ConditionalWidgetHashMap<K, W>>>,
     current_condns: Cell<u64>,
-    change_notifier: Rc<ChangedCondnsNotifier>,
+    change_notifier: ChangedCondnsNotifier,
     selection: Option<gtk::TreeSelection>,
 }
 
@@ -655,7 +661,7 @@ where
 
 pub struct ConditionalWidgetsBuilder {
     widget_states_controlled: WidgetStatesControlled,
-    change_notifier: Rc<ChangedCondnsNotifier>,
+    change_notifier: ChangedCondnsNotifier,
     selection: Option<gtk::TreeSelection>,
 }
 
@@ -682,8 +688,8 @@ impl ConditionalWidgetsBuilder {
         self
     }
 
-    pub fn change_notifier(&mut self, change_notifier: &Rc<ChangedCondnsNotifier>) -> &mut Self {
-        self.change_notifier = Rc::clone(change_notifier);
+    pub fn change_notifier(&mut self, change_notifier: &ChangedCondnsNotifier) -> &mut Self {
+        self.change_notifier = change_notifier.clone();
         self
     }
 
@@ -697,7 +703,7 @@ impl ConditionalWidgetsBuilder {
         W: WidgetExt + Clone + PartialEq,
         K: Eq + std::hash::Hash + std::fmt::Debug + 'static,
     {
-        let change_notifier = Rc::clone(&self.change_notifier);
+        let change_notifier = self.change_notifier.clone();
         let initial_condns = change_notifier.current_condns();
         let selection = self.selection.clone();
         let cwg = Rc::new(ConditionalWidgets::<K, W> {
