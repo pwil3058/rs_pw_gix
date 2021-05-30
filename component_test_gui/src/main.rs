@@ -22,7 +22,7 @@ use pw_gix::{
 
 mod sav_test;
 
-use pw_gix::sav_state::{SAV_HOVER_OK, SAV_SELN_UNIQUE, SAV_SELN_UNIQUE_OR_HOVER_OK};
+use pw_gix::sav_state::{SAV_SELN_UNIQUE, SAV_SELN_UNIQUE_OR_HOVER_OK};
 use sav_test::SavTest;
 
 struct TestListSpec;

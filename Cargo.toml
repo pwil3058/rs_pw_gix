@@ -3,5 +3,7 @@
 members = [
     "pw_gix",
     "pw_gix_derive",
+    "pw_gtk_ext",
+    "pw_gtk_ext_derive",
     "component_test_gui",
 ]
