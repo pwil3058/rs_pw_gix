@@ -13,6 +13,8 @@ use std::rc::Rc;
 
 use gtk::{TreeSelection, TreeSelectionExt, WidgetExt};
 
+pub use pw_gtk_ext_derive::*;
+
 /// A struct that enables the state of a subset of the conditions to
 /// be specified without effecting the other conditions.
 #[derive(Debug, Default, Clone, Copy)]
@@ -124,7 +126,7 @@ pub struct ChangedCondnsNotifierCore {
     current_condns: Cell<u64>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, WClone)]
 pub struct ChangedCondnsNotifier(Rc<ChangedCondnsNotifierCore>);
 
 impl ChangedCondnsNotifier {
@@ -284,7 +286,7 @@ where
     selection: Option<gtk::TreeSelection>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, WClone)]
 pub struct ConditionalWidgetGroups<W>(Rc<ConditionalWidgetGroupsCore<W>>)
 where
     W: WidgetExt + Clone + PartialEq;
@@ -531,7 +533,7 @@ where
 pub struct ConditionalWidgetsCore<K, W>
 where
     W: WidgetExt + Clone + PartialEq,
-    K: Eq + std::hash::Hash + std::fmt::Debug + Clone,
+    K: Eq + std::hash::Hash + std::fmt::Debug,
 {
     widget_states_controlled: WidgetStatesControlled,
     groups: RefCell<HashMap<u64, ConditionalWidgetHashMap<K, W>>>,
@@ -539,16 +541,17 @@ where
     change_notifier: ChangedCondnsNotifier,
     selection: Option<gtk::TreeSelection>,
 }
-#[derive(Default, Clone)]
+
+#[derive(Default, WClone)]
 pub struct ConditionalWidgets<K, W>(Rc<ConditionalWidgetsCore<K, W>>)
 where
     W: WidgetExt + Clone + PartialEq,
-    K: Eq + std::hash::Hash + std::fmt::Debug + Clone;
+    K: Eq + std::hash::Hash + std::fmt::Debug;
 
 impl<K, W> ConditionalWidgets<K, W>
 where
     W: WidgetExt + Clone + PartialEq,
-    K: Eq + std::hash::Hash + std::fmt::Debug + Clone,
+    K: Eq + std::hash::Hash + std::fmt::Debug,
 {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
@@ -672,7 +675,7 @@ impl ConditionalWidgetsBuilder {
     pub fn build<K, W>(&self) -> ConditionalWidgets<K, W>
     where
         W: WidgetExt + Clone + PartialEq,
-        K: Eq + std::hash::Hash + std::fmt::Debug + 'static + Clone,
+        K: Eq + std::hash::Hash + std::fmt::Debug + 'static,
     {
         let change_notifier = self.change_notifier.clone();
         let initial_condns = change_notifier.current_condns();
