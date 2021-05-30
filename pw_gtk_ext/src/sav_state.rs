@@ -164,42 +164,6 @@ impl ChangedCondnsNotifier {
     }
 }
 
-impl ChangedCondnsNotifierCore {
-    pub fn new(initial_condns: u64) -> Rc<Self> {
-        let ccn = Self::default();
-        ccn.current_condns.set(initial_condns);
-        Rc::new(ccn)
-    }
-
-    pub fn current_condns(&self) -> u64 {
-        self.current_condns.get()
-    }
-
-    pub fn register_callback(&self, callback: Box<dyn Fn(MaskedCondns)>) -> u64 {
-        let token = self.next_token.get();
-        self.next_token.set(token + 1);
-
-        self.callbacks.borrow_mut().push((token, callback));
-
-        token
-    }
-
-    pub fn deregister_callback(&self, token: u64) {
-        let position = self.callbacks.borrow().iter().position(|x| x.0 == token);
-        if let Some(position) = position {
-            let _ = self.callbacks.borrow_mut().remove(position);
-        }
-    }
-
-    pub fn notify_changed_condns(&self, masked_condns: MaskedCondns) {
-        for (_, callback) in self.callbacks.borrow().iter() {
-            callback(masked_condns)
-        }
-        self.current_condns
-            .set(masked_condns.condns | (self.current_condns.get() & !masked_condns.mask));
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
 pub enum WidgetStatesControlled {
     Sensitivity,
@@ -564,10 +528,10 @@ where
 }
 
 #[derive(Default)]
-pub struct ConditionalWidgets<K, W>
+pub struct ConditionalWidgetsCore<K, W>
 where
     W: WidgetExt + Clone + PartialEq,
-    K: Eq + std::hash::Hash + std::fmt::Debug,
+    K: Eq + std::hash::Hash + std::fmt::Debug + Clone,
 {
     widget_states_controlled: WidgetStatesControlled,
     groups: RefCell<HashMap<u64, ConditionalWidgetHashMap<K, W>>>,
@@ -575,11 +539,16 @@ where
     change_notifier: ChangedCondnsNotifier,
     selection: Option<gtk::TreeSelection>,
 }
+#[derive(Default, Clone)]
+pub struct ConditionalWidgets<K, W>(Rc<ConditionalWidgetsCore<K, W>>)
+where
+    W: WidgetExt + Clone + PartialEq,
+    K: Eq + std::hash::Hash + std::fmt::Debug + Clone;
 
 impl<K, W> ConditionalWidgets<K, W>
 where
     W: WidgetExt + Clone + PartialEq,
-    K: Eq + std::hash::Hash + std::fmt::Debug,
+    K: Eq + std::hash::Hash + std::fmt::Debug + Clone,
 {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
@@ -587,14 +556,14 @@ where
 
     pub fn len(&self) -> usize {
         let mut len = 0;
-        for group in self.groups.borrow().values() {
+        for group in self.0.groups.borrow().values() {
             len += group.len()
         }
         len
     }
 
     fn contains_key(&self, key: &K) -> bool {
-        for group in self.groups.borrow().values() {
+        for group in self.0.groups.borrow().values() {
             if group.widgets.contains_key(key) {
                 return true;
             }
@@ -603,7 +572,7 @@ where
     }
 
     fn contains_widget(&self, widget: &W) -> bool {
-        for group in self.groups.borrow().values() {
+        for group in self.0.groups.borrow().values() {
             if group.contains_widget(widget) {
                 return true;
             }
@@ -614,13 +583,13 @@ where
     pub fn add_widget(&self, key: K, widget: &W, condns: u64) {
         debug_assert!(!self.contains_widget(&widget));
         debug_assert!(!self.contains_key(&key));
-        let mut groups = self.groups.borrow_mut();
+        let mut groups = self.0.groups.borrow_mut();
         if let Some(group) = groups.get_mut(&condns) {
             group.insert(key, widget.clone());
             return;
         }
-        let mut group = ConditionalWidgetHashMap::<K, W>::new(self.widget_states_controlled);
-        group.set_state((condns & self.current_condns.get()) == condns);
+        let mut group = ConditionalWidgetHashMap::<K, W>::new(self.0.widget_states_controlled);
+        group.set_state((condns & self.0.current_condns.get()) == condns);
         group.insert(key, widget.clone());
         groups.insert(condns, group);
     }
@@ -630,7 +599,7 @@ where
         K: std::borrow::Borrow<Q>,
         Q: std::hash::Hash + Eq,
     {
-        let groups = self.groups.borrow();
+        let groups = self.0.groups.borrow();
         for group in groups.values() {
             if let Some(widget) = group.widgets.get(key) {
                 return Some(widget.clone());
@@ -641,17 +610,18 @@ where
 
     pub fn update_condns(&self, changed_condns: MaskedCondns) {
         debug_assert!(changed_condns.is_consistent());
-        let new_condns = changed_condns.condns | (self.current_condns.get() & !changed_condns.mask);
-        for (key_condns, group) in self.groups.borrow_mut().iter_mut() {
+        let new_condns =
+            changed_condns.condns | (self.0.current_condns.get() & !changed_condns.mask);
+        for (key_condns, group) in self.0.groups.borrow_mut().iter_mut() {
             if changed_condns.mask & key_condns != 0 {
                 group.set_state((key_condns & new_condns) == *key_condns);
             };
         }
-        self.current_condns.set(new_condns)
+        self.0.current_condns.set(new_condns)
     }
 
     pub fn update_hover_condns(&self, hover_ok: bool) {
-        let new_condns = if let Some(selection) = &self.selection {
+        let new_condns = if let Some(selection) = &self.0.selection {
             selection.get_masked_conditions_with_hover_ok(hover_ok)
         } else {
             hover_masked_conditions(hover_ok)
@@ -699,29 +669,30 @@ impl ConditionalWidgetsBuilder {
         self
     }
 
-    pub fn build<K, W>(&self) -> Rc<ConditionalWidgets<K, W>>
+    pub fn build<K, W>(&self) -> ConditionalWidgets<K, W>
     where
         W: WidgetExt + Clone + PartialEq,
-        K: Eq + std::hash::Hash + std::fmt::Debug + 'static,
+        K: Eq + std::hash::Hash + std::fmt::Debug + 'static + Clone,
     {
         let change_notifier = self.change_notifier.clone();
         let initial_condns = change_notifier.current_condns();
         let selection = self.selection.clone();
-        let cwg = Rc::new(ConditionalWidgets::<K, W> {
+        let cwg = ConditionalWidgets(Rc::new(ConditionalWidgetsCore::<K, W> {
             widget_states_controlled: self.widget_states_controlled,
             groups: RefCell::new(HashMap::new()),
             current_condns: Cell::new(initial_condns),
             change_notifier,
             selection,
-        });
-        if let Some(selection) = &cwg.selection {
+        }));
+        if let Some(selection) = &cwg.0.selection {
             cwg.update_condns(selection.get_masked_conditions());
-            let cwg_clone = Rc::clone(&cwg);
+            let cwg_clone = cwg.clone();
             selection
                 .connect_changed(move |seln| cwg_clone.update_condns(seln.get_masked_conditions()));
         }
-        let cwg_clone = Rc::clone(&cwg);
-        cwg.change_notifier
+        let cwg_clone = cwg.clone();
+        cwg.0
+            .change_notifier
             .register_callback(Box::new(move |condns| cwg_clone.update_condns(condns)));
         cwg
     }
