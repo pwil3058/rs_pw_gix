@@ -287,16 +287,10 @@ struct ConditionalWidgetGroupBuilder {
 }
 
 impl ConditionalWidgetGroupBuilder {
-    fn new() -> Self {
-        Self::default()
-    }
-
-    fn widget_states_controlled(
-        &mut self,
-        widget_states_controlled: WidgetStatesControlled,
-    ) -> &mut Self {
-        self.widget_states_controlled = widget_states_controlled;
-        self
+    fn new(widget_states_controlled: WidgetStatesControlled) -> Self {
+        Self {
+            widget_states_controlled,
+        }
     }
 
     fn build<W>(&self) -> ConditionalWidgetGroup<W>
@@ -313,19 +307,23 @@ impl ConditionalWidgetGroupBuilder {
 
 /// Groups of widgets whose sensitivity and/or visibility is determined
 /// by the current conditions
-// TODO: get a better name than ConditionalWidgetGroups
 // TODO: make a dynamic trait version
 #[derive(Default)]
-pub struct ConditionalWidgetGroups<W>
+pub struct ConditionalWidgetGroupsCore<W>
 where
     W: WidgetExt + Clone + PartialEq,
 {
-    widget_states_controlled: WidgetStatesControlled,
+    conditional_widget_group_builder: ConditionalWidgetGroupBuilder,
     groups: RefCell<HashMap<u64, ConditionalWidgetGroup<W>>>,
     current_condns: Cell<u64>,
     change_notifier: ChangedCondnsNotifier,
     selection: Option<gtk::TreeSelection>,
 }
+
+#[derive(Default, Clone)]
+pub struct ConditionalWidgetGroups<W>(Rc<ConditionalWidgetGroupsCore<W>>)
+where
+    W: WidgetExt + Clone + PartialEq;
 
 #[derive(Default)]
 pub struct ConditionalWidgetGroupsBuilder {
@@ -354,7 +352,7 @@ impl ConditionalWidgetGroupsBuilder {
         self
     }
 
-    pub fn build<W>(&self) -> Rc<ConditionalWidgetGroups<W>>
+    pub fn build<W>(&self) -> ConditionalWidgetGroups<W>
     where
         W: WidgetExt + Clone + PartialEq,
     {
@@ -364,25 +362,29 @@ impl ConditionalWidgetGroupsBuilder {
             ChangedCondnsNotifier::new(0)
         };
         let initial_condns = change_notifier.current_condns();
-        let cwg = Rc::new(ConditionalWidgetGroups::<W> {
-            widget_states_controlled: self.widget_states_controlled,
+        let selection = if let Some(selection) = &self.selection {
+            Some(selection.clone())
+        } else {
+            None
+        };
+        let cwg = ConditionalWidgetGroups(Rc::new(ConditionalWidgetGroupsCore::<W> {
+            conditional_widget_group_builder: ConditionalWidgetGroupBuilder::new(
+                self.widget_states_controlled,
+            ),
             groups: RefCell::new(HashMap::new()),
             current_condns: Cell::new(initial_condns),
             change_notifier,
-            selection: if let Some(selection) = &self.selection {
-                Some(selection.clone())
-            } else {
-                None
-            },
-        });
+            selection,
+        }));
         if let Some(selection) = &self.selection {
             cwg.update_condns(selection.get_masked_conditions());
-            let cwg_clone = Rc::clone(&cwg);
+            let cwg_clone = cwg.clone();
             selection
                 .connect_changed(move |seln| cwg_clone.update_condns(seln.get_masked_conditions()));
         }
-        let cwg_clone = Rc::clone(&cwg);
-        cwg.change_notifier
+        let cwg_clone = cwg.clone();
+        cwg.0
+            .change_notifier
             .register_callback(Box::new(move |condns| cwg_clone.update_condns(condns)));
         cwg
     }
@@ -398,22 +400,22 @@ where
 
     pub fn len(&self) -> usize {
         let mut len = 0;
-        for group in self.groups.borrow().values() {
+        for group in self.0.groups.borrow().values() {
             len += group.len()
         }
         len
     }
 
     pub fn current_condns(&self) -> u64 {
-        self.current_condns.get()
+        self.0.current_condns.get()
     }
 
     pub fn change_notifier(&self) -> &ChangedCondnsNotifier {
-        &self.change_notifier
+        &self.0.change_notifier
     }
 
     fn contains_name(&self, name: &str) -> bool {
-        for group in self.groups.borrow().values() {
+        for group in self.0.groups.borrow().values() {
             if group.contains_name(name) {
                 return true;
             }
@@ -422,7 +424,7 @@ where
     }
 
     fn contains_widget(&self, widget: &W) -> bool {
-        for group in self.groups.borrow().values() {
+        for group in self.0.groups.borrow().values() {
             if group.contains_widget(widget) {
                 return true;
             }
@@ -433,21 +435,19 @@ where
     pub fn add_widget(&self, name: &str, widget: &W, condns: u64) {
         assert!(!self.contains_widget(&widget));
         assert!(!self.contains_name(&name));
-        let mut groups = self.groups.borrow_mut();
+        let mut groups = self.0.groups.borrow_mut();
         if let Some(group) = groups.get_mut(&condns) {
             group.add_widget(name, widget.clone());
             return;
         }
-        let mut group = ConditionalWidgetGroupBuilder::new()
-            .widget_states_controlled(self.widget_states_controlled)
-            .build::<W>();
-        group.set_state((condns & self.current_condns.get()) == condns);
+        let mut group = self.0.conditional_widget_group_builder.build::<W>();
+        group.set_state((condns & self.0.current_condns.get()) == condns);
         group.add_widget(name, widget.clone());
         groups.insert(condns, group);
     }
 
     pub fn get_widget(&self, name: &str) -> Option<W> {
-        let groups = self.groups.borrow();
+        let groups = self.0.groups.borrow();
         for group in groups.values() {
             if let Some(widget) = group.widgets.get(name) {
                 return Some(widget.clone());
@@ -458,17 +458,18 @@ where
 
     pub fn update_condns(&self, changed_condns: MaskedCondns) {
         assert!(changed_condns.is_consistent());
-        let new_condns = changed_condns.condns | (self.current_condns.get() & !changed_condns.mask);
-        for (key_condns, group) in self.groups.borrow_mut().iter_mut() {
+        let new_condns =
+            changed_condns.condns | (self.0.current_condns.get() & !changed_condns.mask);
+        for (key_condns, group) in self.0.groups.borrow_mut().iter_mut() {
             if changed_condns.mask & key_condns != 0 {
                 group.set_state((key_condns & new_condns) == *key_condns);
             };
         }
-        self.current_condns.set(new_condns)
+        self.0.current_condns.set(new_condns)
     }
 
     pub fn update_hover_condns(&self, hover_ok: bool) {
-        let new_condns = if let Some(selection) = &self.selection {
+        let new_condns = if let Some(selection) = &self.0.selection {
             selection.get_masked_conditions_with_hover_ok(hover_ok)
         } else {
             hover_masked_conditions(hover_ok)
