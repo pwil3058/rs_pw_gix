@@ -99,11 +99,15 @@ impl MaskedCondnProvider for TreeSelection {
 
     fn get_masked_conditions_with_hover_ok(&self, hover_ok: bool) -> MaskedCondns {
         let mut mc = self.get_masked_conditions();
-        if hover_ok || (mc.condns & SAV_SELN_UNIQUE) != 0 {
-            mc.condns |= SAV_SELN_UNIQUE_OR_HOVER_OK
-        }
-        if hover_ok || (mc.condns & SAV_SELN_MADE) != 0 {
-            mc.condns |= SAV_SELN_MADE_OR_HOVER_OK
+        if hover_ok {
+            mc.condns |= SAV_SELN_UNIQUE_OR_HOVER_OK + SAV_SELN_MADE_OR_HOVER_OK
+        } else {
+            if (mc.condns & SAV_SELN_UNIQUE) != 0 {
+                mc.condns |= SAV_SELN_UNIQUE_OR_HOVER_OK
+            }
+            if (mc.condns & SAV_SELN_MADE) != 0 {
+                mc.condns |= SAV_SELN_MADE_OR_HOVER_OK
+            }
         }
         mc | hover_masked_conditions(hover_ok)
     }

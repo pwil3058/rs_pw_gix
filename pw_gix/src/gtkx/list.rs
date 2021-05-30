@@ -182,11 +182,15 @@ impl ListViewWithPopUpMenuBuilder {
             view.append_column(&col);
         }
 
+        let popup_menu = ManagedMenuBuilder::new()
+            .selection(&view.get_selection())
+            .build();
+
         let rgb_l_v = Rc::new(ListViewWithPopUpMenu {
             view,
             list_store,
             selected_id: RefCell::new(None),
-            popup_menu: ManagedMenuBuilder::new().build(),
+            popup_menu,
             callbacks: RefCell::new(HashMap::new()),
             id_field: self.id_field,
         });
@@ -209,7 +213,6 @@ impl ListViewWithPopUpMenuBuilder {
             if event.get_event_type() == gdk::EventType::ButtonPress {
                 match event.get_button() {
                     2 => {
-                        println!("DESELECT");
                         rgb_l_v_c.view.get_selection().unselect_all();
                         gtk::Inhibit(true)
                     }

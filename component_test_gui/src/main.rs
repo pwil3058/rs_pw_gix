@@ -22,7 +22,7 @@ use pw_gix::{
 
 mod sav_test;
 
-use pw_gix::sav_state::SAV_HOVER_OK;
+use pw_gix::sav_state::{SAV_HOVER_OK, SAV_SELN_UNIQUE, SAV_SELN_UNIQUE_OR_HOVER_OK};
 use sav_test::SavTest;
 
 struct TestListSpec;
@@ -172,12 +172,12 @@ fn main() {
         .menu_item((
             "edit",
             ("Edit", None, Some("Edit the indicated paint.")).into(),
-            SAV_HOVER_OK,
+            SAV_SELN_UNIQUE_OR_HOVER_OK,
         ))
         .menu_item((
             "remove",
             ("Remove", None, Some("Remove the indicated row.")).into(),
-            SAV_HOVER_OK,
+            SAV_SELN_UNIQUE,
         ))
         .id_field(1)
         .build(&TestListSpec);
