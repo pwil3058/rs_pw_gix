@@ -1,0 +1,13 @@
+[package]
+name = "pw_recollect"
+version = "0.1.0"
+authors = ["Peter Williams <pwil3058@bigpond.net.au>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+fs2 = "0.4.3"
+serde_json = "1.0.64"
+lazy_static = "1.4.0"
+mut_static = "5.0.0"

@@ -9,6 +9,7 @@
       <sourceFolder url="file://$MODULE_DIR$/pw_gix_derive/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/pw_gtk_ext/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/pw_gtk_ext_derive/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pw_recollect/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

@@ -6,4 +6,5 @@ members = [
     "pw_gtk_ext",
     "pw_gtk_ext_derive",
     "component_test_gui",
+    "pw_recollect"
 ]

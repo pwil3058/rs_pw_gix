@@ -21,3 +21,4 @@ pangocairo = "0.10.0"
 sourceview = "0.9.0"
 
 pw_gtk_ext_derive = { path = "../pw_gtk_ext_derive" }
+pw_recollect = { path = "../pw_recollect" }
