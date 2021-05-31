@@ -4,71 +4,51 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use quote::{quote, quote_spanned};
-use syn::spanned::Spanned;
 
 #[proc_macro_derive(PWO)]
 pub fn pwo_derive(input: TokenStream) -> TokenStream {
     let parsed_input: syn::DeriveInput = syn::parse_macro_input!(input);
     let struct_name = parsed_input.ident;
+    let error_tokens = quote_spanned! {
+        struct_name.span()=> compile_error!("'PWO' derive failed")
+    };
     match parsed_input.data {
-        syn::Data::Struct(s) => {
-            if let syn::Fields::Named(fields) = s.fields {
-                if let Some(field) = fields.named.first() {
-                    if let Some(ref ff_id) = field.ident {
-                        if let syn::Type::Path(ref ff_ty) = field.ty {
-                            let (impl_generics, ty_generics, where_clause) =
-                                parsed_input.generics.split_for_impl();
-                            let tokens = quote! {
-                                impl #impl_generics PackableWidgetObject for #struct_name #ty_generics #where_clause {
-                                    type PWT = #ff_ty;
-
-                                    fn pwo(&self) -> Self::PWT {
-                                        self.#ff_id.clone()
-                                    }
+        syn::Data::Struct(s) => match s.fields {
+            syn::Fields::Named(fields) => match fields.named.first() {
+                Some(field) => match field.ident {
+                    Some(ref ff_id) => {
+                        let (impl_generics, ty_generics, where_clause) =
+                            parsed_input.generics.split_for_impl();
+                        let tokens = quote! {
+                            impl #impl_generics PackableWidgetObject for #struct_name #ty_generics #where_clause {
+                                fn pwo(&self) -> gtk::Widget {
+                                    self.#ff_id.clone().dynamic_cast::<gtk::Widget>().unwrap()
                                 }
-                            };
-                            return proc_macro::TokenStream::from(tokens);
-                        } else {
-                            let tokens = quote_spanned! {
-                                field.ty.span()=> compile_error!("'PWO': unexpected type")
-                            };
-                            return proc_macro::TokenStream::from(tokens);
+                            }
+                        };
+                        proc_macro::TokenStream::from(tokens)
+                    }
+                    _ => proc_macro::TokenStream::from(error_tokens),
+                },
+                _ => proc_macro::TokenStream::from(error_tokens),
+            },
+            syn::Fields::Unnamed(_fields) => {
+                let (impl_generics, ty_generics, where_clause) =
+                    parsed_input.generics.split_for_impl();
+                let tokens = quote! {
+                    impl #impl_generics PackableWidgetObject for #struct_name #ty_generics #where_clause {
+                        fn pwo(&self) -> gtk::Widget {
+                            self.0.pwo()
                         }
                     }
-                }
+                };
+                proc_macro::TokenStream::from(tokens)
             }
-        }
-        _ => {
-            let tokens = quote_spanned! {
-                struct_name.span()=> compile_error!("'PWO' is only derivable for structs")
-            };
-            return proc_macro::TokenStream::from(tokens);
-        }
+            _ => proc_macro::TokenStream::from(error_tokens),
+        },
+        _ => proc_macro::TokenStream::from(error_tokens),
     }
-    let tokens = quote_spanned! {
-        struct_name.span()=> compile_error!("'PWO' requires at least one named field")
-    };
-    proc_macro::TokenStream::from(tokens)
 }
-
-// #[proc_macro_derive(WPWO)]
-// pub fn wpwo_derive(input: TokenStream) -> TokenStream {
-//     let parsed_input: syn::DeriveInput = syn::parse_macro_input!(input);
-//     let struct_name = parsed_input.ident;
-//     let (impl_generics, ty_generics, where_clause) = parsed_input.generics.split_for_impl();
-//
-//     let tokens = quote! {
-//         impl #impl_generics PackableWidgetObject for #struct_name #ty_generics #where_clause {
-//             type PWT = #ff_ty;
-//
-//             fn pwo(&self) -> Self::PWT {
-//                 self.0.pwo()
-//             }
-//         }
-//     };
-//
-//     proc_macro::TokenStream::from(tokens)
-// }
 
 #[proc_macro_derive(Wrapper)]
 pub fn wrapper_derive(input: TokenStream) -> TokenStream {

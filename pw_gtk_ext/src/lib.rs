@@ -4,6 +4,15 @@
 //! included in the **gtk-rs** project <http://gtk-rs.org/> by providing
 //! mechanisms to do common operations.
 
+#[macro_export]
+macro_rules! yield_to_pending_events {
+    ( ) => {
+        while gtk::events_pending() {
+            gtk::main_iteration();
+        }
+    };
+}
+
 /// Gtk-rs components
 pub use atk;
 pub use cairo;
