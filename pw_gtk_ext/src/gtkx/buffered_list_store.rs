@@ -1,11 +1,13 @@
 // Copyright 2021 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
-use crate::glib::{Type, Value};
+use crate::glib::Value;
 pub use crate::gtkx::list_store::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 pub trait RawDataSource {
+    fn column_types(&self) -> Vec<glib::Type>;
+    fn columns(&self) -> Vec<gtk::TreeViewColumn>;
     fn generate_rows(&self) -> Vec<Vec<Value>>;
     fn refresh(&self) -> Vec<u8>;
 }
@@ -30,6 +32,11 @@ impl<R: RawDataSource> RowBuffer<R> {
         let row_buffer = Self(RefCell::new(rwc));
         row_buffer.init();
         row_buffer
+    }
+
+    pub fn columns(&self) -> Vec<gtk::TreeViewColumn> {
+        let core = self.0.borrow();
+        core.raw_data.columns()
     }
 
     fn finalise(&self) {
@@ -64,8 +71,8 @@ pub struct BufferedListStore<R: RawDataSource> {
 }
 
 impl<R: RawDataSource> BufferedListStore<R> {
-    pub fn new(column_types: &[Type], raw_data_source: R) -> Self {
-        let list_store = gtk::ListStore::new(column_types);
+    pub fn new(raw_data_source: R) -> Self {
+        let list_store = gtk::ListStore::new(&raw_data_source.column_types());
         let row_buffer = RowBuffer::new(raw_data_source);
         Self {
             list_store,
@@ -75,6 +82,10 @@ impl<R: RawDataSource> BufferedListStore<R> {
 
     pub fn list_store(&self) -> &gtk::ListStore {
         &self.list_store
+    }
+
+    pub fn columns(&self) -> Vec<gtk::TreeViewColumn> {
+        self.row_buffer.columns()
     }
 
     pub fn repopulate(&self) {
