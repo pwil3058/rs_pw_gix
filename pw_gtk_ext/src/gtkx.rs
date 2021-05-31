@@ -2,3 +2,10 @@
 
 pub mod combo_box_text;
 pub mod dialog_user;
+#[macro_use]
+pub mod list_store;
+pub mod menu;
+#[macro_use]
+pub mod tree_model;
+#[macro_use]
+pub mod value;

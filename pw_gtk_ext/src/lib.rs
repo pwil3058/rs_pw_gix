@@ -13,6 +13,8 @@ macro_rules! yield_to_pending_events {
     };
 }
 
+pub static UNEXPECTED: &str = "Unexpected error: please inform <pwil3058@bigpond.net.au>";
+
 /// Gtk-rs components
 pub use atk;
 pub use cairo;
@@ -30,6 +32,8 @@ pub use sourceview;
 pub use pw_recollect;
 
 pub mod gdkx;
+#[macro_use]
 pub mod gtkx;
 pub mod sav_state;
+#[macro_use]
 pub mod wrapper;

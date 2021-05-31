@@ -22,3 +22,6 @@ sourceview = "0.9.0"
 
 pw_gtk_ext_derive = { path = "../pw_gtk_ext_derive" }
 pw_recollect = { path = "../pw_recollect" }
+
+[features]
+default = ["gtk/v3_18", "gio/v2_44", "cairo-rs/png"]

@@ -16,24 +16,6 @@ macro_rules! yield_to_pending_events {
     };
 }
 
-#[macro_use]
-pub mod fs_db;
-#[macro_use]
-pub mod wrapper;
-
-pub mod file_tree;
-pub mod gdk_pixbufx;
-pub mod gdkx;
-pub mod geometry;
-pub mod glibx;
-#[macro_use]
-pub mod gtkx;
-pub mod printer;
-pub mod sample;
-pub mod sav;
-pub mod sav_state;
-pub mod timeout;
-
 /// Gtk-rs components
 pub use atk;
 pub use cairo;
@@ -47,6 +29,24 @@ pub use pango;
 pub use pango_sys;
 pub use pangocairo;
 pub use sourceview;
+
+#[macro_use]
+pub mod fs_db;
+
+pub mod file_tree;
+pub mod gdk_pixbufx;
+pub mod gdkx;
+pub mod geometry;
+pub mod glibx;
+#[macro_use]
+pub mod gtkx;
+pub mod printer;
+pub mod sample;
+pub mod sav;
+pub mod sav_state;
+pub mod timeout;
+#[macro_use]
+pub mod wrapper;
 
 mod recollect {
     use std::collections::HashMap;
