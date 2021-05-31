@@ -5,60 +5,21 @@ pub use crate::gtkx::list_store::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub trait RowBufferUserIfce {
-    fn finalise(&self);
-    fn get_rows(&self) -> Rc<Vec<Vec<glib::Value>>>;
-    fn init(&self);
-    fn is_current(&self) -> bool;
-}
-
-pub struct BufferedListStore<B: RowBufferUserIfce> {
-    list_store: gtk::ListStore,
-    row_buffer: B,
-}
-
-impl<B: RowBufferUserIfce> BufferedListStore<B> {
-    pub fn new(column_types: &[Type], row_buffer: B) -> Self {
-        let list_store = gtk::ListStore::new(column_types);
-        Self {
-            list_store,
-            row_buffer,
-        }
-    }
-
-    pub fn list_store(&self) -> &gtk::ListStore {
-        &self.list_store
-    }
-
-    pub fn repopulate(&self) {
-        self.row_buffer.init();
-        self.list_store.repopulate_with(&self.row_buffer.get_rows());
-    }
-
-    pub fn update(&self) {
-        if !self.row_buffer.is_current() {
-            // this does a raw data update
-            self.row_buffer.finalise();
-            self.list_store.update_with(&self.row_buffer.get_rows());
-        };
-    }
-}
-
-pub trait RawData {
+pub trait RawDataSource {
     fn generate_rows(&self) -> Vec<Vec<Value>>;
     fn refresh(&self) -> Vec<u8>;
 }
 
-pub struct RowBufferCore<R: RawData> {
+pub struct RowBufferCore<R: RawDataSource> {
     pub raw_data: R,
     pub raw_data_digest: Vec<u8>,
     pub rows: Rc<Vec<Vec<Value>>>,
     pub rows_digest: Vec<u8>,
 }
 
-pub struct RowBuffer<R: RawData>(RefCell<RowBufferCore<R>>);
+pub struct RowBuffer<R: RawDataSource>(RefCell<RowBufferCore<R>>);
 
-impl<R: RawData> RowBuffer<R> {
+impl<R: RawDataSource> RowBuffer<R> {
     pub fn new(raw_data: R) -> Self {
         let rwc = RowBufferCore {
             raw_data,
@@ -70,9 +31,7 @@ impl<R: RawData> RowBuffer<R> {
         row_buffer.init();
         row_buffer
     }
-}
 
-impl<R: RawData> RowBufferUserIfce for RowBuffer<R> {
     fn finalise(&self) {
         let mut core = self.0.borrow_mut();
         core.rows = Rc::new(core.raw_data.generate_rows());
@@ -96,5 +55,38 @@ impl<R: RawData> RowBufferUserIfce for RowBuffer<R> {
         let mut core = self.0.borrow_mut();
         core.raw_data_digest = core.raw_data.refresh();
         core.raw_data_digest == core.rows_digest
+    }
+}
+
+pub struct BufferedListStore<R: RawDataSource> {
+    list_store: gtk::ListStore,
+    row_buffer: RowBuffer<R>,
+}
+
+impl<R: RawDataSource> BufferedListStore<R> {
+    pub fn new(column_types: &[Type], raw_data_source: R) -> Self {
+        let list_store = gtk::ListStore::new(column_types);
+        let row_buffer = RowBuffer::new(raw_data_source);
+        Self {
+            list_store,
+            row_buffer,
+        }
+    }
+
+    pub fn list_store(&self) -> &gtk::ListStore {
+        &self.list_store
+    }
+
+    pub fn repopulate(&self) {
+        self.row_buffer.init();
+        self.list_store.repopulate_with(&self.row_buffer.get_rows());
+    }
+
+    pub fn update(&self) {
+        if !self.row_buffer.is_current() {
+            // this does a raw data update
+            self.row_buffer.finalise();
+            self.list_store.update_with(&self.row_buffer.get_rows());
+        };
     }
 }
