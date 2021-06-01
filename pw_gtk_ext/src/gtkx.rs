@@ -12,3 +12,4 @@ pub mod tree_model;
 #[macro_use]
 pub mod value;
 pub mod dialog;
+pub mod mapped;
