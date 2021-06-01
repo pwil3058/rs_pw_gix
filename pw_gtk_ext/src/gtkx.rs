@@ -11,3 +11,4 @@ pub mod menu;
 pub mod tree_model;
 #[macro_use]
 pub mod value;
+pub mod dialog;

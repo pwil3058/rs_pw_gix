@@ -20,6 +20,8 @@ pango-sys = "0.10.0"
 pangocairo = "0.10.0"
 sourceview = "0.9.0"
 
+log = "0.4.14"
+
 pw_gtk_ext_derive = { path = "../pw_gtk_ext_derive" }
 pw_recollect = { path = "../pw_recollect" }
 
