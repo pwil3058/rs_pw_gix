@@ -1,7 +1,7 @@
 // Copyright 2021 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
 use crate::glib::Value;
-use crate::gtkx::buffered_list_store::{BufferedListStore, RawDataSource};
+use crate::gtkx::buffered_list_store::{BufferedListStore, RowDataSource};
 use crate::gtkx::menu::{ManagedMenu, ManagedMenuBuilder, MenuItemSpec};
 use crate::sav_state::MaskedCondns;
 use crate::sourceview::prelude::{
@@ -15,7 +15,7 @@ use std::rc::Rc;
 type PopupCallback = Box<dyn Fn(Option<Value>, Option<Vec<Value>>)>;
 
 #[derive(PWO)]
-pub struct BufferedListViewCore<R: RawDataSource> {
+pub struct BufferedListViewCore<R: RowDataSource> {
     view: gtk::TreeView,
     list_store: BufferedListStore<R>,
     selected_id: RefCell<Option<Value>>,
@@ -25,9 +25,9 @@ pub struct BufferedListViewCore<R: RawDataSource> {
 }
 
 #[derive(PWO, WClone)]
-pub struct BufferedListView<R: RawDataSource>(Rc<BufferedListViewCore<R>>);
+pub struct BufferedListView<R: RowDataSource>(Rc<BufferedListViewCore<R>>);
 
-impl<R: RawDataSource> BufferedListView<R> {
+impl<R: RowDataSource> BufferedListView<R> {
     fn set_selected_id(&self, posn: (f64, f64)) {
         if let Some(location) = self.0.view.get_path_at_pos(posn.0 as i32, posn.1 as i32) {
             if let Some(path) = location.0 {
@@ -134,7 +134,7 @@ impl BufferedListViewBuilder {
         self
     }
 
-    pub fn menu_items(&mut self, menu_items: Vec<(&'static str, MenuItemSpec, u64)>) -> &mut Self {
+    pub fn menu_items(&mut self, menu_items: &[(&'static str, MenuItemSpec, u64)]) -> &mut Self {
         for menu_item in menu_items.iter() {
             self.menu_items.push(menu_item.clone());
         }
@@ -151,7 +151,7 @@ impl BufferedListViewBuilder {
         self
     }
 
-    pub fn build<R: RawDataSource + 'static>(&self, raw_data_source: R) -> BufferedListView<R> {
+    pub fn build<R: RowDataSource + 'static>(&self, raw_data_source: R) -> BufferedListView<R> {
         let list_store = BufferedListStore::new(raw_data_source);
         let view = gtk::TreeViewBuilder::new().headers_visible(true).build();
         view.set_model(Some(list_store.list_store()));

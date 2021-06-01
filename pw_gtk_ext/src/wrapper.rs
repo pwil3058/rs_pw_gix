@@ -5,7 +5,7 @@ pub use glib::Cast;
 use crate::gdk::WindowExt;
 use crate::gdk_pixbuf::Pixbuf;
 use crate::gtk::WidgetExt;
-use crate::gtkx::dialog_user::DialogUser;
+pub use crate::gtkx::dialog_user::*;
 
 pub use pw_gtk_ext_derive::*;
 
