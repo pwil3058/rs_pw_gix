@@ -11,6 +11,7 @@ pub trait MapManagedUpdate {
     fn do_renew(&self);
     fn do_update(&self);
     fn is_mapped(&self) -> bool;
+    fn set_is_mapped(&self, value: bool);
     fn get_required_map_action(&self) -> RequiredMapAction;
     fn set_required_map_action(&self, action: RequiredMapAction);
 
@@ -21,14 +22,19 @@ pub trait MapManagedUpdate {
         }
     }
 
+    fn on_unmap_action(&self) {
+        self.set_is_mapped(false)
+    }
+
     fn on_map_action(&self) {
+        self.set_is_mapped(true);
         match self.get_required_map_action() {
             RequiredMapAction::Renew => {
-                self.renew();
+                self.do_renew();
                 self.set_required_map_action(RequiredMapAction::Nothing);
             }
             RequiredMapAction::Update => {
-                self.update();
+                self.do_update();
                 self.set_required_map_action(RequiredMapAction::Nothing);
             }
             RequiredMapAction::Nothing => (),
