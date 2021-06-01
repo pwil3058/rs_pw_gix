@@ -1,5 +1,6 @@
 // Copyright 2021 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
+use crate::sourceview::prelude::GtkWindowExt;
 use glib::Cast;
 use gtk::WidgetExt;
 
@@ -52,4 +53,95 @@ implement_tgw_for_widget!(FontChooserDialog);
 implement_tgw_for_widget!(MessageDialog);
 implement_tgw_for_widget!(RecentChooserDialog);
 
-pub trait DialogUser: TopGtkWindow {}
+pub trait DialogUser: TopGtkWindow {
+    fn new_colour_chooser_dialog_builder(&self) -> gtk::ColorChooserDialogBuilder {
+        let mut dialog_builder = gtk::ColorChooserDialogBuilder::new();
+        if let Some(tlw) = self.get_toplevel_gtk_window() {
+            if let Some(icon) = tlw.get_icon() {
+                dialog_builder = dialog_builder.icon(&icon);
+            }
+            dialog_builder = dialog_builder.parent(&tlw);
+        };
+
+        dialog_builder
+    }
+
+    fn new_dialog_builder(&self) -> gtk::DialogBuilder {
+        let mut dialog_builder = gtk::DialogBuilder::new();
+        if let Some(tlw) = self.get_toplevel_gtk_window() {
+            if let Some(icon) = tlw.get_icon() {
+                dialog_builder = dialog_builder.icon(&icon);
+            }
+            dialog_builder = dialog_builder.parent(&tlw);
+        };
+
+        dialog_builder
+    }
+
+    fn new_file_chooser_dialog_builder(&self) -> gtk::FileChooserDialogBuilder {
+        let mut dialog_builder = gtk::FileChooserDialogBuilder::new();
+        if let Some(tlw) = self.get_toplevel_gtk_window() {
+            if let Some(icon) = tlw.get_icon() {
+                dialog_builder = dialog_builder.icon(&icon);
+            }
+            dialog_builder = dialog_builder.parent(&tlw);
+        };
+
+        dialog_builder
+    }
+
+    fn new_font_chooser_dialog_builder(&self) -> gtk::FontChooserDialogBuilder {
+        let mut dialog_builder = gtk::FontChooserDialogBuilder::new();
+        if let Some(tlw) = self.get_toplevel_gtk_window() {
+            if let Some(icon) = tlw.get_icon() {
+                dialog_builder = dialog_builder.icon(&icon);
+            }
+            dialog_builder = dialog_builder.parent(&tlw);
+        };
+
+        dialog_builder
+    }
+
+    fn new_message_dialog_builder(&self) -> gtk::MessageDialogBuilder {
+        let mut dialog_builder = gtk::MessageDialogBuilder::new();
+        if let Some(tlw) = self.get_toplevel_gtk_window() {
+            if let Some(icon) = tlw.get_icon() {
+                dialog_builder = dialog_builder.icon(&icon);
+            }
+            dialog_builder = dialog_builder.parent(&tlw);
+        };
+
+        dialog_builder
+    }
+
+    fn new_recent_chooser_dialog_builder(&self) -> gtk::RecentChooserDialogBuilder {
+        let mut dialog_builder = gtk::RecentChooserDialogBuilder::new();
+        if let Some(tlw) = self.get_toplevel_gtk_window() {
+            if let Some(icon) = tlw.get_icon() {
+                dialog_builder = dialog_builder.icon(&icon);
+            }
+            dialog_builder = dialog_builder.parent(&tlw);
+        };
+
+        dialog_builder
+    }
+}
+
+impl DialogUser for gtk::Bin {}
+impl DialogUser for gtk::DrawingArea {}
+impl DialogUser for gtk::EventBox {}
+impl DialogUser for gtk::Frame {}
+impl DialogUser for gtk::Notebook {}
+impl DialogUser for gtk::ScrolledWindow {}
+impl DialogUser for gtk::TextView {}
+impl DialogUser for gtk::TreeView {}
+impl DialogUser for gtk::Window {}
+impl DialogUser for gtk::ApplicationWindow {}
+impl DialogUser for gtk::Dialog {}
+impl DialogUser for gtk::AboutDialog {}
+impl DialogUser for gtk::AppChooserDialog {}
+impl DialogUser for gtk::ColorChooserDialog {}
+impl DialogUser for gtk::FileChooserDialog {}
+impl DialogUser for gtk::FontChooserDialog {}
+impl DialogUser for gtk::MessageDialog {}
+impl DialogUser for gtk::RecentChooserDialog {}
