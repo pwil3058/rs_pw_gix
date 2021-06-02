@@ -13,3 +13,5 @@ pub mod tree_model;
 pub mod value;
 pub mod dialog;
 pub mod mapped;
+pub mod notebook;
+pub mod paned;

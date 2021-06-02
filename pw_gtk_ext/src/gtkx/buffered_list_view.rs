@@ -12,7 +12,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-type PopupCallback = Box<dyn Fn(Option<Value>, Option<Vec<Value>>)>;
+type PopupCallback = Box<dyn Fn(Option<Value>, Vec<Value>)>;
 
 #[derive(PWO)]
 pub struct BufferedListViewCore<R: RowDataSource> {
@@ -45,7 +45,7 @@ impl<R: RowDataSource> BufferedListView<R> {
         self.0.popup_menu.update_hover_condns(false);
     }
 
-    pub fn connect_popup_menu_item<F: Fn(Option<Value>, Option<Vec<Value>>) + 'static>(
+    pub fn connect_popup_menu_item<F: Fn(Option<Value>, Vec<Value>) + 'static>(
         &self,
         name: &str,
         callback: F,
@@ -66,22 +66,13 @@ impl<R: RowDataSource> BufferedListView<R> {
         };
         let selection = self.0.view.get_selection();
         let (tree_paths, store) = selection.get_selected_rows();
-        let selected_ids: Option<Vec<Value>> = if tree_paths.len() > 0 {
-            let mut vector = vec![];
-            for tree_path in tree_paths.iter() {
-                if let Some(iter) = store.get_iter(&tree_path) {
-                    vector.push(store.get_value(&iter, self.0.id_field));
-                }
+        let mut selected_ids = vec![];
+        for tree_path in tree_paths.iter() {
+            if let Some(iter) = store.get_iter(&tree_path) {
+                selected_ids.push(store.get_value(&iter, self.0.id_field));
             }
-            if vector.is_empty() {
-                None
-            } else {
-                Some(vector)
-            }
-        } else {
-            None
-        };
-        if hovered_id.is_some() || selected_ids.is_some() {
+        }
+        if hovered_id.is_some() || !selected_ids.is_empty() {
             for callback in self
                 .0
                 .callbacks
@@ -112,6 +103,7 @@ pub struct BufferedListViewBuilder {
     menu_items: Vec<(&'static str, MenuItemSpec, u64)>,
     id_field: i32,
     selection_mode: gtk::SelectionMode,
+    hover_expand: bool,
 }
 
 impl Default for BufferedListViewBuilder {
@@ -120,6 +112,7 @@ impl Default for BufferedListViewBuilder {
             menu_items: vec![],
             id_field: 0,
             selection_mode: gtk::SelectionMode::Single,
+            hover_expand: false,
         }
     }
 }
@@ -141,6 +134,11 @@ impl BufferedListViewBuilder {
         self
     }
 
+    pub fn hover_expand(&mut self, hover_expand: bool) -> &mut Self {
+        self.hover_expand = hover_expand;
+        self
+    }
+
     pub fn id_field(&mut self, id_field: i32) -> &mut Self {
         self.id_field = id_field;
         self
@@ -153,7 +151,10 @@ impl BufferedListViewBuilder {
 
     pub fn build<R: RowDataSource + 'static>(&self, raw_data_source: R) -> BufferedListView<R> {
         let list_store = BufferedListStore::new(raw_data_source);
-        let view = gtk::TreeViewBuilder::new().headers_visible(true).build();
+        let view = gtk::TreeViewBuilder::new()
+            .headers_visible(true)
+            .hover_expand(self.hover_expand)
+            .build();
         view.set_model(Some(list_store.list_store()));
         view.get_selection().set_mode(self.selection_mode);
 
