@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 type PopupCallback = Box<dyn Fn(Option<Value>, Vec<Value>)>;
+type DoubleClickCallback = Box<dyn Fn(&Value)>;
 
 #[derive(PWO)]
 pub struct BufferedListViewCore<R: RowDataSource> {
@@ -20,7 +21,8 @@ pub struct BufferedListViewCore<R: RowDataSource> {
     list_store: BufferedListStore<R>,
     selected_id: RefCell<Option<Value>>,
     popup_menu: ManagedMenu,
-    callbacks: RefCell<HashMap<String, Vec<PopupCallback>>>,
+    popup_callbacks: RefCell<HashMap<String, Vec<PopupCallback>>>,
+    double_click_callbacks: RefCell<Vec<DoubleClickCallback>>,
     id_field: i32,
 }
 
@@ -28,6 +30,20 @@ pub struct BufferedListViewCore<R: RowDataSource> {
 pub struct BufferedListView<R: RowDataSource>(Rc<BufferedListViewCore<R>>);
 
 impl<R: RowDataSource> BufferedListView<R> {
+    fn get_id_value_at(&self, posn: (f64, f64)) -> Option<Value> {
+        if let Some(location) = self.0.view.get_path_at_pos(posn.0 as i32, posn.1 as i32) {
+            if let Some(path) = location.0 {
+                if let Some(list_store) = self.0.view.get_model() {
+                    if let Some(iter) = list_store.get_iter(&path) {
+                        let value = list_store.get_value(&iter, self.0.id_field);
+                        return Some(value);
+                    }
+                }
+            }
+        };
+        None
+    }
+
     fn set_selected_id(&self, posn: (f64, f64)) {
         if let Some(location) = self.0.view.get_path_at_pos(posn.0 as i32, posn.1 as i32) {
             if let Some(path) = location.0 {
@@ -51,7 +67,7 @@ impl<R: RowDataSource> BufferedListView<R> {
         callback: F,
     ) {
         self.0
-            .callbacks
+            .popup_callbacks
             .borrow_mut()
             .get_mut(name)
             .expect("invalid name")
@@ -75,13 +91,28 @@ impl<R: RowDataSource> BufferedListView<R> {
         if hovered_id.is_some() || !selected_ids.is_empty() {
             for callback in self
                 .0
-                .callbacks
+                .popup_callbacks
                 .borrow()
                 .get(name)
                 .expect("invalid name")
                 .iter()
             {
                 callback(hovered_id.clone(), selected_ids.clone())
+            }
+        }
+    }
+
+    pub fn connect_double_click<F: Fn(&Value) + 'static>(&self, callback: F) {
+        self.0
+            .double_click_callbacks
+            .borrow_mut()
+            .push(Box::new(callback));
+    }
+
+    fn process_double_click(&self, posn: (f64, f64)) {
+        if let Some(value) = self.get_id_value_at(posn) {
+            for callback in self.0.double_click_callbacks.borrow().iter() {
+                callback(&value)
             }
         }
     }
@@ -171,7 +202,8 @@ impl BufferedListViewBuilder {
             list_store,
             selected_id: RefCell::new(None),
             popup_menu,
-            callbacks: RefCell::new(HashMap::new()),
+            popup_callbacks: RefCell::new(HashMap::new()),
+            double_click_callbacks: RefCell::new(vec![]),
             id_field: self.id_field,
         }));
 
@@ -183,15 +215,16 @@ impl BufferedListViewBuilder {
                 .append_item(name, menu_item_spec, *condns)
                 .connect_activate(move |_| blv_c.menu_item_selected(&name_c));
             blv.0
-                .callbacks
+                .popup_callbacks
                 .borrow_mut()
                 .insert((*name).to_string(), vec![]);
         }
 
         let blv_c = blv.clone();
-        blv.0.view.connect_button_press_event(move |_, event| {
-            if event.get_event_type() == gdk::EventType::ButtonPress {
-                match event.get_button() {
+        blv.0
+            .view
+            .connect_button_press_event(move |_, event| match event.get_event_type() {
+                gdk::EventType::ButtonPress => match event.get_button() {
                     2 => {
                         blv_c.0.view.get_selection().unselect_all();
                         gtk::Inhibit(true)
@@ -199,14 +232,19 @@ impl BufferedListViewBuilder {
                     3 => {
                         blv_c.set_selected_id(event.get_position());
                         blv_c.0.popup_menu.popup_at_event(event);
-                        return gtk::Inhibit(true);
+                        gtk::Inhibit(true)
                     }
                     _ => gtk::Inhibit(false),
-                }
-            } else {
-                gtk::Inhibit(false)
-            }
-        });
+                },
+                gdk::EventType::DoubleButtonPress => match event.get_button() {
+                    1 => {
+                        blv_c.process_double_click(event.get_position());
+                        gtk::Inhibit(true)
+                    }
+                    _ => gtk::Inhibit(false),
+                },
+                _ => gtk::Inhibit(false),
+            });
 
         blv
     }
