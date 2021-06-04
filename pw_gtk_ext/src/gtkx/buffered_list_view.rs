@@ -1,6 +1,7 @@
 // Copyright 2021 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
 use crate::glib::Value;
+use crate::gtk::prelude::IsA;
 use crate::gtkx::buffered_list_store::{BufferedListStore, RowDataSource};
 use crate::gtkx::menu::{ManagedMenu, ManagedMenuBuilder, MenuItemSpec};
 use crate::sav_state::MaskedCondns;
@@ -45,20 +46,16 @@ impl<R: RowDataSource> BufferedListView<R> {
     }
 
     fn set_selected_id(&self, posn: (f64, f64)) {
-        if let Some(location) = self.0.view.get_path_at_pos(posn.0 as i32, posn.1 as i32) {
-            if let Some(path) = location.0 {
-                if let Some(list_store) = self.0.view.get_model() {
-                    if let Some(iter) = list_store.get_iter(&path) {
-                        let value = list_store.get_value(&iter, self.0.id_field);
-                        *self.0.selected_id.borrow_mut() = Some(value);
-                        self.0.popup_menu.update_hover_condns(true);
-                        return;
-                    }
-                }
+        match self.get_id_value_at(posn) {
+            Some(value) => {
+                *self.0.selected_id.borrow_mut() = Some(value);
+                self.0.popup_menu.update_hover_condns(true);
             }
-        };
-        *self.0.selected_id.borrow_mut() = None;
-        self.0.popup_menu.update_hover_condns(false);
+            None => {
+                *self.0.selected_id.borrow_mut() = None;
+                self.0.popup_menu.update_hover_condns(false);
+            }
+        }
     }
 
     pub fn connect_popup_menu_item<F: Fn(Option<Value>, Vec<Value>) + 'static>(
@@ -134,7 +131,7 @@ pub struct BufferedListViewBuilder {
     menu_items: Vec<(&'static str, MenuItemSpec, u64)>,
     id_field: i32,
     selection_mode: gtk::SelectionMode,
-    hover_expand: bool,
+    tree_view_builder: gtk::TreeViewBuilder,
 }
 
 impl Default for BufferedListViewBuilder {
@@ -143,9 +140,18 @@ impl Default for BufferedListViewBuilder {
             menu_items: vec![],
             id_field: 0,
             selection_mode: gtk::SelectionMode::Single,
-            hover_expand: false,
+            tree_view_builder: gtk::TreeViewBuilder::new(),
         }
     }
+}
+
+macro_rules! impl_builder_option {
+    ( $name:ident, $type:ty ) => {
+        pub fn $name(mut self, $name: $type) -> Self {
+            self.tree_view_builder = self.tree_view_builder.$name($name);
+            self
+        }
+    };
 }
 
 impl BufferedListViewBuilder {
@@ -153,39 +159,73 @@ impl BufferedListViewBuilder {
         Self::default()
     }
 
-    pub fn menu_item(&mut self, menu_item: (&'static str, MenuItemSpec, u64)) -> &mut Self {
+    pub fn menu_item(mut self, menu_item: (&'static str, MenuItemSpec, u64)) -> Self {
         self.menu_items.push(menu_item);
         self
     }
 
-    pub fn menu_items(&mut self, menu_items: &[(&'static str, MenuItemSpec, u64)]) -> &mut Self {
+    pub fn menu_items(mut self, menu_items: &[(&'static str, MenuItemSpec, u64)]) -> Self {
         for menu_item in menu_items.iter() {
             self.menu_items.push(menu_item.clone());
         }
         self
     }
 
-    pub fn hover_expand(&mut self, hover_expand: bool) -> &mut Self {
-        self.hover_expand = hover_expand;
-        self
-    }
-
-    pub fn id_field(&mut self, id_field: i32) -> &mut Self {
+    pub fn id_field(mut self, id_field: i32) -> Self {
         self.id_field = id_field;
         self
     }
 
-    pub fn selection_mode(&mut self, selection_mode: gtk::SelectionMode) -> &mut Self {
+    pub fn selection_mode(mut self, selection_mode: gtk::SelectionMode) -> Self {
         self.selection_mode = selection_mode;
         self
     }
 
-    pub fn build<R: RowDataSource + 'static>(&self, raw_data_source: R) -> BufferedListView<R> {
+    /// Wrappers for TreeViewBuilder options relevant to lists.
+    pub fn hadjustment<P: IsA<gtk::Adjustment>>(mut self, hadjustment: &P) -> Self {
+        self.tree_view_builder = self.tree_view_builder.hadjustment(hadjustment);
+        self
+    }
+
+    pub fn vadjustment<P: IsA<gtk::Adjustment>>(mut self, vadjustment: &P) -> Self {
+        self.tree_view_builder = self.tree_view_builder.vadjustment(vadjustment);
+        self
+    }
+
+    impl_builder_option!(activate_on_single_click, bool);
+    impl_builder_option!(border_width, u32);
+    impl_builder_option!(enable_grid_lines, gtk::TreeViewGridLines);
+    impl_builder_option!(enable_search, bool);
+    impl_builder_option!(events, gdk::EventMask);
+    impl_builder_option!(fixed_height_mode, bool);
+    impl_builder_option!(halign, gtk::Align);
+    impl_builder_option!(headers_clickable, bool);
+    impl_builder_option!(headers_visible, bool);
+    impl_builder_option!(height_request, i32);
+    impl_builder_option!(hover_expand, bool);
+    impl_builder_option!(hover_selection, bool);
+    impl_builder_option!(hscroll_policy, gtk::ScrollablePolicy);
+    impl_builder_option!(margin, i32);
+    impl_builder_option!(margin_bottom, i32);
+    impl_builder_option!(margin_end, i32);
+    impl_builder_option!(margin_start, i32);
+    impl_builder_option!(margin_top, i32);
+    impl_builder_option!(name, &str);
+    impl_builder_option!(opacity, f64);
+    impl_builder_option!(rubber_banding, bool);
+    impl_builder_option!(search_column, i32);
+    impl_builder_option!(sensitive, bool);
+    impl_builder_option!(tooltip_column, i32);
+    impl_builder_option!(tooltip_markup, &str);
+    impl_builder_option!(tooltip_text, &str);
+    impl_builder_option!(valign, gtk::Align);
+    impl_builder_option!(visible, bool);
+    impl_builder_option!(vscroll_policy, gtk::ScrollablePolicy);
+    impl_builder_option!(width_request, i32);
+
+    pub fn build<R: RowDataSource + 'static>(self, raw_data_source: R) -> BufferedListView<R> {
         let list_store = BufferedListStore::new(raw_data_source);
-        let view = gtk::TreeViewBuilder::new()
-            .headers_visible(true)
-            .hover_expand(self.hover_expand)
-            .build();
+        let view = self.tree_view_builder.build();
         view.set_model(Some(list_store.list_store()));
         view.get_selection().set_mode(self.selection_mode);
 
