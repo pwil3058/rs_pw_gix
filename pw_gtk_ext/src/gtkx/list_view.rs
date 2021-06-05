@@ -6,7 +6,7 @@ use crate::gtkx::list_store::ListRowOps;
 use crate::gtkx::menu::{ManagedMenu, ManagedMenuBuilder, MenuItemSpec};
 use crate::sav_state::MaskedCondns;
 use crate::sourceview::prelude::{
-    GtkMenuItemExt, TreeModelExt, TreeSelectionExt, TreeViewExt, WidgetExt,
+    GtkListStoreExt, GtkMenuItemExt, TreeModelExt, TreeSelectionExt, TreeViewExt, WidgetExt,
 };
 use crate::wrapper::*;
 use std::cell::RefCell;
@@ -121,6 +121,10 @@ impl ListView {
 
     pub fn update_popup_condns(&self, changed_condns: MaskedCondns) {
         self.0.popup_menu.update_condns(changed_condns)
+    }
+
+    pub fn clear_rows(&self) {
+        self.0.list_store.clear()
     }
 
     pub fn append_row(&self, row: &[glib::Value]) {

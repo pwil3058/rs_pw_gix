@@ -1,8 +1,9 @@
 // Copyright 2021 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
-use crate::sourceview::prelude::GtkWindowExt;
+use crate::sourceview::prelude::{DialogExt, GtkWindowExt};
 use glib::Cast;
 use gtk::WidgetExt;
+use std::error::Error;
 
 pub trait TopGtkWindow {
     fn get_toplevel_gtk_window(&self) -> Option<gtk::Window>;
@@ -124,6 +125,23 @@ pub trait DialogUser: TopGtkWindow {
         };
 
         dialog_builder
+    }
+
+    fn report_error<E: Error>(&self, msg: &str, error: &E) {
+        let mut expln = error.to_string();
+        if let Some(source) = error.source() {
+            expln += &format!("\nCaused by: {}.", source);
+        };
+        let dialog = self
+            .new_message_dialog_builder()
+            .text(msg)
+            .secondary_text(&expln)
+            .message_type(gtk::MessageType::Error)
+            .buttons(gtk::ButtonsType::Close)
+            .window_position(gtk::WindowPosition::Mouse)
+            .build();
+        dialog.run();
+        dialog.close();
     }
 }
 
