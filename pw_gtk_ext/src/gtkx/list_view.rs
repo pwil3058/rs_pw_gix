@@ -14,8 +14,8 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 pub trait ListViewSpec {
-    fn column_types(&self) -> Vec<glib::Type>;
-    fn columns(&self) -> Vec<gtk::TreeViewColumn>;
+    fn column_types() -> Vec<glib::Type>;
+    fn columns() -> Vec<gtk::TreeViewColumn>;
 }
 
 type PopupCallback = Box<dyn Fn(Option<Value>, Vec<Value>)>;
@@ -244,13 +244,13 @@ impl ListViewBuilder {
     impl_builder_option!(vscroll_policy, gtk::ScrollablePolicy);
     impl_builder_option!(width_request, i32);
 
-    pub fn build<L: ListViewSpec>(self, list_view_spec: &L) -> ListView {
-        let list_store = gtk::ListStore::new(&list_view_spec.column_types());
+    pub fn build<L: ListViewSpec>(self) -> ListView {
+        let list_store = gtk::ListStore::new(&L::column_types());
         let view = self.tree_view_builder.build();
         view.set_model(Some(&list_store));
         view.get_selection().set_mode(self.selection_mode);
 
-        for col in list_view_spec.columns() {
+        for col in L::columns() {
             view.append_column(&col);
         }
 

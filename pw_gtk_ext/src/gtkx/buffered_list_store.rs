@@ -6,8 +6,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 pub trait RowDataSource: Sized {
-    fn column_types(&self) -> Vec<glib::Type>;
-    fn columns(&self) -> Vec<gtk::TreeViewColumn>;
+    fn column_types() -> Vec<glib::Type>;
+    fn columns() -> Vec<gtk::TreeViewColumn>;
     fn generate_rows(&self) -> Vec<Vec<Value>>;
     fn refresh(&self) -> Vec<u8>;
 }
@@ -35,8 +35,9 @@ impl<R: RowDataSource> RowBuffer<R> {
     }
 
     pub fn columns(&self) -> Vec<gtk::TreeViewColumn> {
-        let core = self.0.borrow();
-        core.row_data_source.columns()
+        // let core = self.0.borrow();
+        // core.row_data_source.columns()
+        R::columns()
     }
 
     fn finalise(&self) {
@@ -72,7 +73,7 @@ pub struct BufferedListStore<R: RowDataSource> {
 
 impl<R: RowDataSource> BufferedListStore<R> {
     pub fn new(raw_data_source: R) -> Self {
-        let list_store = gtk::ListStore::new(&raw_data_source.column_types());
+        let list_store = gtk::ListStore::new(&R::column_types());
         let row_buffer = RowBuffer::new(raw_data_source);
         Self {
             list_store,
