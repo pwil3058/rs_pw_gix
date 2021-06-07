@@ -103,6 +103,28 @@ pub trait ListRowOps:
         prepend_row_to_list!(row, self)
     }
 
+    fn remove_row_at(&self, position: i32) -> Result<(), &'static str> {
+        match self.iter_nth_child(None, position) {
+            Some(iter) => {
+                self.remove(&iter);
+                Ok(())
+            }
+            None => Err("invalid position"),
+        }
+    }
+
+    fn remove_row_where<F>(&self, this_is_the_row: F) -> Result<(), &'static str>
+    where
+        F: Fn(&Self, &gtk::TreeIter) -> bool,
+    {
+        if let Some((_, iter)) = self.find_row_where(this_is_the_row) {
+            self.remove(&iter);
+            Ok(())
+        } else {
+            Err("not found")
+        }
+    }
+
     fn repopulate_with(&self, rows: &[Vec<glib::Value>]) {
         self.clear();
         for row in rows.iter() {
