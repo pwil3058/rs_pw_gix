@@ -229,7 +229,7 @@ impl BufferedListViewBuilder {
         view.set_model(Some(list_store.list_store()));
         view.get_selection().set_mode(self.selection_mode);
 
-        for col in list_store.columns() {
+        for col in R::columns() {
             view.append_column(&col);
         }
 

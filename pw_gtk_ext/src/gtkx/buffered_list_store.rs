@@ -34,9 +34,7 @@ impl<R: RowDataSource> RowBuffer<R> {
         row_buffer
     }
 
-    pub fn columns(&self) -> Vec<gtk::TreeViewColumn> {
-        // let core = self.0.borrow();
-        // core.row_data_source.columns()
+    pub fn columns() -> Vec<gtk::TreeViewColumn> {
         R::columns()
     }
 
@@ -85,8 +83,8 @@ impl<R: RowDataSource> BufferedListStore<R> {
         &self.list_store
     }
 
-    pub fn columns(&self) -> Vec<gtk::TreeViewColumn> {
-        self.row_buffer.columns()
+    pub fn columns() -> Vec<gtk::TreeViewColumn> {
+        R::columns()
     }
 
     pub fn repopulate(&self) {
