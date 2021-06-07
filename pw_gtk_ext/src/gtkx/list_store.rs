@@ -1,7 +1,7 @@
 // Copyright 2021 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
 use crate::glib;
-use crate::gtkx::tree_model::*;
+pub use crate::gtkx::tree_model::*;
 use crate::{are_eq_values, are_equal_as, get_row_values_from, matches_list_row, UNEXPECTED};
 
 // NB: when done with the returned rows their items need to be unset?
