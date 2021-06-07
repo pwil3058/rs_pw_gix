@@ -235,7 +235,7 @@ impl ListViewBuilder {
         tree_view.set_model(Some(wrapped_tree_model.tree_model()));
         tree_view.get_selection().set_mode(self.selection_mode);
 
-        for col in wrapped_tree_model.columns() {
+        for col in W::columns() {
             tree_view.append_column(&col);
         }
 
