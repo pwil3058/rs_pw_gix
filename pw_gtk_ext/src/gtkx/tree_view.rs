@@ -1,22 +1,17 @@
 // Copyright 2021 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
 use crate::glib::Value;
-use crate::gtk::prelude::IsA;
-use crate::gtkx::menu::{ManagedMenu, ManagedMenuBuilder, MenuItemSpec};
-use crate::sav_state::MaskedCondns;
-use crate::sourceview::prelude::{
-    GtkMenuItemExt, TreeModelExt, TreeSelectionExt, TreeViewExt, WidgetExt,
+use crate::gtk::prelude::{
+    GtkMenuItemExt, IsA, TreeModelExt, TreeSelectionExt, TreeViewExt, WidgetExt,
 };
+use crate::gtkx::menu::{ManagedMenu, ManagedMenuBuilder, MenuItemSpec};
+use crate::gtkx::tree_model::{TreeModelRowOps, WrappedTreeModel};
+use crate::sav_state::MaskedCondns;
 use crate::wrapper::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::rc::Rc;
-
-pub trait WrappedTreeModel<M: IsA<gtk::TreeModel>> {
-    fn tree_model(&self) -> &M;
-    fn columns(&self) -> Vec<gtk::TreeViewColumn>;
-}
 
 type PopupCallback = Box<dyn Fn(Option<Value>, Vec<Value>)>;
 type DoubleClickCallback = Box<dyn Fn(&Value)>;
@@ -233,7 +228,7 @@ impl ListViewBuilder {
 
     pub fn build<M, W>(self, wrapped_tree_model: &W) -> TreeViewWithPopup
     where
-        M: IsA<gtk::TreeModel>,
+        M: IsA<gtk::TreeModel> + TreeModelRowOps,
         W: WrappedTreeModel<M>,
     {
         let tree_view = self.tree_view_builder.build();
