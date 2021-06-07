@@ -5,9 +5,7 @@ pub use crate::gtkx::list_store::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub trait RowDataSource: Sized {
-    fn column_types() -> Vec<glib::Type>;
-    fn columns() -> Vec<gtk::TreeViewColumn>;
+pub trait RowDataSource: ListViewSpec + Sized {
     fn generate_rows(&self) -> Vec<Vec<Value>>;
     fn refresh(&self) -> Vec<u8>;
 }

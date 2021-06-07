@@ -3,6 +3,8 @@
 use crate::glib;
 pub use crate::gtkx::tree_model::*;
 use crate::{are_eq_values, are_equal_as, get_row_values_from, matches_list_row, UNEXPECTED};
+use std::marker::PhantomData;
+use std::ops::Deref;
 
 // NB: when done with the returned rows their items need to be unset?
 #[macro_export]
@@ -139,3 +141,29 @@ pub trait ListRowOps:
 }
 
 impl ListRowOps for gtk::ListStore {}
+
+pub trait ListViewSpec {
+    fn column_types() -> Vec<glib::Type>;
+    fn columns() -> Vec<gtk::TreeViewColumn>;
+}
+
+#[derive(Clone)]
+pub struct WrappedListStore<L: ListViewSpec>(gtk::ListStore, PhantomData<L>);
+
+impl<L: ListViewSpec> Deref for WrappedListStore<L> {
+    type Target = gtk::ListStore;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<L: ListViewSpec> WrappedTreeModel<gtk::ListStore> for WrappedListStore<L> {
+    fn columns() -> Vec<gtk::TreeViewColumn> {
+        L::columns()
+    }
+
+    fn tree_model(&self) -> &gtk::ListStore {
+        &self.0
+    }
+}

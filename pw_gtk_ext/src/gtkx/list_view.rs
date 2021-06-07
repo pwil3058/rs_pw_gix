@@ -2,7 +2,7 @@
 
 use crate::glib::Value;
 use crate::gtk::prelude::IsA;
-use crate::gtkx::list_store::ListRowOps;
+use crate::gtkx::list_store::{ListRowOps, ListViewSpec};
 use crate::gtkx::menu::{ManagedMenu, ManagedMenuBuilder, MenuItemSpec};
 use crate::sav_state::MaskedCondns;
 use crate::sourceview::prelude::{
@@ -12,11 +12,6 @@ use crate::wrapper::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-
-pub trait ListViewSpec {
-    fn column_types() -> Vec<glib::Type>;
-    fn columns() -> Vec<gtk::TreeViewColumn>;
-}
 
 type PopupCallback = Box<dyn Fn(Option<Value>, Vec<Value>)>;
 type DoubleClickCallback = Box<dyn Fn(&Value)>;
