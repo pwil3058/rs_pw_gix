@@ -17,3 +17,4 @@ pub mod mapped;
 pub mod menu;
 pub mod notebook;
 pub mod paned;
+pub mod tree_view;
