@@ -7,12 +7,12 @@ use crate::{are_eq_values, are_equal_as, get_row_values_from, matches_list_row, 
 // NB: when done with the returned rows their items need to be unset?
 #[macro_export]
 macro_rules! get_rows_values_from_list {
-    ( $s:expr ) => {{
+    ( $list_store:expr ) => {{
         let mut rows = vec![];
-        if let Some(iter) = $s.get_iter_first() {
-            while $s.iter_is_valid(&iter) {
-                rows.push(get_row_values_from!($s, &iter));
-                $s.iter_next(&iter);
+        if let Some(iter) = $list_store.get_iter_first() {
+            while $list_store.iter_is_valid(&iter) {
+                rows.push(get_row_values_from!($list_store, &iter));
+                $list_store.iter_next(&iter);
             }
         };
         rows
@@ -21,55 +21,55 @@ macro_rules! get_rows_values_from_list {
 
 #[macro_export]
 macro_rules! set_list_row_values {
-    ( $s:expr, $i:expr, $r:expr ) => {{
-        assert_eq!($s.get_n_columns(), $r.len() as i32);
-        for (index, item) in $r.iter().enumerate() {
-            $s.set_value($i, index as u32, &item);
+    ( $list_store:expr, $iter:expr, $row:expr ) => {{
+        debug_assert_eq!($list_store.get_n_columns(), $row.len() as i32);
+        for (index, item) in $row.iter().enumerate() {
+            $list_store.set_value($iter, index as u32, &item);
         }
     }};
 }
 
 #[macro_export]
 macro_rules! append_row_to_list {
-    ( $r:expr, $s:expr ) => {{
-        let iter = $s.append();
-        set_list_row_values!($s, &iter, $r);
+    ( $row:expr, $list_store:expr ) => {{
+        let iter = $list_store.append();
+        set_list_row_values!($list_store, &iter, $row);
         iter
     }};
 }
 
 #[macro_export]
 macro_rules! insert_row_in_list_at {
-    ( $r:expr, $s:expr, $p:expr ) => {{
-        let iter = $s.insert($p);
-        set_list_row_values!($s, &iter, $r);
+    ( $row:expr, $list_store:expr, $position:expr ) => {{
+        let iter = $list_store.insert($position);
+        set_list_row_values!($list_store, &iter, $row);
         iter
     }};
 }
 
 #[macro_export]
 macro_rules! insert_row_in_list_after {
-    ( $r:expr, $s:expr, $i:expr ) => {{
-        let iter = $s.insert_after($i);
-        set_list_row_values!($s, &iter, $r);
+    ( $row:expr, $list_store:expr, $iter:expr ) => {{
+        let iter = $list_store.insert_after($iter);
+        set_list_row_values!($list_store, &iter, $row);
         iter
     }};
 }
 
 #[macro_export]
 macro_rules! insert_row_in_list_before {
-    ( $r:expr, $s:expr, $i:expr ) => {{
-        let iter = $s.insert_before($i);
-        set_list_row_values!($s, &iter, $r);
+    ( $row:expr, $list_store:expr, $iter:expr ) => {{
+        let iter = $list_store.insert_before($iter);
+        set_list_row_values!($list_store, &iter, $row);
         iter
     }};
 }
 
 #[macro_export]
 macro_rules! prepend_row_to_list {
-    ( $r:expr, $s:expr ) => {{
-        let iter = $s.prepend();
-        set_list_row_values!($s, &iter, $r);
+    ( $row:expr, $list_store:expr ) => {{
+        let iter = $list_store.prepend();
+        set_list_row_values!($list_store, &iter, $row);
         iter
     }};
 }
