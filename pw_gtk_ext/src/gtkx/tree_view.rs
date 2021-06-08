@@ -130,14 +130,14 @@ impl TreeViewWithPopup {
     }
 }
 
-pub struct ListViewBuilder {
+pub struct TreeViewWithPopupBuilder {
     menu_items: Vec<(&'static str, MenuItemSpec, u64)>,
     id_field: i32,
     selection_mode: gtk::SelectionMode,
     tree_view_builder: gtk::TreeViewBuilder,
 }
 
-impl Default for ListViewBuilder {
+impl Default for TreeViewWithPopupBuilder {
     fn default() -> Self {
         Self {
             menu_items: vec![],
@@ -157,7 +157,7 @@ macro_rules! impl_builder_option {
     };
 }
 
-impl ListViewBuilder {
+impl TreeViewWithPopupBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -232,7 +232,7 @@ impl ListViewBuilder {
         W: WrappedTreeModel<M>,
     {
         let tree_view = self.tree_view_builder.build();
-        tree_view.set_model(Some(wrapped_tree_model.tree_model()));
+        tree_view.set_model(Some(wrapped_tree_model.model()));
         tree_view.get_selection().set_mode(self.selection_mode);
 
         for col in W::columns() {

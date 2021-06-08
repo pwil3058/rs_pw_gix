@@ -185,7 +185,13 @@ impl<L: ListViewSpec> WrappedTreeModel<gtk::ListStore> for WrappedListStore<L> {
         L::columns()
     }
 
-    fn tree_model(&self) -> &gtk::ListStore {
+    fn model(&self) -> &gtk::ListStore {
         &self.0
+    }
+}
+
+impl<L: ListViewSpec> WrappedListStore<L> {
+    pub fn new() -> Self {
+        Self(gtk::ListStore::new(&L::column_types()), PhantomData)
     }
 }

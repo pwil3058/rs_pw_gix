@@ -2,7 +2,7 @@
 
 use crate::glib::Value;
 use crate::gtk::prelude::IsA;
-use crate::gtkx::buffered_list_store::{BufferedListStore, RowDataSource};
+use crate::gtkx::buffered_list_store::{BufferedListStore, RowDataSource, WrappedTreeModel};
 use crate::gtkx::menu::{ManagedMenu, ManagedMenuBuilder, MenuItemSpec};
 use crate::sav_state::MaskedCondns;
 use crate::sourceview::prelude::{
@@ -226,7 +226,7 @@ impl BufferedListViewBuilder {
     pub fn build<R: RowDataSource + 'static>(self, raw_data_source: R) -> BufferedListView<R> {
         let list_store = BufferedListStore::new(raw_data_source);
         let view = self.tree_view_builder.build();
-        view.set_model(Some(list_store.list_store()));
+        view.set_model(Some(list_store.model()));
         view.get_selection().set_mode(self.selection_mode);
 
         for col in R::columns() {

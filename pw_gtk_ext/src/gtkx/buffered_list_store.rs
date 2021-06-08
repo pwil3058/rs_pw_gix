@@ -77,14 +77,6 @@ impl<R: RowDataSource> BufferedListStore<R> {
         }
     }
 
-    pub fn list_store(&self) -> &gtk::ListStore {
-        &self.list_store
-    }
-
-    pub fn columns() -> Vec<gtk::TreeViewColumn> {
-        R::columns()
-    }
-
     pub fn repopulate(&self) {
         self.row_buffer.init();
         self.list_store.repopulate_with(&self.row_buffer.get_rows());
@@ -96,5 +88,15 @@ impl<R: RowDataSource> BufferedListStore<R> {
             self.row_buffer.finalise();
             self.list_store.update_with(&self.row_buffer.get_rows());
         };
+    }
+}
+
+impl<R: RowDataSource> WrappedTreeModel<gtk::ListStore> for BufferedListStore<R> {
+    fn columns() -> Vec<gtk::TreeViewColumn> {
+        R::columns()
+    }
+
+    fn model(&self) -> &gtk::ListStore {
+        &self.list_store
     }
 }
