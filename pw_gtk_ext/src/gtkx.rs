@@ -8,12 +8,9 @@ pub mod value;
 pub mod list_store;
 
 pub mod buffered_list_store;
-pub mod buffered_list_view;
 pub mod combo_box_text;
 pub mod dialog;
 pub mod dialog_user;
-pub mod list_view;
-pub mod mapped;
 pub mod menu;
 pub mod notebook;
 pub mod paned;
