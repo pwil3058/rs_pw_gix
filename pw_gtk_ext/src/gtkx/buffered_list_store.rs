@@ -10,26 +10,24 @@ pub trait RowDataSource: ListViewSpec + Sized {
     fn refresh(&self) -> Vec<u8>;
 }
 
-pub struct RowBufferCore<R: RowDataSource> {
-    pub row_data_source: R,
-    pub row_data_source_digest: Vec<u8>,
-    pub rows: Rc<Vec<Vec<Value>>>,
-    pub rows_digest: Vec<u8>,
+#[derive(Default)]
+pub struct Rows {
+    row_data_source_digest: Vec<u8>,
+    rows: Rc<Vec<Vec<Value>>>,
+    rows_digest: Vec<u8>,
 }
 
-pub struct RowBuffer<R: RowDataSource>(RefCell<RowBufferCore<R>>);
+pub struct RowBuffer<R: RowDataSource> {
+    row_data_source: R,
+    row_data: RefCell<Rows>,
+}
 
 impl<R: RowDataSource> RowBuffer<R> {
     pub fn new(raw_data: R) -> Self {
-        let rwc = RowBufferCore {
+        RowBuffer {
             row_data_source: raw_data,
-            row_data_source_digest: vec![],
-            rows: Rc::new(vec![]),
-            rows_digest: vec![],
-        };
-        let row_buffer = Self(RefCell::new(rwc));
-        row_buffer.init();
-        row_buffer
+            row_data: RefCell::new(Rows::default()),
+        }
     }
 
     pub fn columns() -> Vec<gtk::TreeViewColumn> {
@@ -37,28 +35,28 @@ impl<R: RowDataSource> RowBuffer<R> {
     }
 
     fn finalise(&self) {
-        let mut core = self.0.borrow_mut();
-        core.rows = Rc::new(core.row_data_source.generate_rows());
-        core.rows_digest = core.row_data_source_digest.clone();
+        let mut row_data = self.row_data.borrow_mut();
+        row_data.rows = Rc::new(self.row_data_source.generate_rows());
+        row_data.rows_digest = row_data.row_data_source_digest.clone();
     }
 
     fn get_rows(&self) -> Rc<Vec<Vec<glib::Value>>> {
-        let core = self.0.borrow();
-        Rc::clone(&core.rows)
+        let row_data = self.row_data.borrow();
+        Rc::clone(&row_data.rows)
     }
 
     fn init(&self) {
         {
-            let mut core = self.0.borrow_mut();
-            core.row_data_source_digest = core.row_data_source.refresh();
+            let mut row_data = self.row_data.borrow_mut();
+            row_data.row_data_source_digest = self.row_data_source.refresh();
         }
         self.finalise();
     }
 
     fn is_current(&self) -> bool {
-        let mut core = self.0.borrow_mut();
-        core.row_data_source_digest = core.row_data_source.refresh();
-        core.row_data_source_digest == core.rows_digest
+        let mut row_data = self.row_data.borrow_mut();
+        row_data.row_data_source_digest = self.row_data_source.refresh();
+        row_data.row_data_source_digest == row_data.rows_digest
     }
 }
 
@@ -75,6 +73,10 @@ impl<R: RowDataSource> BufferedListStore<R> {
             list_store,
             row_buffer,
         }
+    }
+
+    pub fn row_data_source(&self) -> &R {
+        &self.row_buffer.row_data_source
     }
 
     pub fn repopulate(&self) {

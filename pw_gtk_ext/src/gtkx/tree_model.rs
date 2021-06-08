@@ -54,7 +54,7 @@ macro_rules! len_of {
 
 pub trait WrappedTreeModel<M: IsA<gtk::TreeModel> + TreeModelRowOps> {
     fn columns() -> Vec<gtk::TreeViewColumn>;
-    fn tree_model(&self) -> &M;
+    fn model(&self) -> &M;
 }
 
 pub trait TreeModelRowOps: TreeModelExt {
