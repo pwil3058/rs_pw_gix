@@ -24,6 +24,7 @@ pub struct MaskedCondns {
 }
 
 impl MaskedCondns {
+    /// Check whether `MaskedCondns` is internally consistent.
     pub fn is_consistent(&self) -> bool {
         self.condns & !self.mask == 0
     }

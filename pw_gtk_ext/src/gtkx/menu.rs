@@ -11,42 +11,34 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub struct MenuItemSpec {
-    label: String,
-    image: Option<gtk::Image>,
-    tooltip_text: Option<String>,
-}
+pub struct MenuItemSpec(
+    pub &'static str,
+    pub Option<gtk::Image>,
+    pub Option<&'static str>,
+);
 
-impl From<(&str, Option<gtk::Image>, Option<&str>)> for MenuItemSpec {
-    fn from(tuple_: (&str, Option<gtk::Image>, Option<&str>)) -> Self {
-        Self {
-            label: tuple_.0.to_string(),
-            image: tuple_.1,
-            tooltip_text: if let Some(text) = tuple_.2 {
-                Some(text.to_string())
-            } else {
-                None
-            },
-        }
+impl From<(&'static str, Option<gtk::Image>, Option<&'static str>)> for MenuItemSpec {
+    fn from(tuple_: (&'static str, Option<gtk::Image>, Option<&'static str>)) -> Self {
+        Self(tuple_.0, tuple_.1, tuple_.2)
     }
 }
 
 impl From<&MenuItemSpec> for gtk::MenuItem {
     fn from(menu_item_spec: &MenuItemSpec) -> Self {
-        let item = gtk::MenuItem::new();
-        let h_box = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-        if let Some(image) = &menu_item_spec.image {
+        let h_box = gtk::BoxBuilder::new()
+            .orientation(gtk::Orientation::Horizontal)
+            .spacing(6)
+            .build();
+        if let Some(image) = &menu_item_spec.1 {
             h_box.pack_start(image, false, false, 0);
         }
-        let label = gtk::Label::new(Some(&menu_item_spec.label));
-        label.set_xalign(0.0);
+        let label = gtk::LabelBuilder::new()
+            .label(menu_item_spec.0)
+            .xalign(0.0)
+            .build();
         h_box.pack_start(&label, true, true, 0);
-        item.add(&h_box);
-        item.set_tooltip_text(if let Some(string) = &menu_item_spec.tooltip_text {
-            Some(string)
-        } else {
-            None
-        });
+        let item = gtk::MenuItemBuilder::new().child(&h_box).build();
+        item.set_tooltip_text(menu_item_spec.2);
 
         item
     }
