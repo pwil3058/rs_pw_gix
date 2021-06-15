@@ -55,6 +55,14 @@ implement_tgw_for_widget!(MessageDialog);
 implement_tgw_for_widget!(RecentChooserDialog);
 
 pub trait DialogUser: TopGtkWindow {
+    // Necessary because not all dialog builders have a buttons() method
+    const CLOSE_BUTTONS: [(&'static str, gtk::ResponseType); 1] =
+        [("Close", gtk::ResponseType::Close)];
+    const CANCEL_OK_BUTTONS: [(&'static str, gtk::ResponseType); 2] = [
+        ("Cancel", gtk::ResponseType::Cancel),
+        ("Ok", gtk::ResponseType::Ok),
+    ];
+
     fn new_colour_chooser_dialog_builder(&self) -> gtk::ColorChooserDialogBuilder {
         let mut dialog_builder = gtk::ColorChooserDialogBuilder::new();
         if let Some(tlw) = self.get_toplevel_gtk_window() {
