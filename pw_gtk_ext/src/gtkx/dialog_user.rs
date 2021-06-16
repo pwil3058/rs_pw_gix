@@ -1,5 +1,7 @@
 // Copyright 2021 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
+use crate::gdk::prelude::IsA;
+use crate::gtk::BoxExt;
 use crate::sourceview::prelude::{DialogExt, GtkWindowExt};
 use glib::Cast;
 use gtk::WidgetExt;
@@ -150,6 +152,23 @@ pub trait DialogUser: TopGtkWindow {
             .build();
         dialog.run();
         dialog.close();
+    }
+
+    fn present_widget_cancel_or_ok<W: IsA<gtk::Widget>>(&self, widget: &W) -> gtk::ResponseType {
+        let dialog = self
+            .new_dialog_builder()
+            .window_position(gtk::WindowPosition::Mouse)
+            .build();
+        dialog
+            .get_content_area()
+            .pack_start(widget, false, false, 0);
+        for button in &Self::CANCEL_OK_BUTTONS {
+            dialog.add_button(button.0, button.1);
+        }
+        dialog.show_all();
+        let response = dialog.run();
+        dialog.close();
+        response
     }
 }
 
