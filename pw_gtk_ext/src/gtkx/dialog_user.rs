@@ -1,7 +1,7 @@
 // Copyright 2021 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
 use crate::gdk::prelude::IsA;
-use crate::gtk::BoxExt;
+use crate::gtk::{BoxExt, MessageDialogExt};
 use crate::sourceview::prelude::{DialogExt, GtkWindowExt};
 use glib::Cast;
 use gtk::WidgetExt;
@@ -137,6 +137,32 @@ pub trait DialogUser: TopGtkWindow {
         dialog_builder
     }
 
+    fn inform_user(&self, msg: &str, expln: Option<&str>) {
+        let dialog = self
+            .new_message_dialog_builder()
+            .text(msg)
+            .message_type(gtk::MessageType::Info)
+            .buttons(gtk::ButtonsType::Close)
+            .window_position(gtk::WindowPosition::Mouse)
+            .build();
+        dialog.set_property_secondary_text(expln);
+        dialog.run();
+        dialog.close()
+    }
+
+    fn warn_user(&self, msg: &str, expln: Option<&str>) {
+        let dialog = self
+            .new_message_dialog_builder()
+            .text(msg)
+            .message_type(gtk::MessageType::Warning)
+            .buttons(gtk::ButtonsType::Close)
+            .window_position(gtk::WindowPosition::Mouse)
+            .build();
+        dialog.set_property_secondary_text(expln);
+        dialog.run();
+        dialog.close()
+    }
+
     fn report_error<E: Error>(&self, msg: &str, error: &E) {
         let mut expln = error.to_string();
         if let Some(source) = error.source() {
@@ -168,6 +194,7 @@ pub trait DialogUser: TopGtkWindow {
         dialog.show_all();
         let response = dialog.run();
         dialog.close();
+        crate::yield_to_pending_events!();
         response
     }
 }
