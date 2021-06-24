@@ -4,6 +4,7 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use quote::{quote, quote_spanned};
+use syn;
 
 #[proc_macro_derive(PWO)]
 pub fn pwo_derive(input: TokenStream) -> TokenStream {
@@ -47,6 +48,96 @@ pub fn pwo_derive(input: TokenStream) -> TokenStream {
             _ => proc_macro::TokenStream::from(error_tokens),
         },
         _ => proc_macro::TokenStream::from(error_tokens),
+    }
+}
+
+#[proc_macro_derive(PWO2)]
+pub fn pwo2_derive(input: TokenStream) -> TokenStream {
+    let parsed_input: syn::DeriveInput = syn::parse_macro_input!(input);
+    let struct_name = parsed_input.ident;
+    let error_tokens = quote_spanned! {
+        struct_name.span()=> compile_error!("'PWO' derive failed")
+    };
+    match parsed_input.data {
+        syn::Data::Struct(s) => match s.fields {
+            syn::Fields::Named(fields) => match fields.named.first() {
+                Some(field) => match &field.ident {
+                    Some(ref ff_id) => match &field.ty {
+                        syn::Type::Path(ref ff_ty) => {
+                            let (impl_generics, ty_generics, where_clause) =
+                                parsed_input.generics.split_for_impl();
+                            let tokens = quote! {
+                                impl #impl_generics PackableWidgetObject2 for #struct_name #ty_generics #where_clause {
+                                    type PWT = #ff_ty;
+
+                                    fn pwo(&self) -> &#ff_ty {
+                                         &self.#ff_id
+                                    }
+                                }
+                            };
+                            proc_macro::TokenStream::from(tokens)
+                        }
+                        _ => proc_macro::TokenStream::from(error_tokens),
+                    },
+                    _ => proc_macro::TokenStream::from(error_tokens),
+                },
+                _ => proc_macro::TokenStream::from(error_tokens),
+            },
+            syn::Fields::Unnamed(fields) => {
+                let ff_ty = match fields.unnamed.first() {
+                    Some(field) => match field.ty {
+                        syn::Type::Path(syn::TypePath { ref path, .. }) => {
+                            if segments_match_tail(&path.segments, &["std", "rc", "Rc"]) {
+                                match path.segments.last().unwrap().arguments {
+                                    syn::PathArguments::AngleBracketed(
+                                        syn::AngleBracketedGenericArguments { ref args, .. },
+                                    ) => args.first(),
+                                    _ => None,
+                                }
+                            } else {
+                                None
+                            }
+                        }
+                        _ => None,
+                    },
+                    _ => None,
+                };
+                if let Some(ff_ty) = ff_ty {
+                    let (impl_generics, ty_generics, where_clause) =
+                        parsed_input.generics.split_for_impl();
+                    let tokens = quote! {
+                        impl #impl_generics PackableWidgetObject2 for #struct_name #ty_generics #where_clause {
+                            type PWT = <#ff_ty as PackableWidgetObject2>::PWT;
+
+                            fn pwo(&self) -> &Self::PWT {
+                                self.0.pwo()
+                            }
+                        }
+                    };
+                    proc_macro::TokenStream::from(tokens)
+                } else {
+                    proc_macro::TokenStream::from(error_tokens)
+                }
+            }
+            _ => proc_macro::TokenStream::from(error_tokens),
+        },
+        _ => proc_macro::TokenStream::from(error_tokens),
+    }
+}
+
+fn segments_match_tail(
+    segments: &syn::punctuated::Punctuated<syn::PathSegment, syn::token::Colon2>,
+    names: &[&str],
+) -> bool {
+    if segments.len() > 0 && segments.len() <= names.len() {
+        let start = names.len() - segments.len();
+        segments
+            .iter()
+            .map(|s| &s.ident)
+            .zip(names[start..].iter())
+            .all(|(a, b)| a == b)
+    } else {
+        false
     }
 }
 

@@ -13,6 +13,12 @@ pub trait PackableWidgetObject {
     fn pwo(&self) -> gtk::Widget;
 }
 
+pub trait PackableWidgetObject2 {
+    type PWT: glib::IsA<gtk::Widget> + WidgetExt;
+
+    fn pwo(&self) -> &Self::PWT;
+}
+
 pub enum CursorSpec<'a> {
     Type(gdk::CursorType),
     Name(&'a str),
