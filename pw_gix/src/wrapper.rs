@@ -18,7 +18,7 @@ pub use pw_gix_derive::*;
 pub trait PackableWidgetObject {
     type PWT: glib::IsA<gtk::Widget> + WidgetExt;
 
-    fn pwo(&self) -> Self::PWT;
+    fn pwo(&self) -> &Self::PWT;
 }
 
 pub enum CursorSpec<'a> {

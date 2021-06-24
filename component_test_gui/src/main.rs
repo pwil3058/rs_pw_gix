@@ -86,7 +86,7 @@ fn main() {
         let selected = mecbs_c.selected();
         assert_eq!(name, selected);
     });
-    vbox.pack_start(&mecbs.pwo(), false, false, 0);
+    vbox.pack_start(mecbs.pwo(), false, false, 0);
 
     let cbt = gtk::ComboBoxText::new();
     assert!(!cbt.remove_text_item("one"));
@@ -126,7 +126,7 @@ fn main() {
     vbox.pack_start(&cbt, false, false, 0);
 
     let hex_entry = HexEntryBuilder::<u8>::new().editable(true).build();
-    vbox.pack_start(&hex_entry.pwo(), false, false, 0);
+    vbox.pack_start(hex_entry.pwo(), false, false, 0);
 
     let button = gtk::Button::with_label("Image Viewer");
     vbox.pack_start(&button, false, false, 0);
@@ -144,7 +144,7 @@ fn main() {
             ("delete", ("Delete", None, None).into(), 0),
         ])
         .build();
-    menu_item.set_submenu(Some(&menu1.pwo()));
+    menu_item.set_submenu(Some(menu1.pwo()));
     menu_bar.add(&menu_item);
     menu1
         .append_item("add", &("Add", None, Some("help message")).into(), 0)
@@ -156,7 +156,7 @@ fn main() {
     menu_bar.show_all();
 
     let sav_test = Rc::new(SavTest::new());
-    vbox.pack_start(&sav_test.pwo(), false, false, 0);
+    vbox.pack_start(sav_test.pwo(), false, false, 0);
 
     let button = gtk::Button::with_label("Cancel/Ok Question");
     vbox.pack_start(&button, false, false, 0);
@@ -181,7 +181,7 @@ fn main() {
         ))
         .id_field(1)
         .build(&TestListSpec);
-    vbox.pack_start(&list.pwo(), true, true, 0);
+    vbox.pack_start(list.pwo(), true, true, 0);
     list.connect_popup_menu_item("edit", |s, l| println!("edit: {:?} : {:?}", s, l));
     list.connect_popup_menu_item("remove", |s, l| println!("remove: {:?} : {:?}", s, l));
     list.add_row(&vec!["one".to_value(), "two".to_value()]);
@@ -397,7 +397,7 @@ fn launch_image_viewer() {
     window.set_title("component_test_gui: Image Viewer");
 
     let view = PixbufViewBuilder::new().load_last_image(true).build();
-    window.add(&view.pwo());
+    window.add(view.pwo());
     window.show_all();
 
     window.present();
