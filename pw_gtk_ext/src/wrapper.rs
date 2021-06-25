@@ -4,16 +4,12 @@ pub use glib::Cast;
 
 use crate::gdk::WindowExt;
 use crate::gdk_pixbuf::Pixbuf;
-use crate::gtk::WidgetExt;
+use crate::gtk::prelude::*;
 pub use crate::gtkx::dialog_user::*;
 
 pub use pw_gtk_ext_derive::*;
 
 pub trait PackableWidgetObject {
-    fn pwo(&self) -> gtk::Widget;
-}
-
-pub trait PackableWidgetObject2 {
     type PWT: glib::IsA<gtk::Widget> + WidgetExt;
 
     fn pwo(&self) -> &Self::PWT;

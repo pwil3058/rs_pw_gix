@@ -7,51 +7,6 @@ use quote::{quote, quote_spanned};
 use syn;
 
 #[proc_macro_derive(PWO)]
-pub fn pwo_derive(input: TokenStream) -> TokenStream {
-    let parsed_input: syn::DeriveInput = syn::parse_macro_input!(input);
-    let struct_name = parsed_input.ident;
-    let error_tokens = quote_spanned! {
-        struct_name.span()=> compile_error!("'PWO' derive failed")
-    };
-    match parsed_input.data {
-        syn::Data::Struct(s) => match s.fields {
-            syn::Fields::Named(fields) => match fields.named.first() {
-                Some(field) => match field.ident {
-                    Some(ref ff_id) => {
-                        let (impl_generics, ty_generics, where_clause) =
-                            parsed_input.generics.split_for_impl();
-                        let tokens = quote! {
-                            impl #impl_generics PackableWidgetObject for #struct_name #ty_generics #where_clause {
-                                fn pwo(&self) -> gtk::Widget {
-                                    self.#ff_id.clone().dynamic_cast::<gtk::Widget>().unwrap()
-                                }
-                            }
-                        };
-                        proc_macro::TokenStream::from(tokens)
-                    }
-                    _ => proc_macro::TokenStream::from(error_tokens),
-                },
-                _ => proc_macro::TokenStream::from(error_tokens),
-            },
-            syn::Fields::Unnamed(_fields) => {
-                let (impl_generics, ty_generics, where_clause) =
-                    parsed_input.generics.split_for_impl();
-                let tokens = quote! {
-                    impl #impl_generics PackableWidgetObject for #struct_name #ty_generics #where_clause {
-                        fn pwo(&self) -> gtk::Widget {
-                            self.0.pwo()
-                        }
-                    }
-                };
-                proc_macro::TokenStream::from(tokens)
-            }
-            _ => proc_macro::TokenStream::from(error_tokens),
-        },
-        _ => proc_macro::TokenStream::from(error_tokens),
-    }
-}
-
-#[proc_macro_derive(PWO2)]
 pub fn pwo2_derive(input: TokenStream) -> TokenStream {
     let parsed_input: syn::DeriveInput = syn::parse_macro_input!(input);
     let struct_name = parsed_input.ident;
@@ -67,7 +22,7 @@ pub fn pwo2_derive(input: TokenStream) -> TokenStream {
                             let (impl_generics, ty_generics, where_clause) =
                                 parsed_input.generics.split_for_impl();
                             let tokens = quote! {
-                                impl #impl_generics PackableWidgetObject2 for #struct_name #ty_generics #where_clause {
+                                impl #impl_generics PackableWidgetObject for #struct_name #ty_generics #where_clause {
                                     type PWT = #ff_ty;
 
                                     fn pwo(&self) -> &#ff_ty {
@@ -106,8 +61,8 @@ pub fn pwo2_derive(input: TokenStream) -> TokenStream {
                     let (impl_generics, ty_generics, where_clause) =
                         parsed_input.generics.split_for_impl();
                     let tokens = quote! {
-                        impl #impl_generics PackableWidgetObject2 for #struct_name #ty_generics #where_clause {
-                            type PWT = <#ff_ty as PackableWidgetObject2>::PWT;
+                        impl #impl_generics PackableWidgetObject for #struct_name #ty_generics #where_clause {
+                            type PWT = <#ff_ty as PackableWidgetObject>::PWT;
 
                             fn pwo(&self) -> &Self::PWT {
                                 self.0.pwo()
@@ -177,7 +132,7 @@ pub fn wclone_derive(input: TokenStream) -> TokenStream {
     let tokens = quote! {
         impl #impl_generics Clone for #struct_name #ty_generics #where_clause {
             fn clone(&self) -> Self {
-                Self(Rc::clone(&self.0))
+                Self(std::rc::Rc::clone(&self.0))
             }
         }
     };
