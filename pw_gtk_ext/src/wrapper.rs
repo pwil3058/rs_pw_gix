@@ -88,7 +88,6 @@ pub trait WidgetWrapper: PackableWidgetObject + DialogUser {
 #[cfg(test)]
 mod wrapper_tests {
     use super::*;
-    use crate::gtkx::dialog_user::*;
     use glib::Cast;
     use gtk;
     use gtk::WidgetExt;
