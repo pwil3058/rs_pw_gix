@@ -5,6 +5,7 @@ use pw_gtk_ext::gtk::prelude::*;
 use pw_gtk_ext::gtkx::check_button::MutuallyExclusiveCheckButtonsBuilder;
 use pw_gtk_ext::gtkx::combo_box_text::SortedUnique;
 use pw_gtk_ext::gtkx::list_store::{ListRowOps, ListViewSpec, WrappedListStore, WrappedTreeModel};
+use pw_gtk_ext::gtkx::menu::ManagedMenuBuilder;
 use pw_gtk_ext::gtkx::notebook::TabRemoveLabelBuilder;
 use pw_gtk_ext::gtkx::tree_view::TreeViewWithPopupBuilder;
 use pw_gtk_ext::pw_recollect::recollections;
@@ -140,6 +141,33 @@ fn main() {
         Some(1),
     );
     v_box.pack_start(&notebook, false, false, 0);
+
+    let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    v_box.pack_start(&hbox, false, false, 0);
+    let menu_bar = gtk::MenuBarBuilder::new().build();
+    menu_bar.show();
+    hbox.pack_start(&menu_bar, true, true, 0);
+    let menu_item = gtk::MenuItemBuilder::new().label("Menu").build();
+    let menu1 = ManagedMenuBuilder::new()
+        .items(&[
+            ("remove", ("Remove", None, Some("help help")).into(), 0),
+            ("delete", ("Delete", None, None).into(), 0),
+        ])
+        .build();
+    menu_item.set_submenu(Some(menu1.pwo()));
+    menu_bar.add(&menu_item);
+    menu1
+        .append_item("add", &("Add", None, Some("help message")).into(), 0)
+        .connect_activate(|_| println!("add"));
+    menu1
+        .menu_item("remove")
+        .expect("unknown item")
+        .connect_activate(|_| println!("remove"));
+    menu1
+        .menu_item("delete")
+        .expect("unknown item")
+        .connect_activate(|_| println!("delete"));
+    menu_bar.show_all();
 
     let list_store = WrappedListStore::<TestListSpec>::new();
 
