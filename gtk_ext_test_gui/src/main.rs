@@ -1,15 +1,15 @@
 // Copyright 2017 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
+use std::rc;
 
 use pw_gtk_ext::gtk::prelude::*;
-use pw_gtk_ext::wrapper::*;
-use pw_gtk_ext::*;
-
+use pw_gtk_ext::gtkx::check_button::MutuallyExclusiveCheckButtonsBuilder;
 use pw_gtk_ext::gtkx::list_store::{ListRowOps, ListViewSpec, WrappedListStore, WrappedTreeModel};
 use pw_gtk_ext::gtkx::notebook::TabRemoveLabelBuilder;
 use pw_gtk_ext::gtkx::tree_view::TreeViewWithPopupBuilder;
 use pw_gtk_ext::pw_recollect::recollections;
 use pw_gtk_ext::sav_state::{SAV_SELN_UNIQUE, SAV_SELN_UNIQUE_OR_HOVER_OK};
-use std::rc;
+use pw_gtk_ext::wrapper::*;
+use pw_gtk_ext::*;
 
 #[derive(PWO)]
 struct SimpleCore {
@@ -68,9 +68,24 @@ fn main() {
             .orientation(gtk::Orientation::Horizontal)
             .build(),
     };
+
     let v_box = gtk::BoxBuilder::new()
         .orientation(gtk::Orientation::Vertical)
         .build();
+
+    let mecbs = MutuallyExclusiveCheckButtonsBuilder::new()
+        .orientation(gtk::Orientation::Vertical)
+        .check_button("a", "--a", "just testing: a")
+        .check_button("b", "--b", "just testing: b")
+        .check_button("c", "--c", "just testing: c")
+        .build();
+    let mecbs_c = mecbs.clone();
+    mecbs.connect_changed(move |name| {
+        let selected = mecbs_c.selected();
+        assert_eq!(name, selected);
+    });
+    v_box.pack_start(mecbs.pwo(), false, false, 0);
+
     v_box.pack_start(simple_core.pwo(), false, false, 0);
     let simple = Simple(rc::Rc::new(SimpleCore {
         h_box: gtk::BoxBuilder::new()
