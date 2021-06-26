@@ -3,6 +3,7 @@ use std::rc;
 
 use pw_gtk_ext::gtk::prelude::*;
 use pw_gtk_ext::gtkx::check_button::MutuallyExclusiveCheckButtonsBuilder;
+use pw_gtk_ext::gtkx::combo_box_text::SortedUnique;
 use pw_gtk_ext::gtkx::list_store::{ListRowOps, ListViewSpec, WrappedListStore, WrappedTreeModel};
 use pw_gtk_ext::gtkx::notebook::TabRemoveLabelBuilder;
 use pw_gtk_ext::gtkx::tree_view::TreeViewWithPopupBuilder;
@@ -85,6 +86,43 @@ fn main() {
         assert_eq!(name, selected);
     });
     v_box.pack_start(mecbs.pwo(), false, false, 0);
+
+    let cbt = gtk::ComboBoxText::new();
+    assert!(cbt.remove_text_item("one").is_err());
+    assert_eq!(cbt.insert_text_item("one").unwrap(), -1);
+    assert_eq!(cbt.insert_text_item("two").unwrap(), -1);
+    assert_eq!(cbt.insert_text_item("three").unwrap(), 1);
+    assert_eq!(cbt.insert_text_item("four").unwrap(), 0);
+    assert_eq!(cbt.insert_text_item("five").unwrap(), 0);
+    assert_eq!(cbt.insert_text_item("six").unwrap(), 3);
+    assert_eq!(cbt.insert_text_item("zero").unwrap(), -1);
+    assert!(cbt.remove_text_item("two").is_ok());
+    assert!(cbt.remove_text_item("two").is_err());
+    assert!(cbt.remove_text_item("four").is_ok());
+    assert!(cbt.remove_text_item("four").is_err());
+    assert_eq!(
+        cbt.get_text_items(),
+        vec!["five", "one", "six", "three", "zero"]
+    );
+    assert_ne!(
+        cbt.get_text_items(),
+        vec!["five", "one", "six", "ten", "three", "zero"]
+    );
+    cbt.update_with(&vec![
+        "five".to_string(),
+        "one".to_string(),
+        "ten".to_string(),
+        "three".to_string(),
+        "zero".to_string(),
+        "twelve".to_string(),
+        "aa".to_string(),
+        "zz".to_string(),
+    ]);
+    assert_eq!(
+        cbt.get_text_items(),
+        vec!["aa", "five", "one", "ten", "three", "twelve", "zero", "zz"]
+    );
+    v_box.pack_start(&cbt, false, false, 0);
 
     v_box.pack_start(simple_core.pwo(), false, false, 0);
     let simple = Simple(rc::Rc::new(SimpleCore {
