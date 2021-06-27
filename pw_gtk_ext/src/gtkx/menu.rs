@@ -4,7 +4,7 @@ use crate::gtk::prelude::*;
 
 use crate::{
     sav_state::{
-        ChangedCondnsNotifier, ConditionalWidgets, ConditionalWidgetsBuilder, MaskedCondns,
+        self, ChangedCondnsNotifier, ConditionalWidgets, ConditionalWidgetsBuilder, MaskedCondns,
         WidgetStatesControlled,
     },
     wrapper::*,
@@ -55,14 +55,20 @@ impl ManagedMenu {
         self.menu.clone()
     }
 
-    pub fn menu_item(&self, name: &'static str) -> Option<gtk::MenuItem> {
+    pub fn menu_item(&self, name: &'static str) -> Result<gtk::MenuItem, sav_state::Error> {
         self.items.get_widget(&name)
     }
 
-    pub fn append_menu_item(&self, name: &'static str, item: &gtk::MenuItem, condns: u64) {
-        self.items.add_widget(name, item, condns);
+    pub fn append_menu_item(
+        &self,
+        name: &'static str,
+        item: &gtk::MenuItem,
+        condns: u64,
+    ) -> Result<(), sav_state::Error> {
+        self.items.add_widget(name, item, condns)?;
         self.menu.append(item);
         self.menu.show_all();
+        Ok(())
     }
 
     pub fn insert_menu_item(
@@ -71,16 +77,23 @@ impl ManagedMenu {
         item: &gtk::MenuItem,
         condns: u64,
         position: i32,
-    ) {
-        self.items.add_widget(name, item, condns);
+    ) -> Result<(), sav_state::Error> {
+        self.items.add_widget(name, item, condns)?;
         self.menu.insert(item, position);
         self.menu.show_all();
+        Ok(())
     }
 
-    pub fn prepend_menu_item(&self, name: &'static str, item: &gtk::MenuItem, condns: u64) {
-        self.items.add_widget(name, item, condns);
+    pub fn prepend_menu_item(
+        &self,
+        name: &'static str,
+        item: &gtk::MenuItem,
+        condns: u64,
+    ) -> Result<(), sav_state::Error> {
+        self.items.add_widget(name, item, condns)?;
         self.menu.prepend(item);
         self.menu.show_all();
+        Ok(())
     }
 
     pub fn append_item(
@@ -88,11 +101,11 @@ impl ManagedMenu {
         name: &'static str,
         menu_item_spec: &MenuItemSpec,
         condns: u64,
-    ) -> gtk::MenuItem {
+    ) -> Result<gtk::MenuItem, sav_state::Error> {
         let item = menu_item_spec.into();
-        self.append_menu_item(name, &item, condns);
+        self.append_menu_item(name, &item, condns)?;
 
-        item
+        Ok(item)
     }
 
     pub fn insert_item(
@@ -101,11 +114,11 @@ impl ManagedMenu {
         menu_item_spec: &MenuItemSpec,
         condns: u64,
         position: i32,
-    ) -> gtk::MenuItem {
+    ) -> Result<gtk::MenuItem, sav_state::Error> {
         let item = menu_item_spec.into();
-        self.insert_menu_item(name, &item, condns, position);
+        self.insert_menu_item(name, &item, condns, position)?;
 
-        item
+        Ok(item)
     }
 
     pub fn prepend_item(
@@ -113,11 +126,11 @@ impl ManagedMenu {
         name: &'static str,
         menu_item_spec: &MenuItemSpec,
         condns: u64,
-    ) -> gtk::MenuItem {
+    ) -> Result<gtk::MenuItem, sav_state::Error> {
         let item = menu_item_spec.into();
-        self.prepend_menu_item(name, &item, condns);
+        self.prepend_menu_item(name, &item, condns)?;
 
-        item
+        Ok(item)
     }
 
     pub fn append_separator(&self) {
@@ -193,7 +206,9 @@ impl ManagedMenuBuilder {
             .build::<&'static str, gtk::MenuItem>();
         let mm = ManagedMenu { menu, items };
         for (name, menu_item_spec, condns) in self.items.iter() {
-            mm.append_item(*name, menu_item_spec, *condns);
+            if let Err(err) = mm.append_item(*name, menu_item_spec, *condns) {
+                panic!("Error adding item '{}' to menu: {}", name, err);
+            };
         }
         mm.menu.show_all();
 

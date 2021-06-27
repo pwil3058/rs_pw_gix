@@ -15,6 +15,28 @@ use gtk::{TreeSelection, TreeSelectionExt, WidgetExt};
 
 pub use pw_gtk_ext_derive::*;
 
+#[derive(Debug)]
+pub enum Error {
+    DuplicateKey,
+    DuplicateWidget,
+    NotFound,
+    InconsistentMaskCondns,
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use Error::*;
+        match self {
+            DuplicateKey => f.write_str("Duplicate key"),
+            DuplicateWidget => f.write_str("Duplicate widget"),
+            NotFound => f.write_str("Not found"),
+            InconsistentMaskCondns => f.write_str("Inconsistent mask/conditions"),
+        }
+    }
+}
+
+impl std::error::Error for Error {}
+
 /// A struct that enables the state of a subset of the conditions to
 /// be specified without effecting the other conditions.
 #[derive(Debug, Default, Clone, Copy)]
@@ -158,6 +180,7 @@ impl ChangedCondnsNotifier {
     }
 
     pub fn notify_changed_condns(&self, masked_condns: MaskedCondns) {
+        debug_assert!(masked_condns.is_consistent());
         for (_, callback) in self.0.callbacks.borrow().iter() {
             callback(masked_condns)
         }
@@ -200,29 +223,26 @@ where
         self.widgets.len()
     }
 
-    fn contains_name(&self, name: &str) -> bool {
-        self.widgets.contains_key(name)
-    }
-
-    fn contains_widget(&self, widget: &W) -> bool {
-        for value in self.widgets.values() {
-            if value == widget {
-                return true;
+    fn add_widget(&mut self, name: &str, widget: W) -> Result<(), Error> {
+        if self.widgets.contains_key(name) {
+            Err(Error::DuplicateKey)
+        } else if self.widgets.values().any(|value| value == &widget) {
+            Err(Error::DuplicateWidget)
+        } else {
+            match self.widget_states_controlled {
+                Sensitivity => widget.set_sensitive(self.is_on),
+                Visibility => widget.set_visible(self.is_on),
+                Both => {
+                    widget.set_sensitive(self.is_on);
+                    widget.set_visible(self.is_on);
+                }
+            }
+            if self.widgets.insert(name.to_string(), widget).is_none() {
+                Ok(())
+            } else {
+                Err(Error::DuplicateKey)
             }
         }
-        false
-    }
-
-    fn add_widget(&mut self, name: &str, widget: W) {
-        match self.widget_states_controlled {
-            Sensitivity => widget.set_sensitive(self.is_on),
-            Visibility => widget.set_visible(self.is_on),
-            Both => {
-                widget.set_sensitive(self.is_on);
-                widget.set_visible(self.is_on);
-            }
-        }
-        self.widgets.insert(name.to_string(), widget);
     }
 
     fn set_state(&mut self, on: bool) {
@@ -381,46 +401,27 @@ where
         &self.0.change_notifier
     }
 
-    fn contains_name(&self, name: &str) -> bool {
-        for group in self.0.groups.borrow().values() {
-            if group.contains_name(name) {
-                return true;
-            }
-        }
-        false
-    }
-
-    fn contains_widget(&self, widget: &W) -> bool {
-        for group in self.0.groups.borrow().values() {
-            if group.contains_widget(widget) {
-                return true;
-            }
-        }
-        false
-    }
-
-    pub fn add_widget(&self, name: &str, widget: &W, condns: u64) {
-        assert!(!self.contains_widget(&widget));
-        assert!(!self.contains_name(&name));
+    pub fn add_widget(&self, name: &str, widget: &W, condns: u64) -> Result<(), Error> {
         let mut groups = self.0.groups.borrow_mut();
         if let Some(group) = groups.get_mut(&condns) {
-            group.add_widget(name, widget.clone());
-            return;
+            group.add_widget(name, widget.clone())?;
+            return Ok(());
         }
         let mut group = self.0.conditional_widget_group_builder.build::<W>();
         group.set_state((condns & self.0.current_condns.get()) == condns);
-        group.add_widget(name, widget.clone());
+        group.add_widget(name, widget.clone())?;
         groups.insert(condns, group);
+        Ok(())
     }
 
-    pub fn get_widget(&self, name: &str) -> Option<W> {
+    pub fn get_widget(&self, name: &str) -> Result<W, Error> {
         let groups = self.0.groups.borrow();
         for group in groups.values() {
             if let Some(widget) = group.widgets.get(name) {
-                return Some(widget.clone());
+                return Ok(widget.clone());
             }
         }
-        None
+        Err(Error::NotFound)
     }
 
     pub fn update_condns(&self, changed_condns: MaskedCondns) {
@@ -485,26 +486,26 @@ where
         self.widgets.len()
     }
 
-    fn contains_widget(&self, widget: &W) -> bool {
-        for value in self.widgets.values() {
-            if value == widget {
-                return true;
+    fn insert(&mut self, key: K, widget: W) -> Result<(), Error> {
+        if self.widgets.contains_key(&key) {
+            Err(Error::DuplicateKey)
+        } else if self.widgets.values().any(|value| value == &widget) {
+            Err(Error::DuplicateWidget)
+        } else {
+            match self.widget_states_controlled {
+                Sensitivity => widget.set_sensitive(self.is_on),
+                Visibility => widget.set_visible(self.is_on),
+                Both => {
+                    widget.set_sensitive(self.is_on);
+                    widget.set_visible(self.is_on);
+                }
+            }
+            if self.widgets.insert(key, widget).is_none() {
+                Ok(())
+            } else {
+                Err(Error::DuplicateKey)
             }
         }
-        false
-    }
-
-    fn insert(&mut self, key: K, widget: W) {
-        debug_assert!(!self.widgets.contains_key(&key));
-        match self.widget_states_controlled {
-            Sensitivity => widget.set_sensitive(self.is_on),
-            Visibility => widget.set_visible(self.is_on),
-            Both => {
-                widget.set_sensitive(self.is_on);
-                widget.set_visible(self.is_on);
-            }
-        }
-        self.widgets.insert(key, widget);
     }
 
     fn set_state(&mut self, on: bool) {
@@ -566,39 +567,20 @@ where
         len
     }
 
-    fn contains_key(&self, key: &K) -> bool {
-        for group in self.0.groups.borrow().values() {
-            if group.widgets.contains_key(key) {
-                return true;
-            }
-        }
-        false
-    }
-
-    fn contains_widget(&self, widget: &W) -> bool {
-        for group in self.0.groups.borrow().values() {
-            if group.contains_widget(widget) {
-                return true;
-            }
-        }
-        false
-    }
-
-    pub fn add_widget(&self, key: K, widget: &W, condns: u64) {
-        debug_assert!(!self.contains_widget(&widget));
-        debug_assert!(!self.contains_key(&key));
+    pub fn add_widget(&self, key: K, widget: &W, condns: u64) -> Result<(), Error> {
         let mut groups = self.0.groups.borrow_mut();
         if let Some(group) = groups.get_mut(&condns) {
-            group.insert(key, widget.clone());
-            return;
+            group.insert(key, widget.clone())?;
+            return Ok(());
         }
         let mut group = ConditionalWidgetHashMap::<K, W>::new(self.0.widget_states_controlled);
         group.set_state((condns & self.0.current_condns.get()) == condns);
-        group.insert(key, widget.clone());
+        group.insert(key, widget.clone())?;
         groups.insert(condns, group);
+        Ok(())
     }
 
-    pub fn get_widget<Q: ?Sized>(&self, key: &Q) -> Option<W>
+    pub fn get_widget<Q: ?Sized>(&self, key: &Q) -> Result<W, Error>
     where
         K: std::borrow::Borrow<Q>,
         Q: std::hash::Hash + Eq,
@@ -606,10 +588,10 @@ where
         let groups = self.0.groups.borrow();
         for group in groups.values() {
             if let Some(widget) = group.widgets.get(key) {
-                return Some(widget.clone());
+                return Ok(widget.clone());
             }
         }
-        None
+        Err(Error::NotFound)
     }
 
     pub fn update_condns(&self, changed_condns: MaskedCondns) {

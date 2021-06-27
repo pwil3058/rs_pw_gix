@@ -184,6 +184,7 @@ fn main() {
     menu_bar.add(&menu_item);
     menu1
         .append_item("add", &("Add", None, Some("help message")).into(), 0)
+        .unwrap()
         .connect_activate(|_| println!("add"));
     menu1
         .menu_item("remove")
