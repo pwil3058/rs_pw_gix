@@ -57,6 +57,13 @@ impl ListViewSpec for TestListSpec {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum XYZ {
+    X,
+    Y,
+    Z,
+}
+
 fn main() {
     recollections::init("./.recollections");
     if gtk::init().is_err() {
@@ -82,9 +89,28 @@ fn main() {
         .check_button("c", "--c", "just testing: c")
         .build();
     let mecbs_c = mecbs.clone();
-    mecbs.connect_changed(move |name| {
+    mecbs.connect_changed(move |tag| {
         let selected = mecbs_c.selected();
-        assert_eq!(name, selected);
+        assert_eq!(tag, selected);
+    });
+    v_box.pack_start(mecbs.pwo(), false, false, 0);
+    v_box.pack_start(
+        &gtk::Separator::new(gtk::Orientation::Horizontal),
+        false,
+        false,
+        0,
+    );
+
+    let mecbs = MutuallyExclusiveCheckButtonsBuilder::new()
+        .orientation(gtk::Orientation::Horizontal)
+        .check_button(XYZ::X, "--x", "just testing: x")
+        .check_button(XYZ::Y, "--y", "just testing: y")
+        .check_button(XYZ::Z, "--z", "just testing: z")
+        .build();
+    let mecbs_c = mecbs.clone();
+    mecbs.connect_changed(move |tag| {
+        let selected = mecbs_c.selected();
+        assert_eq!(tag, selected);
     });
     v_box.pack_start(mecbs.pwo(), false, false, 0);
 
