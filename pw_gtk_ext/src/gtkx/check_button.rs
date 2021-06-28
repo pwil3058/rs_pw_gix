@@ -89,6 +89,11 @@ impl<T: Clone + Hash + Eq + 'static> MutuallyExclusiveCheckButtonsBuilder<T> {
         self
     }
 
+    pub fn spacing(mut self, spacing: i32) -> Self {
+        self.spacing = spacing;
+        self
+    }
+
     pub fn build(self) -> MutuallyExclusiveCheckButtons<T> {
         let box_ = gtk::Box::new(self.orientation, self.spacing);
         let mut check_buttons = HashMap::new();

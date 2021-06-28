@@ -7,6 +7,7 @@ use pw_gtk_ext::gtkx::combo_box_text::SortedUnique;
 use pw_gtk_ext::gtkx::list_store::{ListRowOps, ListViewSpec, WrappedListStore, WrappedTreeModel};
 use pw_gtk_ext::gtkx::menu::ManagedMenuBuilder;
 use pw_gtk_ext::gtkx::notebook::TabRemoveLabelBuilder;
+use pw_gtk_ext::gtkx::radio_button::RadioButtonsBuilder;
 use pw_gtk_ext::gtkx::tree_view::TreeViewWithPopupBuilder;
 use pw_gtk_ext::pw_recollect::recollections;
 use pw_gtk_ext::sav_state::{SAV_SELN_UNIQUE, SAV_SELN_UNIQUE_OR_HOVER_OK};
@@ -113,6 +114,19 @@ fn main() {
         assert_eq!(tag, selected);
     });
     v_box.pack_start(mecbs.pwo(), false, false, 0);
+
+    let radio_buttons = RadioButtonsBuilder::new()
+        .radio_button(XYZ::X, "--X", "X radio button")
+        .radio_button(XYZ::Y, "--Y", "Y oprtio")
+        .radio_button(XYZ::Z, "--Z", "Z optio")
+        .default(XYZ::Y)
+        .build();
+    let radio_buttons_c = radio_buttons.clone();
+    radio_buttons.connect_changed(move |tag| {
+        let selected = radio_buttons_c.selected();
+        assert_eq!(tag, selected);
+    });
+    v_box.pack_start(radio_buttons.pwo(), false, false, 0);
 
     let cbt = gtk::ComboBoxText::new();
     assert!(cbt.remove_text_item("one").is_err());
