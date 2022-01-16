@@ -11,7 +11,7 @@ fn main() {
                 .title("Hello, OrbTk!")
                 .position((2000.0, 1000.0))
                 .size(200.0, 100.0)
-                .resizeable(true)
+                .resizable(true)
                 .child(
                     TextBlock::new()
                         .text("Hello, World")
