@@ -8,5 +8,5 @@ members = [
     "component_test_gui",
     "pw_recollect",
     "gtk_ext_test_gui",
-    "orbtk_test_gui",
+#    "orbtk_test_gui",
 ]
