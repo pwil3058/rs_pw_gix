@@ -102,17 +102,15 @@ impl XYSelection {
                     xys_c.end_xy.set(Some(point));
                     xys_c.selection_made.set(false);
                     da.queue_draw();
-                    gtk::Inhibit(true)
+                    Inhibit(true)
                 } else if event.get_button() == 2 {
-                    if xys_c.in_progress() {
-                        xys_c.reset()
-                    } else if xys_c.selection_made.get() {
+                    if xys_c.in_progress() || xys_c.selection_made.get() {
                         xys_c.reset()
                     };
                     da.queue_draw();
-                    gtk::Inhibit(true)
+                    Inhibit(true)
                 } else {
-                    gtk::Inhibit(false)
+                    Inhibit(false)
                 }
             });
         let xys_c = xys.clone();
@@ -125,9 +123,9 @@ impl XYSelection {
                         callback();
                     }
                     da.queue_draw();
-                    gtk::Inhibit(true)
+                    Inhibit(true)
                 } else {
-                    gtk::Inhibit(false)
+                    Inhibit(false)
                 }
             });
         let xys_c = xys.clone();
@@ -136,9 +134,9 @@ impl XYSelection {
                 if xys_c.in_progress() {
                     xys_c.end_xy.set(Some(Point::from(event.get_position())));
                     da.queue_draw();
-                    gtk::Inhibit(true)
+                    Inhibit(true)
                 } else {
-                    gtk::Inhibit(false)
+                    Inhibit(false)
                 }
             });
         let xys_c = xys.clone();
@@ -147,7 +145,7 @@ impl XYSelection {
                 xys_c.reset();
                 da.queue_draw();
             };
-            gtk::Inhibit(false)
+            Inhibit(false)
         });
         let xys_c = xys.clone();
         xys.drawing_area

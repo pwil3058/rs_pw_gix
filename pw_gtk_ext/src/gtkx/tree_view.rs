@@ -83,16 +83,12 @@ impl TreeViewWithPopup {
     }
 
     fn menu_item_selected(&self, name: &str) {
-        let hovered_id = if let Some(ref id) = *self.0.selected_id.borrow() {
-            Some(id.clone())
-        } else {
-            None
-        };
+        let hovered_id = (*self.0.selected_id.borrow()).as_ref().cloned();
         let selection = self.0.tree_view.get_selection();
         let (tree_paths, store) = selection.get_selected_rows();
         let mut selected_ids = vec![];
         for tree_path in tree_paths.iter() {
-            if let Some(iter) = store.get_iter(&tree_path) {
+            if let Some(iter) = store.get_iter(tree_path) {
                 selected_ids.push(store.get_value(&iter, self.0.id_field));
             }
         }

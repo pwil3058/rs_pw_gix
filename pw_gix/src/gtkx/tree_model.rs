@@ -55,7 +55,11 @@ macro_rules! len_of {
 
 pub trait TreeModelRowOps: TreeModelExt {
     fn len(&self) -> i32 {
-        len_of!(&self)
+        len_of!(self)
+    }
+
+    fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     fn find_row_where<F>(&self, this_is_the_row: F) -> Option<(i32, gtk::TreeIter)>
@@ -90,21 +94,15 @@ pub trait TreeModelRowOps: TreeModelExt {
     }
 
     fn find_row_index(&self, row: &[glib::Value]) -> Option<i32> {
-        match self.find_row(row) {
-            Some((index, _)) => Some(index),
-            None => None,
-        }
+        self.find_row(row).map(|(index, _)| index)
     }
 
     fn find_row_iter(&self, row: &[glib::Value]) -> Option<gtk::TreeIter> {
-        match self.find_row(row) {
-            Some((_, iter)) => Some(iter),
-            None => None,
-        }
+        self.find_row(row).map(|(_, iter)| iter)
     }
 
     fn get_iter_next<'a>(&self, iter: &'a gtk::TreeIter) -> Option<&'a gtk::TreeIter> {
-        if self.iter_next(&iter) {
+        if self.iter_next(iter) {
             Some(iter)
         } else {
             None

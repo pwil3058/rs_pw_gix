@@ -4,7 +4,6 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use quote::{quote, quote_spanned};
-use syn;
 
 #[proc_macro_derive(PWO)]
 pub fn pwo2_derive(input: TokenStream) -> TokenStream {
@@ -84,7 +83,7 @@ fn segments_match_tail(
     segments: &syn::punctuated::Punctuated<syn::PathSegment, syn::token::Colon2>,
     names: &[&str],
 ) -> bool {
-    if segments.len() > 0 && segments.len() <= names.len() {
+    if !segments.is_empty() && segments.len() <= names.len() {
         let start = names.len() - segments.len();
         segments
             .iter()

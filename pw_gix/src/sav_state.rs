@@ -168,7 +168,7 @@ pub enum WidgetStatesControlled {
 
 impl Default for WidgetStatesControlled {
     fn default() -> Self {
-        Self::Sensitivity
+        Sensitivity
     }
 }
 
@@ -260,7 +260,7 @@ where
     groups: RefCell<HashMap<u64, ConditionalWidgetGroup<W>>>,
     current_condns: Cell<u64>,
     change_notifier: Rc<ChangedCondnsNotifier>,
-    selection: Option<gtk::TreeSelection>,
+    selection: Option<TreeSelection>,
 }
 
 impl<W> ConditionalWidgetGroups<W>
@@ -269,11 +269,11 @@ where
 {
     pub fn new(
         wsc: WidgetStatesControlled,
-        selection: Option<&gtk::TreeSelection>,
+        selection: Option<&TreeSelection>,
         change_notifier: Option<&Rc<ChangedCondnsNotifier>>,
     ) -> Rc<Self> {
         let change_notifier = if let Some(change_notifier) = change_notifier {
-            Rc::clone(&change_notifier)
+            Rc::clone(change_notifier)
         } else {
             ChangedCondnsNotifier::new(0)
         };
@@ -282,12 +282,8 @@ where
             widget_states_controlled: wsc,
             groups: RefCell::new(HashMap::new()),
             current_condns: Cell::new(initial_condns),
-            change_notifier: change_notifier,
-            selection: if let Some(selection) = selection {
-                Some(selection.clone())
-            } else {
-                None
-            },
+            change_notifier,
+            selection: selection.cloned(),
         });
         if let Some(selection) = selection {
             cwg.update_condns(selection.get_masked_conditions());
@@ -340,8 +336,8 @@ where
     }
 
     pub fn add_widget(&self, name: &str, widget: &W, condns: u64) {
-        assert!(!self.contains_widget(&widget));
-        assert!(!self.contains_name(&name));
+        assert!(!self.contains_widget(widget));
+        assert!(!self.contains_name(name));
         let mut groups = self.groups.borrow_mut();
         if let Some(group) = groups.get_mut(&condns) {
             group.add_widget(name, widget.clone());
@@ -415,9 +411,10 @@ where
     K: Eq + std::hash::Hash + std::fmt::Debug,
 {
     fn new(widget_states_controlled: WidgetStatesControlled) -> Self {
-        let mut cwhm = Self::default();
-        cwhm.widget_states_controlled = widget_states_controlled;
-        cwhm
+        ConditionalWidgetHashMap::<K, W> {
+            widget_states_controlled,
+            ..Default::default()
+        }
     }
 
     fn len(&self) -> usize {
@@ -479,7 +476,7 @@ where
     groups: RefCell<HashMap<u64, ConditionalWidgetHashMap<K, W>>>,
     current_condns: Cell<u64>,
     change_notifier: Rc<ChangedCondnsNotifier>,
-    selection: Option<gtk::TreeSelection>,
+    selection: Option<TreeSelection>,
 }
 
 impl<K, W> ConditionalWidgets<K, W>
@@ -518,7 +515,7 @@ where
     }
 
     pub fn add_widget(&self, key: K, widget: &W, condns: u64) {
-        debug_assert!(!self.contains_widget(&widget));
+        debug_assert!(!self.contains_widget(widget));
         debug_assert!(!self.contains_key(&key));
         let mut groups = self.groups.borrow_mut();
         if let Some(group) = groups.get_mut(&condns) {
@@ -569,7 +566,7 @@ where
 pub struct ConditionalWidgetsBuilder {
     widget_states_controlled: WidgetStatesControlled,
     change_notifier: Rc<ChangedCondnsNotifier>,
-    selection: Option<gtk::TreeSelection>,
+    selection: Option<TreeSelection>,
 }
 
 impl Default for ConditionalWidgetsBuilder {
@@ -600,7 +597,7 @@ impl ConditionalWidgetsBuilder {
         self
     }
 
-    pub fn selection(&mut self, selection: &gtk::TreeSelection) -> &mut Self {
+    pub fn selection(&mut self, selection: &TreeSelection) -> &mut Self {
         self.selection = Some(selection.clone());
         self
     }

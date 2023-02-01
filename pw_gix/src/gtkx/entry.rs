@@ -42,7 +42,7 @@ impl LabelledTextEntry {
 
 // Hex Entry
 
-type BoxedChangeCallback<U> = Box<dyn Fn(U)>;
+type ChangeCallback<U> = Box<dyn Fn(U)>;
 
 #[derive(PWO)]
 pub struct HexEntry<U>
@@ -60,7 +60,7 @@ where
     value: Cell<U>,
     current_step: Cell<U>,
     max_step: U,
-    callbacks: RefCell<Vec<BoxedChangeCallback<U>>>,
+    callbacks: RefCell<Vec<ChangeCallback<U>>>,
 }
 
 impl<U> HexEntry<U>
@@ -118,7 +118,7 @@ where
     }
 
     fn set_value_from_text(&self, text: &str) {
-        let value = if let Some(index) = text.find("x") {
+        let value = if let Some(index) = text.find('x') {
             U::from_str_radix(&text[index + 1..], 16)
         } else {
             U::from_str_radix(text, 16)
@@ -202,7 +202,7 @@ where
         let value = Cell::new(self.initial_value);
         let max_step = cmp::max(U::MAX >> 5, U::ONE);
         let current_step = Cell::new(U::ONE);
-        let callbacks: RefCell<Vec<Box<dyn Fn(U)>>> = RefCell::new(Vec::new());
+        let callbacks: RefCell<Vec<ChangeCallback<U>>> = RefCell::new(Vec::new());
         let hex_entry = Rc::new(HexEntry {
             entry,
             value,
@@ -217,6 +217,17 @@ where
             .entry
             .connect_key_press_event(move |entry, event| {
                 use gdk::keys::constants::*;
+
+                const KEY_0: gdk::keys::Key = _0;
+                const KEY_1: gdk::keys::Key = _1;
+                const KEY_2: gdk::keys::Key = _2;
+                const KEY_3: gdk::keys::Key = _3;
+                const KEY_4: gdk::keys::Key = _4;
+                const KEY_5: gdk::keys::Key = _5;
+                const KEY_6: gdk::keys::Key = _6;
+                const KEY_7: gdk::keys::Key = _7;
+                const KEY_8: gdk::keys::Key = _8;
+                const KEY_9: gdk::keys::Key = _9;
                 let key = event.get_keyval();
                 match key {
                     Return | Tab | ISO_Left_Tab => {
@@ -228,20 +239,20 @@ where
                         }
                         // NB: this will nobble the "activate" signal
                         // but let the Tab key move the focus
-                        gtk::Inhibit(key == Return)
+                        Inhibit(key == Return)
                     }
                     Up => {
                         hex_entry_c.incr_value();
-                        gtk::Inhibit(true)
+                        Inhibit(true)
                     }
                     Down => {
                         hex_entry_c.decr_value();
-                        gtk::Inhibit(true)
+                        Inhibit(true)
                     }
-                    _0 | _1 | _2 | _3 | _4 | _5 | _6 | _7 | _8 | _9 | A | B | C | D | E | F
-                    | BackSpace | Delete | Copy | Paste | x | a | b | c | d | e | f | Left
-                    | Right => gtk::Inhibit(false),
-                    _ => gtk::Inhibit(true),
+                    KEY_0 | KEY_1 | KEY_2 | KEY_3 | KEY_4 | KEY_5 | KEY_6 | KEY_7 | KEY_8
+                    | KEY_9 | A | B | C | D | E | F | BackSpace | Delete | Copy | Paste | x | a
+                    | b | c | d | e | f | Left | Right => Inhibit(false),
+                    _ => Inhibit(true),
                 }
             });
 
@@ -251,9 +262,9 @@ where
             match event.get_keyval() {
                 Up | Down => {
                     hex_entry_c.reset_current_step();
-                    gtk::Inhibit(true)
+                    Inhibit(true)
                 }
-                _ => gtk::Inhibit(false),
+                _ => Inhibit(false),
             }
         });
 
@@ -263,7 +274,7 @@ where
 
 // FILEPATH COMPLETION
 
-pub trait PathCompletion: gtk::EntryExt + gtk::EditableSignals {
+pub trait PathCompletion: EntryExt + EditableSignals {
     fn _enable_path_completion(&self, dirs_only: bool) {
         let entry_completion = gtk::EntryCompletion::new();
         entry_completion.pack_start(&gtk::CellRendererText::new(), true);
@@ -272,7 +283,7 @@ pub trait PathCompletion: gtk::EntryExt + gtk::EditableSignals {
         entry_completion.set_inline_selection(true);
         entry_completion.set_minimum_key_length(0);
         let list_store = gtk::ListStore::new(&[glib::Type::String]);
-        entry_completion.set_model(Some(&list_store.clone()));
+        entry_completion.set_model(Some(&list_store));
 
         self.set_completion(Some(&entry_completion));
         self.connect_changed(move |editable| {
@@ -290,7 +301,7 @@ pub trait PathCompletion: gtk::EntryExt + gtk::EditableSignals {
                             continue;
                         };
                         let text = dir_path_txt.clone() + &entry.file_name();
-                        list_store.append_row(&vec![text.to_value()]);
+                        list_store.append_row(&[text.to_value()]);
                     }
                 } else {
                     let msep = format!("{}", MAIN_SEPARATOR);
@@ -300,7 +311,7 @@ pub trait PathCompletion: gtk::EntryExt + gtk::EditableSignals {
                         } else {
                             dir_path_txt.clone() + &entry.file_name()
                         };
-                        list_store.append_row(&vec![text.to_value()]);
+                        list_store.append_row(&[text.to_value()]);
                     }
                 }
             };

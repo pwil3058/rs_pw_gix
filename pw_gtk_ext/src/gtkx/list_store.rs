@@ -195,3 +195,9 @@ impl<L: ListViewSpec> WrappedListStore<L> {
         Self(gtk::ListStore::new(&L::column_types()), PhantomData)
     }
 }
+
+impl<L: ListViewSpec> Default for WrappedListStore<L> {
+    fn default() -> Self {
+        Self(gtk::ListStore::new(&L::column_types()), PhantomData)
+    }
+}

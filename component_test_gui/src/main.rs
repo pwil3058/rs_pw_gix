@@ -184,8 +184,8 @@ fn main() {
     vbox.pack_start(list.pwo(), true, true, 0);
     list.connect_popup_menu_item("edit", |s, l| println!("edit: {:?} : {:?}", s, l));
     list.connect_popup_menu_item("remove", |s, l| println!("remove: {:?} : {:?}", s, l));
-    list.add_row(&vec!["one".to_value(), "two".to_value()]);
-    list.add_row(&vec!["three".to_value(), "four".to_value()]);
+    list.add_row(&["one".to_value(), "two".to_value()]);
+    list.add_row(&["three".to_value(), "four".to_value()]);
 
     vbox.show_all();
     win.add(&vbox);

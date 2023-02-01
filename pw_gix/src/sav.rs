@@ -196,7 +196,7 @@ impl Enforcer {
 
     pub fn remove_widget<W: IsA<gtk::Widget>>(&self, w: &W) -> Result<(), &'static str> {
         let widget = w.clone().upcast::<gtk::Widget>();
-        if let None = self.widget_policy.borrow_mut().remove(&widget) {
+        if self.widget_policy.borrow_mut().remove(&widget).is_none() {
             return Err("Widget not found");
         };
         Ok(())

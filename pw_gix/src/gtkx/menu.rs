@@ -33,23 +33,24 @@ impl WrappedMenu {
         self.items.borrow().len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn menu(&self) -> gtk::Menu {
         self.menu.clone()
     }
 
     pub fn menu_item(&self, name: &str) -> Option<gtk::MenuItem> {
-        if let Some(item) = self.items.borrow().get(name) {
-            Some(item.clone())
-        } else {
-            None
-        }
+        self.items.borrow().get(name).cloned()
     }
 
     pub fn append_menu_item(&self, name: &str, item: &gtk::MenuItem) {
-        if let Some(_) = self
+        if self
             .items
             .borrow_mut()
             .insert(name.to_string(), item.clone())
+            .is_some()
         {
             panic!("Duplicate popup menu item name: {}", name);
         };
@@ -58,10 +59,11 @@ impl WrappedMenu {
     }
 
     pub fn insert_menu_item(&self, name: &str, item: &gtk::MenuItem, position: i32) {
-        if let Some(_) = self
+        if self
             .items
             .borrow_mut()
             .insert(name.to_string(), item.clone())
+            .is_some()
         {
             panic!("Duplicate popup menu item name: {}", name);
         };
@@ -70,10 +72,11 @@ impl WrappedMenu {
     }
 
     pub fn prepend_menu_item(&self, name: &str, item: &gtk::MenuItem) {
-        if let Some(_) = self
+        if self
             .items
             .borrow_mut()
             .insert(name.to_string(), item.clone())
+            .is_some()
         {
             panic!("Duplicate popup menu item name: {}", name);
         };
@@ -159,12 +162,13 @@ impl WrappedMenu {
     }
 
     pub fn popup_at_event(&self, event: &gdk::EventButton) {
-        if self.len() > 0 {
+        if !self.is_empty() {
             self.menu.popup_easy(event.get_button(), event.get_time());
         }
     }
 }
 
+#[derive(Default)]
 pub struct WrappedMenuBuilder<'a> {
     items: &'a [(&'a str, &'a str, &'a str)],
 }
@@ -383,6 +387,7 @@ impl ManagedMenu {
     }
 }
 
+#[derive(Default)]
 pub struct ManagedMenuBuilder<'a, 'b, 'c> {
     wsc: WidgetStatesControlled,
     selection: Option<&'a gtk::TreeSelection>,
@@ -392,12 +397,7 @@ pub struct ManagedMenuBuilder<'a, 'b, 'c> {
 
 impl<'a, 'b, 'c> ManagedMenuBuilder<'a, 'b, 'c> {
     pub fn new() -> Self {
-        Self {
-            wsc: WidgetStatesControlled::Sensitivity,
-            selection: None,
-            change_notifier: None,
-            items: &[],
-        }
+        Self::default()
     }
 
     pub fn states_controlled(&mut self, wsc: WidgetStatesControlled) -> &Self {
@@ -446,11 +446,13 @@ pub struct DualManagedMenu {
     visibility: Rc<ConditionalWidgetGroups<gtk::MenuItem>>,
 }
 
+pub type DMMenuSpec<'c> = (&'c str, &'c str, Option<&'c gtk::Image>, &'c str, u64, u64);
+
 impl DualManagedMenu {
     pub fn new(
         selection: Option<&gtk::TreeSelection>,
         change_notifier: Option<&Rc<ChangedCondnsNotifier>>,
-        items: &Vec<(&str, &str, Option<&gtk::Image>, &str, u64, u64)>,
+        items: &[DMMenuSpec],
     ) -> Self {
         let pm = Self {
             menu: gtk::Menu::new(),
@@ -632,7 +634,7 @@ pub struct DualManagedMenuBuilder<'a, 'b, 'c> {
     wsc: WidgetStatesControlled,
     selection: Option<&'a gtk::TreeSelection>,
     change_notifier: Option<&'b Rc<ChangedCondnsNotifier>>,
-    items: &'c [(&'c str, &'c str, Option<&'c gtk::Image>, &'c str, u64, u64)],
+    items: &'c [DMMenuSpec<'c>],
 }
 
 impl<'a, 'b, 'c> Default for DualManagedMenuBuilder<'a, 'b, 'c> {
@@ -666,10 +668,7 @@ impl<'a, 'b, 'c> DualManagedMenuBuilder<'a, 'b, 'c> {
         self
     }
 
-    pub fn items(
-        &mut self,
-        items: &'c [(&'c str, &'c str, Option<&'c gtk::Image>, &'c str, u64, u64)],
-    ) -> &Self {
+    pub fn items(&mut self, items: &'c [DMMenuSpec<'c>]) -> &Self {
         self.items = items;
         self
     }

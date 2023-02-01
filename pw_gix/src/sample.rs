@@ -1,7 +1,5 @@
 // Copyright 2017 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
-use std::clone;
-use std::convert;
 use std::error;
 use std::fmt;
 use std::io;
@@ -27,7 +25,7 @@ pub enum FailureReason {
     IOError(io::Error),
 }
 
-impl clone::Clone for FailureReason {
+impl Clone for FailureReason {
     // NB: this is necessary because io::Error doesn't implement copy OR clone
     fn clone(&self) -> FailureReason {
         match *self {
@@ -81,10 +79,7 @@ impl Failure {
     }
 
     pub fn user_cancelled(&self) -> bool {
-        match self.reason {
-            FailureReason::UserCancelled => true,
-            _ => false,
-        }
+        matches!(self.reason, FailureReason::UserCancelled)
     }
 }
 
@@ -100,7 +95,7 @@ impl error::Error for Failure {
     }
 }
 
-impl convert::From<io::Error> for Failure {
+impl From<io::Error> for Failure {
     fn from(io_error: io::Error) -> Failure {
         Failure::new(FailureReason::IOError(io_error))
     }
@@ -416,10 +411,7 @@ pub mod area_selection {
                                         status,
                                     )));
                                 }
-                                return Ok(PointerAndKeyboard {
-                                    pointer: pointer,
-                                    keyboard: keyboard,
-                                });
+                                return Ok(PointerAndKeyboard { pointer, keyboard });
                             } else {
                                 panic!("window not realized!!!")
                             }

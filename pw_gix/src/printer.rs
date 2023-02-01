@@ -27,7 +27,7 @@ impl RememberedPrinterSettings {
         if !file_path.exists() {
             if let Some(dir_path) = file_path.parent() {
                 if !dir_path.exists() {
-                    fs::create_dir_all(&dir_path).unwrap_or_else(|err| {
+                    fs::create_dir_all(dir_path).unwrap_or_else(|err| {
                         panic!("{:?}: line {:?}: {:?}", file!(), line!(), err)
                     });
                 }
@@ -75,7 +75,7 @@ pub struct PrintError(Option<glib::Error>);
 
 impl fmt::Display for PrintError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PrintError({}): {:?}.", self.to_string(), self.source())?;
+        write!(f, "PrintError({:?}): {:?}.", self.0, self.source())?;
         Ok(())
     }
 }
@@ -132,7 +132,7 @@ impl MarkupPrinterInterface for Rc<MarkupPrinterCore> {
     fn create(chunks: Vec<String>) -> Rc<MarkupPrinterCore> {
         let mp = Rc::new(MarkupPrinterCore {
             print_operation: gtk::PrintOperation::new(),
-            chunks: chunks,
+            chunks,
             pages: RefCell::new(Vec::new()),
         });
         mp.print_operation

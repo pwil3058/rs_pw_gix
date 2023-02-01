@@ -20,11 +20,7 @@ impl From<(&str, Option<gtk::Image>, Option<&str>)> for MenuItemSpec {
         Self {
             label: tuple_.0.to_string(),
             image: tuple_.1,
-            tooltip_text: if let Some(text) = tuple_.2 {
-                Some(text.to_string())
-            } else {
-                None
-            },
+            tooltip_text: tuple_.2.map(|text| text.to_string()),
         }
     }
 }
@@ -199,7 +195,7 @@ impl ManagedMenuBuilder {
             .build::<&'static str, gtk::MenuItem>();
         let mm = ManagedMenu { menu, items };
         for (name, menu_item_spec, condns) in self.items.iter() {
-            mm.append_item(*name, menu_item_spec, *condns);
+            mm.append_item(name, menu_item_spec, *condns);
         }
         mm.menu.show_all();
 
@@ -219,18 +215,15 @@ impl WrappedMenu {
     }
 
     pub fn menu_item(&self, name: &str) -> Option<gtk::MenuItem> {
-        if let Some(item) = self.items.borrow().get(name) {
-            Some(item.clone())
-        } else {
-            None
-        }
+        self.items.borrow().get(name).cloned()
     }
 
     pub fn append_menu_item(&self, name: &str, item: &gtk::MenuItem) {
-        if let Some(_) = self
+        if self
             .items
             .borrow_mut()
             .insert(name.to_string(), item.clone())
+            .is_some()
         {
             panic!("Duplicate popup menu item name: {}", name);
         };
@@ -239,10 +232,11 @@ impl WrappedMenu {
     }
 
     pub fn insert_menu_item(&self, name: &str, item: &gtk::MenuItem, position: i32) {
-        if let Some(_) = self
+        if self
             .items
             .borrow_mut()
             .insert(name.to_string(), item.clone())
+            .is_some()
         {
             panic!("Duplicate popup menu item name: {}", name);
         };
@@ -251,10 +245,11 @@ impl WrappedMenu {
     }
 
     pub fn prepend_menu_item(&self, name: &str, item: &gtk::MenuItem) {
-        if let Some(_) = self
+        if self
             .items
             .borrow_mut()
             .insert(name.to_string(), item.clone())
+            .is_some()
         {
             panic!("Duplicate popup menu item name: {}", name);
         };
@@ -359,7 +354,7 @@ impl WrappedMenuBuilder {
             items: RefCell::new(HashMap::<String, gtk::MenuItem>::new()),
         };
         for (name, menu_item_spec) in self.items.iter() {
-            pm.append_item(name, &menu_item_spec);
+            pm.append_item(name, menu_item_spec);
         }
         pm.menu.show_all();
 
@@ -489,20 +484,11 @@ impl SplitManagedMenu {
     }
 }
 
+#[derive(Default)]
 pub struct SplitManagedMenuBuilder {
     selection: Option<gtk::TreeSelection>,
     change_notifier: Option<Rc<ChangedCondnsNotifier>>,
     items: Vec<(&'static str, MenuItemSpec, u64, u64)>,
-}
-//wsc: ,
-impl Default for SplitManagedMenuBuilder {
-    fn default() -> Self {
-        Self {
-            selection: None,
-            change_notifier: None,
-            items: vec![],
-        }
-    }
 }
 
 impl SplitManagedMenuBuilder {
@@ -511,12 +497,12 @@ impl SplitManagedMenuBuilder {
         let sensitivity = ConditionalWidgetGroups::<gtk::MenuItem>::new(
             WidgetStatesControlled::Sensitivity,
             if let Some(selection) = &self.selection {
-                Some(&selection)
+                Some(selection)
             } else {
                 None
             },
             if let Some(change_notifier) = &self.change_notifier {
-                Some(&change_notifier)
+                Some(change_notifier)
             } else {
                 None
             },
@@ -524,12 +510,12 @@ impl SplitManagedMenuBuilder {
         let visibility = ConditionalWidgetGroups::<gtk::MenuItem>::new(
             WidgetStatesControlled::Visibility,
             if let Some(selection) = &self.selection {
-                Some(&selection)
+                Some(selection)
             } else {
                 None
             },
             if let Some(change_notifier) = &self.change_notifier {
-                Some(&change_notifier)
+                Some(change_notifier)
             } else {
                 None
             },
@@ -542,7 +528,7 @@ impl SplitManagedMenuBuilder {
         for (name, menu_item_spec, sensitivity_condns, visibility_condns) in self.items.iter() {
             smm.append_item(
                 name,
-                &menu_item_spec,
+                menu_item_spec,
                 *sensitivity_condns,
                 *visibility_condns,
             );

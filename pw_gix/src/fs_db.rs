@@ -83,8 +83,8 @@ macro_rules! impl_os_fs_db {
             fn new(dir_path: &str, show_hidden: bool, hide_clean: bool) -> Self {
                 Self {
                     path: dir_path.to_string(),
-                    show_hidden: show_hidden,
-                    hide_clean: hide_clean,
+                    show_hidden,
+                    hide_clean,
                     dirs_data: Rc::new(vec![]),
                     files_data: Rc::new(vec![]),
                     hash_digest: None,
@@ -286,7 +286,7 @@ macro_rules! impl_simple_fs_object {
                 Self {
                     name: name.to_string(),
                     path: path.to_string(),
-                    is_dir: is_dir,
+                    is_dir,
                 }
             }
 

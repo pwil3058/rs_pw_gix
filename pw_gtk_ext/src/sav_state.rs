@@ -199,7 +199,7 @@ pub enum WidgetStatesControlled {
 
 impl Default for WidgetStatesControlled {
     fn default() -> Self {
-        Self::Sensitivity
+        Sensitivity
     }
 }
 
@@ -304,7 +304,7 @@ where
     groups: RefCell<HashMap<u64, ConditionalWidgetGroup<W>>>,
     current_condns: Cell<u64>,
     change_notifier: ChangedCondnsNotifier,
-    selection: Option<gtk::TreeSelection>,
+    selection: Option<TreeSelection>,
 }
 
 #[derive(Default, WClone)]
@@ -315,7 +315,7 @@ where
 #[derive(Default)]
 pub struct ConditionalWidgetGroupsBuilder {
     widget_states_controlled: WidgetStatesControlled,
-    selection: Option<gtk::TreeSelection>,
+    selection: Option<TreeSelection>,
     change_notifier: Option<ChangedCondnsNotifier>,
 }
 
@@ -329,7 +329,7 @@ impl ConditionalWidgetGroupsBuilder {
         self
     }
 
-    pub fn selection(&mut self, selection: &gtk::TreeSelection) -> &mut Self {
+    pub fn selection(&mut self, selection: &TreeSelection) -> &mut Self {
         self.selection = Some(selection.clone());
         self
     }
@@ -349,11 +349,7 @@ impl ConditionalWidgetGroupsBuilder {
             ChangedCondnsNotifier::new(0)
         };
         let initial_condns = change_notifier.current_condns();
-        let selection = if let Some(selection) = &self.selection {
-            Some(selection.clone())
-        } else {
-            None
-        };
+        let selection = self.selection.as_ref().cloned();
         let cwg = ConditionalWidgetGroups(Rc::new(ConditionalWidgetGroupsCore::<W> {
             conditional_widget_group_builder: ConditionalWidgetGroupBuilder::new(
                 self.widget_states_controlled,
@@ -477,9 +473,13 @@ where
     K: Eq + std::hash::Hash + std::fmt::Debug,
 {
     fn new(widget_states_controlled: WidgetStatesControlled) -> Self {
-        let mut cwhm = Self::default();
-        cwhm.widget_states_controlled = widget_states_controlled;
-        cwhm
+        Self {
+            widget_states_controlled,
+            ..std::default::Default::default()
+        }
+        //let mut cwhm = Self::default();
+        //cwhm.widget_states_controlled = widget_states_controlled;
+        //cwhm
     }
 
     fn len(&self) -> usize {
@@ -541,7 +541,7 @@ where
     groups: RefCell<HashMap<u64, ConditionalWidgetHashMap<K, W>>>,
     current_condns: Cell<u64>,
     change_notifier: ChangedCondnsNotifier,
-    selection: Option<gtk::TreeSelection>,
+    selection: Option<TreeSelection>,
 }
 
 #[derive(Default, WClone)]
@@ -619,7 +619,7 @@ where
 pub struct ConditionalWidgetsBuilder {
     widget_states_controlled: WidgetStatesControlled,
     change_notifier: ChangedCondnsNotifier,
-    selection: Option<gtk::TreeSelection>,
+    selection: Option<TreeSelection>,
 }
 
 impl Default for ConditionalWidgetsBuilder {
@@ -650,7 +650,7 @@ impl ConditionalWidgetsBuilder {
         self
     }
 
-    pub fn selection(&mut self, selection: &gtk::TreeSelection) -> &mut Self {
+    pub fn selection(&mut self, selection: &TreeSelection) -> &mut Self {
         self.selection = Some(selection.clone());
         self
     }

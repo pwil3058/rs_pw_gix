@@ -157,7 +157,7 @@ impl ManagedMenu {
     }
 
     pub fn popup_at_event(&self, event: &gdk::EventButton) {
-        if self.items.len() > 0 {
+        if !self.items.is_empty() {
             self.menu.popup_easy(event.get_button(), event.get_time());
         }
     }
@@ -206,7 +206,7 @@ impl ManagedMenuBuilder {
             .build::<&'static str, gtk::MenuItem>();
         let mm = ManagedMenu { menu, items };
         for (name, menu_item_spec, condns) in self.items.iter() {
-            if let Err(err) = mm.append_item(*name, menu_item_spec, *condns) {
+            if let Err(err) = mm.append_item(name, menu_item_spec, *condns) {
                 panic!("Error adding item '{}' to menu: {}", name, err);
             };
         }

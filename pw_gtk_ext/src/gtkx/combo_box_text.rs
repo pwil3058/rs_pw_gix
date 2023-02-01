@@ -31,13 +31,13 @@ pub trait SortedUnique {
     fn update_with(&self, new_item_list: &Vec<String>) {
         let current_item_list = self.get_text_items();
         for item in &current_item_list {
-            if !new_item_list.contains(&item) {
-                self.remove_text_item(&item).expect("it's there");
+            if !new_item_list.contains(item) {
+                self.remove_text_item(item).expect("it's there");
             }
         }
         for item in new_item_list {
-            if !current_item_list.contains(&item) {
-                self.insert_text_item(&item).expect("uniqueness checked");
+            if !current_item_list.contains(item) {
+                self.insert_text_item(item).expect("uniqueness checked");
             }
         }
     }
@@ -65,7 +65,7 @@ impl SortedUnique for gtk::ComboBoxText {
                 }
             }
         };
-        return Err(-1);
+        Err(-1)
     }
 
     fn get_text_items(&self) -> Vec<String> {

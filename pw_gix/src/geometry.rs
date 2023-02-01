@@ -14,7 +14,7 @@ use normalised_angles::Angle;
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub struct Point(pub f64, pub f64);
 
-const SQRT_2: f64 = 1.4142_13562_37309_50488;
+use std::f64::consts::SQRT_2;
 pub const SIN_45_DEG: f64 = 1.0 / SQRT_2;
 pub const COS_45_DEG: f64 = SIN_45_DEG;
 

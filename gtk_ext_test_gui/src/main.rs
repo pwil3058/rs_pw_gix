@@ -20,7 +20,7 @@ struct SimpleCore {
 }
 
 #[derive(PWO, Wrapper, WClone)]
-struct Simple(std::rc::Rc<SimpleCore>);
+struct Simple(rc::Rc<SimpleCore>);
 
 struct TestListSpec;
 
@@ -59,7 +59,7 @@ impl ListViewSpec for TestListSpec {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-enum XYZ {
+enum Xyz {
     X,
     Y,
     Z,
@@ -104,9 +104,9 @@ fn main() {
 
     let mecbs = MutuallyExclusiveCheckButtonsBuilder::new()
         .orientation(gtk::Orientation::Horizontal)
-        .check_button(XYZ::X, "--x", "just testing: x")
-        .check_button(XYZ::Y, "--y", "just testing: y")
-        .check_button(XYZ::Z, "--z", "just testing: z")
+        .check_button(Xyz::X, "--x", "just testing: x")
+        .check_button(Xyz::Y, "--y", "just testing: y")
+        .check_button(Xyz::Z, "--z", "just testing: z")
         .build();
     let mecbs_c = mecbs.clone();
     mecbs.connect_changed(move |tag| {
@@ -116,10 +116,10 @@ fn main() {
     v_box.pack_start(mecbs.pwo(), false, false, 0);
 
     let radio_buttons = RadioButtonsBuilder::new()
-        .radio_button(XYZ::X, "--X", "X radio button")
-        .radio_button(XYZ::Y, "--Y", "Y oprtio")
-        .radio_button(XYZ::Z, "--Z", "Z optio")
-        .default(XYZ::Y)
+        .radio_button(Xyz::X, "--X", "X radio button")
+        .radio_button(Xyz::Y, "--Y", "Y oprtio")
+        .radio_button(Xyz::Z, "--Z", "Z optio")
+        .default(Xyz::Y)
         .build();
     let radio_buttons_c = radio_buttons.clone();
     radio_buttons.connect_changed(move |tag| {
@@ -231,10 +231,10 @@ fn main() {
     list.connect_popup_menu_item("remove", |s, l| println!("remove: {:?} : {:?}", s, l));
     list_store
         .model()
-        .append_row(&vec!["one".to_value(), "two".to_value()]);
+        .append_row(&["one".to_value(), "two".to_value()]);
     list_store
         .model()
-        .append_row(&vec!["three".to_value(), "four".to_value()]);
+        .append_row(&["three".to_value(), "four".to_value()]);
 
     v_box.show_all();
     win.add(&v_box);

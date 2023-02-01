@@ -11,11 +11,13 @@ use gtk::prelude::*;
 
 use crate::wrapper::*;
 
+pub type ChangeCallback<T> = Box<dyn Fn(Option<&T>)>;
+
 #[derive(PWO)]
 pub struct MutuallyExclusiveCheckButtonsCore<T: Clone + Hash> {
     box_: gtk::Box,
     check_buttons: HashMap<T, gtk::CheckButton>,
-    change_callbacks: RefCell<Vec<Box<dyn Fn(Option<&T>)>>>,
+    change_callbacks: RefCell<Vec<ChangeCallback<T>>>,
     suppress_inform: Cell<bool>,
 }
 
@@ -126,5 +128,11 @@ impl<T: Clone + Hash + Eq + 'static> MutuallyExclusiveCheckButtonsBuilder<T> {
         }
 
         mecb
+    }
+}
+
+impl<T: Clone + Hash + Eq + 'static> Default for MutuallyExclusiveCheckButtonsBuilder<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }

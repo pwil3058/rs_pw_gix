@@ -68,17 +68,15 @@ impl ListViewWithPopUpMenu {
     }
 
     fn menu_item_selected(&self, name: &str) {
-        let hovered_id = if let Some(ref id) = *self.selected_id.borrow() {
-            Some(id.to_string())
-        } else {
-            None
-        };
+        let hovered_id = (*self.selected_id.borrow())
+            .as_ref()
+            .map(|id| id.to_string());
         let selection = self.view.get_selection();
         let (tree_paths, store) = selection.get_selected_rows();
-        let selected_ids: Option<Vec<String>> = if tree_paths.len() > 0 {
+        let selected_ids: Option<Vec<String>> = if !tree_paths.is_empty() {
             let mut vector = vec![];
             for tree_path in tree_paths.iter() {
-                if let Some(iter) = store.get_iter(&tree_path) {
+                if let Some(iter) = store.get_iter(tree_path) {
                     if let Some(id) = store
                         .get_value(&iter, self.id_field)
                         .get::<String>()
@@ -110,7 +108,7 @@ impl ListViewWithPopUpMenu {
     }
 
     pub fn add_row(&self, row: &[glib::Value]) {
-        self.list_store.append_row(&row.to_vec());
+        self.list_store.append_row(row);
     }
 
     pub fn remove_row(&self, id: &str) {
@@ -219,7 +217,7 @@ impl ListViewWithPopUpMenuBuilder {
                     3 => {
                         rgb_l_v_c.set_selected_id(event.get_position());
                         rgb_l_v_c.popup_menu.popup_at_event(event);
-                        return gtk::Inhibit(true);
+                        gtk::Inhibit(true)
                     }
                     _ => gtk::Inhibit(false),
                 }

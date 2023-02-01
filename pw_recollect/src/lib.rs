@@ -7,9 +7,8 @@ mod recollect {
     use std::path;
 
     use fs2::FileExt;
-    use serde_json;
 
-    type RDB = HashMap<String, String>;
+    type RecollectionDb = HashMap<String, String>;
 
     pub struct Recollections {
         pub file_path: Option<path::PathBuf>,
@@ -21,7 +20,7 @@ mod recollect {
                 if !file_path.exists() {
                     if let Some(dir_path) = file_path.parent() {
                         if !dir_path.exists() {
-                            fs::create_dir_all(&dir_path).unwrap_or_else(|err| {
+                            fs::create_dir_all(dir_path).unwrap_or_else(|err| {
                                 panic!("{:?}: line {:?}: {:?}", file!(), line!(), err)
                             });
                         }
@@ -29,7 +28,7 @@ mod recollect {
                     let file = fs::File::create(file_path).unwrap_or_else(|err| {
                         panic!("{:?}: line {:?}: {:?}", file!(), line!(), err)
                     });
-                    serde_json::to_writer(&file, &RDB::new()).unwrap_or_else(|err| {
+                    serde_json::to_writer(&file, &RecollectionDb::new()).unwrap_or_else(|err| {
                         panic!("{:?}: line {:?}: {:?}", file!(), line!(), err)
                     });
                 }
@@ -45,14 +44,14 @@ mod recollect {
             if !file_path.exists() {
                 if let Some(dir_path) = file_path.parent() {
                     if !dir_path.exists() {
-                        fs::create_dir_all(&dir_path).unwrap_or_else(|err| {
+                        fs::create_dir_all(dir_path).unwrap_or_else(|err| {
                             panic!("{:?}: line {:?}: {:?}", file!(), line!(), err)
                         });
                     }
                 }
                 let file = fs::File::create(file_path)
                     .unwrap_or_else(|err| panic!("{:?}: line {:?}: {:?}", file!(), line!(), err));
-                serde_json::to_writer(&file, &RDB::new())
+                serde_json::to_writer(&file, &RecollectionDb::new())
                     .unwrap_or_else(|err| panic!("{:?}: line {:?}: {:?}", file!(), line!(), err));
             };
             self.file_path = Some(file_path.to_path_buf())
@@ -64,14 +63,11 @@ mod recollect {
                     .unwrap_or_else(|err| panic!("{:?}: line {:?}: {:?}", file!(), line!(), err));
                 file.lock_shared()
                     .unwrap_or_else(|err| panic!("{:?}: line {:?}: {:?}", file!(), line!(), err));
-                let hash_map: RDB = serde_json::from_reader(&file)
+                let hash_map: RecollectionDb = serde_json::from_reader(&file)
                     .unwrap_or_else(|err| panic!("{:?}: line {:?}: {:?}", file!(), line!(), err));
                 file.unlock()
                     .unwrap_or_else(|err| panic!("{:?}: line {:?}: {:?}", file!(), line!(), err));
-                match hash_map.get(name) {
-                    Some(s) => Some(s.to_string()),
-                    None => None,
-                }
+                hash_map.get(name).map(|s| s.to_string())
             } else {
                 None
             }
@@ -93,7 +89,7 @@ mod recollect {
                     .unwrap_or_else(|err| panic!("{:?}: line {:?}: {:?}", file!(), line!(), err));
                 file.lock_exclusive()
                     .unwrap_or_else(|err| panic!("{:?}: line {:?}: {:?}", file!(), line!(), err));
-                let mut hash_map: RDB = serde_json::from_reader(&file)
+                let mut hash_map: RecollectionDb = serde_json::from_reader(&file)
                     .unwrap_or_else(|err| panic!("{:?}: line {:?}: {:?}", file!(), line!(), err));
                 hash_map.insert(name.to_string(), value.to_string());
                 file.seek(io::SeekFrom::Start(0))

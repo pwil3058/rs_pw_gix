@@ -5,11 +5,13 @@ use std::{cell::RefCell, collections::HashMap, hash::Hash, rc::Rc};
 use crate::gtk::prelude::*;
 use crate::wrapper::*;
 
+pub type ChangeCallback<T> = Box<dyn Fn(&T)>;
+
 #[derive(PWO)]
 pub struct RadioButtonsCore<T: Clone + Hash> {
     box_: gtk::Box,
     radio_buttons: HashMap<T, gtk::RadioButton>,
-    change_callbacks: RefCell<Vec<Box<dyn Fn(&T)>>>,
+    change_callbacks: RefCell<Vec<ChangeCallback<T>>>,
 }
 
 #[derive(PWO, WClone)]
@@ -117,5 +119,11 @@ impl<T: Clone + Hash + Eq + 'static> RadioButtonsBuilder<T> {
         }
 
         radio_buttons
+    }
+}
+
+impl<T: Clone + Hash + Eq + 'static> Default for RadioButtonsBuilder<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }

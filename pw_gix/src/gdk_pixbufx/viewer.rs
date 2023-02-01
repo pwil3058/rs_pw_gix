@@ -113,7 +113,7 @@ impl PixbufView {
     const ZOOM_IN_ADJUST: f64 = (Self::ZOOM_FACTOR - 1.0) / 2.0;
     const ZOOM_OUT_ADJUST: f64 = (1.0 / Self::ZOOM_FACTOR - 1.0) / 2.0;
 
-    const SAV_HAS_IMAGE: u64 = SAV_NEXT_CONDN << 0;
+    const SAV_HAS_IMAGE: u64 = SAV_NEXT_CONDN;
     const SAV_HAS_SELECTION: u64 = SAV_NEXT_CONDN << 1;
 
     pub fn set_pixbuf(&self, o_pixbuf: Option<&gdk_pixbuf::Pixbuf>) {
@@ -294,7 +294,7 @@ impl PixbufViewBuilder {
                     });
                 }
             };
-            gtk::Inhibit(false)
+            Inhibit(false)
         });
 
         let viewer_c = Rc::clone(&viewer);
@@ -388,26 +388,26 @@ impl PixbufViewBuilder {
                     match event.get_direction() {
                         gdk::ScrollDirection::Up => {
                             viewer_c.zoom_in();
-                            return gtk::Inhibit(true);
+                            return Inhibit(true);
                         }
                         gdk::ScrollDirection::Down => {
                             viewer_c.zoom_in();
-                            return gtk::Inhibit(true);
+                            return Inhibit(true);
                         }
                         gdk::ScrollDirection::Smooth => {
                             let (_, delta_y) = event.get_delta();
                             if delta_y > 0.0 {
                                 viewer_c.zoom_in();
-                                return gtk::Inhibit(true);
+                                return Inhibit(true);
                             } else if delta_y < 0.0 {
                                 viewer_c.zoom_out();
-                                return gtk::Inhibit(true);
+                                return Inhibit(true);
                             }
                         }
                         _ => (),
                     }
                 };
-                gtk::Inhibit(false)
+                Inhibit(false)
             });
 
         let viewer_c = Rc::clone(&viewer);
@@ -425,12 +425,12 @@ impl PixbufViewBuilder {
                 {
                     viewer_c.last_xy.set(event.get_position().into());
                     viewer_c.doing_button_motion.set(true);
-                    return gtk::Inhibit(true);
+                    return Inhibit(true);
                 } else if event.get_button() == 3 {
                     viewer_c.popup_menu.popup_at_event(event);
-                    return gtk::Inhibit(true);
+                    return Inhibit(true);
                 };
-                gtk::Inhibit(false)
+                Inhibit(false)
             });
         let viewer_c = Rc::clone(&viewer);
         viewer
@@ -438,16 +438,16 @@ impl PixbufViewBuilder {
             .connect_button_release_event(move |_, event| {
                 if event.get_button() == 1 && viewer_c.doing_button_motion.get() {
                     viewer_c.doing_button_motion.set(false);
-                    return gtk::Inhibit(true);
+                    return Inhibit(true);
                 };
-                gtk::Inhibit(false)
+                Inhibit(false)
             });
         let viewer_c = Rc::clone(&viewer);
         viewer
             .scrolled_window
             .connect_leave_notify_event(move |_, _| {
                 viewer_c.doing_button_motion.set(false);
-                gtk::Inhibit(false)
+                Inhibit(false)
             });
         let viewer_c = Rc::clone(&viewer);
         viewer
@@ -468,14 +468,13 @@ impl PixbufViewBuilder {
                             let new_val = adj.get_value() - delta_xy[dim];
                             adj.set_value(
                                 new_val
-                                    .max(adj.get_lower())
-                                    .min(adj.get_upper() - adj.get_page_size()),
+                                    .clamp(adj.get_lower(), adj.get_upper() - adj.get_page_size()),
                             );
                         }
                     }
-                    return gtk::Inhibit(true);
+                    return Inhibit(true);
                 };
-                gtk::Inhibit(false)
+                Inhibit(false)
             });
 
         // POPUP MENU
@@ -509,12 +508,9 @@ impl PixbufViewBuilder {
             )
             .connect_activate(move |_| {
                 let o_last_file = recollections::recall("image_viewer::last_image_file");
-                let last_file = if let Some(ref text) = o_last_file {
-                    Some(text.as_str())
-                } else {
-                    None
-                };
-                if let Some(path) = viewer_c.ask_file_path(Some("Image File"), last_file, true) {
+                if let Some(path) =
+                    viewer_c.ask_file_path(Some("Image File"), o_last_file.as_deref(), true)
+                {
                     if let Err(err) = viewer_c.set_pixbuf_fm_file(&path) {
                         viewer_c.report_error("Failed To Load Image", &err);
                     } else {
@@ -578,5 +574,11 @@ impl PixbufViewBuilder {
         };
 
         viewer
+    }
+}
+
+impl Default for PixbufViewBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }

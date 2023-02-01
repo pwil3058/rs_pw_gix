@@ -102,9 +102,9 @@ pub mod dialog_user {
     }
 
     fn markup_output(output: &process::Output) -> Option<String> {
-        if output.stdout.len() > 0 {
+        if !output.stdout.is_empty() {
             let stdout = markup_escape_text(&String::from_utf8_lossy(&output.stdout));
-            if output.stderr.len() > 0 {
+            if !output.stderr.is_empty() {
                 let stderr = markup_escape_text(&String::from_utf8_lossy(&output.stderr));
                 Some(format!(
                     "{}\n<span foreground=\"red\">{}</span>",
@@ -113,7 +113,7 @@ pub mod dialog_user {
             } else {
                 Some(stdout.to_string())
             }
-        } else if output.stderr.len() > 0 {
+        } else if !output.stderr.is_empty() {
             let stderr = markup_escape_text(&String::from_utf8_lossy(&output.stderr));
             Some(format!("<span foreground=\"red\">{}</span>", stderr))
         } else {
@@ -129,7 +129,7 @@ pub mod dialog_user {
             ("Ok", gtk::ResponseType::Ok),
         ];
 
-        fn set_transient_for_and_icon_on<W: gtk::GtkWindowExt>(&self, window: &W) {
+        fn set_transient_for_and_icon_on<W: GtkWindowExt>(&self, window: &W) {
             if let Some(tlw) = self.get_toplevel_gtk_window() {
                 window.set_transient_for(Some(&tlw));
                 if let Some(ref icon) = tlw.get_icon() {
@@ -250,13 +250,13 @@ pub mod dialog_user {
                 Ok(output) => {
                     let (msg_type, markup) = if !output.status.success() {
                         (gtk::MessageType::Error, markup_cmd_fail(cmd))
-                    } else if output.stderr.len() > 0 {
+                    } else if !output.stderr.is_empty() {
                         (gtk::MessageType::Warning, markup_cmd_warn(cmd))
                     } else {
                         (gtk::MessageType::Info, markup_cmd_ok(cmd))
                     };
                     let mut builder = self.new_message_dialog_builder();
-                    if let Some(markup) = markup_output(&output) {
+                    if let Some(markup) = markup_output(output) {
                         builder = builder
                             .secondary_use_markup(true)
                             .secondary_text(markup.as_str());
@@ -279,19 +279,19 @@ pub mod dialog_user {
         fn report_any_command_problems(&self, cmd: &str, result: &io::Result<process::Output>) {
             match result {
                 Ok(output) => {
-                    if output.status.success() && output.stderr.len() == 0 {
+                    if output.status.success() && output.stderr.is_empty() {
                         // Nothing to report
                         return;
                     }
                     let (msg_type, markup) = if !output.status.success() {
                         (gtk::MessageType::Error, markup_cmd_fail(cmd))
-                    } else if output.stderr.len() > 0 {
+                    } else if !output.stderr.is_empty() {
                         (gtk::MessageType::Warning, markup_cmd_warn(cmd))
                     } else {
                         (gtk::MessageType::Info, markup_cmd_ok(cmd))
                     };
                     let mut builder = self.new_message_dialog_builder();
-                    if let Some(markup) = markup_output(&output) {
+                    if let Some(markup) = markup_output(output) {
                         builder = builder
                             .secondary_use_markup(true)
                             .secondary_text(markup.as_str());
@@ -472,7 +472,7 @@ pub mod dialog_user {
             if dialog.run() == gtk::ResponseType::Ok {
                 let text = String::from(entry.get_text());
                 unsafe { dialog.destroy() };
-                Some(PathBuf::from(&String::from(text)))
+                Some(PathBuf::from(&text))
             } else {
                 unsafe { dialog.destroy() };
                 None
@@ -580,8 +580,8 @@ fn get_dialog_size_corrn() -> (i32, i32) {
             return (width, height);
         } else {
             io::stderr()
-                .write(b"Error parsing \"dialog::size_correction\"\n")
-                .unwrap();
+                .write_all(b"Error parsing \"dialog::size_correction\"\n")
+                .expect("such is life");
         }
     };
     (0, 0)
@@ -594,7 +594,9 @@ fn recall_dialog_last_size(key: &str, default: (i32, i32)) -> (i32, i32) {
             return (width + w_corrn, height + h_corrn);
         } else {
             let msg = format!("Error parsing \"{}\"\n", key);
-            io::stderr().write(msg.as_bytes()).unwrap();
+            io::stderr()
+                .write_all(msg.as_bytes())
+                .expect("such is life");
         }
     };
     default

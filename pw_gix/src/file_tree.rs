@@ -24,20 +24,16 @@ trait FileTreeStoreExt: TreeRowOps {
         until: F,
         changed: &mut bool,
     ) -> Option<&'a gtk::TreeIter> {
-        loop {
-            if let Some(iter) = o_iter {
-                if until(self, iter) {
-                    break;
-                }
-                o_iter = if self.recursive_remove(iter) {
-                    Some(iter)
-                } else {
-                    None
-                };
-                *changed = true;
-            } else {
+        while let Some(iter) = o_iter {
+            if until(self, iter) {
                 break;
             }
+            o_iter = if self.recursive_remove(iter) {
+                Some(iter)
+            } else {
+                None
+            };
+            *changed = true;
         }
         o_iter
     }
@@ -126,13 +122,13 @@ where
     }
 
     fn view_expand_row(&self, dir_iter: &gtk::TreeIter) {
-        if let Some(ref path) = self.store().get_path(&dir_iter) {
+        if let Some(ref path) = self.store().get_path(dir_iter) {
             self.view().expand_row(path, true);
         }
     }
 
     fn view_row_expanded(&self, iter: &gtk::TreeIter) -> bool {
-        if let Some(ref path) = self.store().get_path(&iter) {
+        if let Some(ref path) = self.store().get_path(iter) {
             return self.view().row_expanded(path);
         }
         false
@@ -152,7 +148,7 @@ where
         for dir_data in dirs.iter() {
             let dir_iter = self.store().append(o_parent_iter);
             dir_data.set_row_values(self.store(), &dir_iter);
-            self.auto_expand_dir_or_insert_place_holder(&dir_data.path(), &dir_iter);
+            self.auto_expand_dir_or_insert_place_holder(dir_data.path(), &dir_iter);
         }
         for file_data in files.iter() {
             let file_iter = self.store().append(o_parent_iter);
@@ -193,7 +189,7 @@ where
                 None
             }
         } else if let Some(iter) = self.store().get_iter_first() {
-            child_iter = iter.clone();
+            child_iter = iter;
             Some(&child_iter)
         } else {
             None
@@ -209,13 +205,13 @@ where
                 &mut changed,
             );
             if let Some(child_iter) = o_child_iter {
-                let name = FSOI::get_name_from_row(self.store(), &child_iter);
-                if !FSOI::row_is_a_dir(self.store(), &child_iter) || name.as_str() > dir_data.name()
+                let name = FSOI::get_name_from_row(self.store(), child_iter);
+                if !FSOI::row_is_a_dir(self.store(), child_iter) || name.as_str() > dir_data.name()
                 {
                     let dir_iter = self.store().insert_before(o_parent_iter, o_child_iter);
                     dir_data.set_row_values(self.store(), &dir_iter);
                     changed = true;
-                    self.auto_expand_dir_or_insert_place_holder(&dir_data.path(), &dir_iter);
+                    self.auto_expand_dir_or_insert_place_holder(dir_data.path(), &dir_iter);
                 } else {
                     changed |= dir_data.update_row_if_required(self.store(), child_iter);
                     // This is an update so ignore auto_expand for existing directories
@@ -232,7 +228,7 @@ where
                 let dir_iter = self.store().append(o_parent_iter);
                 dir_data.set_row_values(self.store(), &dir_iter);
                 changed = true;
-                self.auto_expand_dir_or_insert_place_holder(&dir_data.path(), &dir_iter);
+                self.auto_expand_dir_or_insert_place_holder(dir_data.path(), &dir_iter);
             }
         }
         o_child_iter = self.store().remove_dead_rows(

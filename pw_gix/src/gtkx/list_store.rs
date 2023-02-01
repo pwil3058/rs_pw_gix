@@ -106,7 +106,7 @@ pub trait ListRowOps:
         prepend_row_to_list!(row, self)
     }
 
-    fn repopulate_with(&self, rows: &Vec<Row>) {
+    fn repopulate_with(&self, rows: &[Row]) {
         self.clear();
         for row in rows.iter() {
             append_row_to_list!(row, self);
@@ -114,7 +114,7 @@ pub trait ListRowOps:
     }
 
     // NB: this function assumes that all rows are unique and that order isn't important
-    fn update_with(&self, rows: &Vec<Row>) {
+    fn update_with(&self, rows: &[Row]) {
         // First remove the rows that have gone away
         if let Some(iter) = self.get_iter_first() {
             while self.iter_is_valid(&iter) {
@@ -264,9 +264,8 @@ where
     fn set_required_map_action(&self, action: RequiredMapAction);
 
     fn auto_update(&self) {
-        match self.get_required_map_action() {
-            RequiredMapAction::Nothing => self.update(),
-            _ => (),
+        if self.get_required_map_action() == RequiredMapAction::Nothing {
+            self.update()
         }
     }
 
