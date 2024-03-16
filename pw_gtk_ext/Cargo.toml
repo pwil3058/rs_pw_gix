@@ -20,10 +20,14 @@ pango-sys = "0.10.0"
 pangocairo = "0.10.0"
 sourceview = "0.9.0"
 
-log = "0.4.14"
+num-traits = "0.2"
+
+log = "0.4"
 
 pw_gtk_ext_derive = { path = "../pw_gtk_ext_derive" }
 pw_recollect = { path = "../pw_recollect" }
+num_traits_plus = { git = "https://github.com/pwil3058/rs_num_traits_plus.git" }
+dirs = "5.0.1"
 
 [features]
 default = ["gtk/v3_18", "gio/v2_44", "cairo-rs/png"]

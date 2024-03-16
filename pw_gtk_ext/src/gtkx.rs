@@ -12,6 +12,7 @@ pub mod check_button;
 pub mod combo_box_text;
 pub mod dialog;
 pub mod dialog_user;
+pub mod entry;
 pub mod menu;
 pub mod notebook;
 pub mod paned;

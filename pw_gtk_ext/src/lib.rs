@@ -37,3 +37,4 @@ pub mod gtkx;
 pub mod sav_state;
 #[macro_use]
 pub mod wrapper;
+mod path_utilities;
