@@ -1,5 +1,3 @@
-// Copyright 2024 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
-
 use std::env;
 use std::ffi::OsString;
 use std::fs::{DirEntry, FileType, Metadata, ReadDir};
@@ -31,6 +29,37 @@ pub fn absolute_pathbuf(path: &Path) -> Option<PathBuf> {
         }
     } else {
         None
+    }
+}
+
+pub fn relative_pathbuf(path: &Path) -> Option<PathBuf> {
+    if path.is_absolute() {
+        if let Ok(current_dir_path) = env::current_dir() {
+            if let Ok(rel_path) = path.strip_prefix(&current_dir_path) {
+                Some(rel_path.to_path_buf())
+            } else {
+                None
+            }
+        } else {
+            log::warn!("Can't find current directory???",);
+            None
+        }
+    } else {
+        Some(path.to_path_buf())
+    }
+}
+
+pub fn relative_pathbuf_or_mine(path: &Path) -> PathBuf {
+    relative_pathbuf(path).unwrap_or(path.to_path_buf())
+}
+
+pub fn path_to_string(path: &Path) -> String {
+    if let Some(path_str) = path.to_str() {
+        path_str.to_string()
+    } else {
+        let string = path.to_string_lossy();
+        log::warn!("Non UniCode file path: {string}");
+        string.to_string()
     }
 }
 

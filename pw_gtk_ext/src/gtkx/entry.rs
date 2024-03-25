@@ -9,9 +9,10 @@ use gdk;
 use gtk;
 use gtk::prelude::*;
 
+use path_utilities;
 //use pw_pathux;
 
-use crate::{gtkx::list_store::*, path_utilities, wrapper::*};
+use crate::{gtkx::list_store::*, wrapper::*};
 
 // Labelled Text Entry
 

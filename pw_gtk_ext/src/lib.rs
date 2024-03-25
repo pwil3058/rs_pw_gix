@@ -29,12 +29,16 @@ pub use pango_sys;
 pub use pangocairo;
 pub use sourceview;
 
-pub use pw_recollect;
+pub use recollections;
 
+pub mod gdk_pixbufx;
 pub mod gdkx;
+pub mod geometry;
+pub mod glibx;
 #[macro_use]
 pub mod gtkx;
+pub mod printer;
 pub mod sav_state;
 #[macro_use]
 pub mod wrapper;
-mod path_utilities;
+pub mod sample;

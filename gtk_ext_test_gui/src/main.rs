@@ -9,7 +9,7 @@ use pw_gtk_ext::gtkx::menu::ManagedMenuBuilder;
 use pw_gtk_ext::gtkx::notebook::TabRemoveLabelBuilder;
 use pw_gtk_ext::gtkx::radio_button::RadioButtonsBuilder;
 use pw_gtk_ext::gtkx::tree_view::TreeViewWithPopupBuilder;
-use pw_gtk_ext::pw_recollect::recollections;
+use pw_gtk_ext::recollections;
 use pw_gtk_ext::sav_state::{SAV_SELN_UNIQUE, SAV_SELN_UNIQUE_OR_HOVER_OK};
 use pw_gtk_ext::wrapper::*;
 use pw_gtk_ext::*;

@@ -7,6 +7,7 @@ use crate::gdk_pixbuf::Pixbuf;
 use crate::gtk::prelude::*;
 pub use crate::gtkx::dialog_user::*;
 
+use crate::printer::*;
 pub use pw_gtk_ext_derive::*;
 
 pub trait PackableWidgetObject {
@@ -82,6 +83,14 @@ pub trait WidgetWrapper: PackableWidgetObject + DialogUser {
         let o_old_cursor = self.show_busy();
         action(self);
         self.unshow_busy(o_old_cursor);
+    }
+
+    fn print_pixbuf(&self, pixbuf: &Pixbuf) -> PrintResult {
+        if let Some(parent) = self.get_toplevel_gtk_window() {
+            print_pixbuf(pixbuf, Some(&parent))
+        } else {
+            print_pixbuf(pixbuf, Option::<&gtk::Window>::None)
+        }
     }
 }
 

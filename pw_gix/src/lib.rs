@@ -175,10 +175,10 @@ pub mod recollections {
     ///
     /// ```no_run
     /// fn main_() {
-    ///     use std::env;
+    ///     use dirs;
     ///     use pw_gix::recollections;
     ///
-    ///     let home_dir = env::home_dir().expect("badly designed OS");
+    ///     let home_dir = dirs::home_dir().expect("badly designed OS");
     ///     recollections::init(&home_dir.join(".this_apps_recollections"));
     /// }
     /// ```

@@ -3,7 +3,7 @@
 use log;
 
 use crate::gdkx::{format_geometry_size, parse_geometry_size};
-use crate::pw_recollect::recollections;
+use recollections;
 
 fn get_dialog_size_corrn() -> (i32, i32) {
     match recollections::recall("dialog::size_correction") {

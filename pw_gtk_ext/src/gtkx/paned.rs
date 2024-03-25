@@ -1,7 +1,7 @@
 // Copyright 2021 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 
-use crate::pw_recollect::recollections;
 use log;
+use recollections;
 use std::str::FromStr;
 
 pub trait RememberPosition: gtk::WidgetExt + gtk::PanedExt {

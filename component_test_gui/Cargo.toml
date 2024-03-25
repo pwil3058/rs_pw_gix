@@ -1,6 +1,6 @@
 [package]
 name = "component_test_gui"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Peter Williams <pwil3058@gmail.com>"]
 edition = "2021"
 
