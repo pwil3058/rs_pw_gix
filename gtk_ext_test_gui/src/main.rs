@@ -1,6 +1,7 @@
 // Copyright 2017 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
 use std::rc;
 
+use pw_gtk_ext::gdk_pixbufx::viewer::*;
 use pw_gtk_ext::gtk::prelude::*;
 use pw_gtk_ext::gtkx::check_button::MutuallyExclusiveCheckButtonsBuilder;
 use pw_gtk_ext::gtkx::combo_box_text::SortedUnique;
@@ -9,6 +10,7 @@ use pw_gtk_ext::gtkx::menu::ManagedMenuBuilder;
 use pw_gtk_ext::gtkx::notebook::TabRemoveLabelBuilder;
 use pw_gtk_ext::gtkx::radio_button::RadioButtonsBuilder;
 use pw_gtk_ext::gtkx::tree_view::TreeViewWithPopupBuilder;
+use pw_gtk_ext::gtkx::window::RememberGeometry;
 use pw_gtk_ext::recollections;
 use pw_gtk_ext::sav_state::{SAV_SELN_UNIQUE, SAV_SELN_UNIQUE_OR_HOVER_OK};
 use pw_gtk_ext::wrapper::*;
@@ -82,6 +84,10 @@ fn main() {
     let v_box = gtk::BoxBuilder::new()
         .orientation(gtk::Orientation::Vertical)
         .build();
+
+    let button = gtk::Button::with_label("Image Viewer");
+    v_box.pack_start(&button, false, false, 0);
+    button.connect_clicked(|_| launch_image_viewer());
 
     let mecbs = MutuallyExclusiveCheckButtonsBuilder::new()
         .orientation(gtk::Orientation::Vertical)
@@ -241,4 +247,17 @@ fn main() {
     win.connect_destroy(|_| gtk::main_quit());
     win.show();
     gtk::main()
+}
+
+fn launch_image_viewer() {
+    let window = gtk::Window::new(gtk::WindowType::Toplevel);
+    window.set_geometry_from_recollections("image_viewer", (200, 200));
+    window.set_destroy_with_parent(true);
+    window.set_title("component_test_gui: Image Viewer");
+
+    let view = PixbufViewBuilder::new().load_last_image(true).build();
+    window.add(view.pwo());
+    window.show_all();
+
+    window.present();
 }
