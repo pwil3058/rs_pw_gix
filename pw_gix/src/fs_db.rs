@@ -167,7 +167,7 @@ macro_rules! impl_os_fs_db {
                 }
             }
 
-            fn dirs_and_files<'a>(&'a mut self) -> (Rc<Vec<FSOI>>, Rc<Vec<FSOI>>) {
+            fn dirs_and_files(&mut self) -> (Rc<Vec<FSOI>>, Rc<Vec<FSOI>>) {
                 (Rc::clone(&self.dirs_data), Rc::clone(&self.files_data))
             }
         }

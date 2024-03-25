@@ -411,22 +411,22 @@ pub mod area_selection {
                                         status,
                                     )));
                                 }
-                                return Ok(PointerAndKeyboard { pointer, keyboard });
+                                Ok(PointerAndKeyboard { pointer, keyboard })
                             } else {
                                 panic!("window not realized!!!")
                             }
                         } else {
-                            return Err(Failure::new(FailureReason::KeyboardNotFound));
+                            Err(Failure::new(FailureReason::KeyboardNotFound))
                         }
                     } else {
-                        return Err(Failure::new(FailureReason::PointerNotFound));
+                        Err(Failure::new(FailureReason::PointerNotFound))
                     }
                 } else {
-                    return Err(Failure::new(FailureReason::NoDeviceManager));
+                    Err(Failure::new(FailureReason::NoDeviceManager))
                 }
             } else {
-                return Err(Failure::new(FailureReason::NoDefaultScreen));
-            };
+                Err(Failure::new(FailureReason::NoDefaultScreen))
+            }
         }
 
         fn ungrab(&self) {

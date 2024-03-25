@@ -34,6 +34,7 @@ pub fn simple_text_column(
     col
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn editable_text_column<F: Fn(&gtk::CellRendererText, gtk::TreePath, &str) + 'static>(
     title: &str,
     text_id: i32,

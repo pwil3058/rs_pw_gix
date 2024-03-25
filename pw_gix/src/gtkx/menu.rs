@@ -567,6 +567,7 @@ impl DualManagedMenu {
         item
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn insert_item(
         &self,
         name: &str,

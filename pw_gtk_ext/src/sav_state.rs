@@ -190,17 +190,12 @@ impl ChangedCondnsNotifier {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub enum WidgetStatesControlled {
+    #[default]
     Sensitivity,
     Visibility,
     Both,
-}
-
-impl Default for WidgetStatesControlled {
-    fn default() -> Self {
-        Sensitivity
-    }
 }
 
 use self::WidgetStatesControlled::*;

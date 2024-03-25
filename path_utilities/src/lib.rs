@@ -4,8 +4,6 @@ use std::fs::{DirEntry, FileType, Metadata, ReadDir};
 use std::io;
 use std::path::{Component, Path, PathBuf};
 
-use log;
-
 pub fn absolute_pathbuf(path: &Path) -> Option<PathBuf> {
     if path.is_absolute() {
         Some(path.to_path_buf())
@@ -106,6 +104,7 @@ pub struct UsableDirEntries {
 impl Iterator for UsableDirEntries {
     type Item = UsableDirEntry;
 
+    #[allow(clippy::while_let_on_iterator)]
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(result) = self.read_dir.next() {
             match result {
