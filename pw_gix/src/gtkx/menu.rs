@@ -1,4 +1,4 @@
-// Copyright 2018 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
+// Copyright (c) 2026 Peter Williams <pwil3058@bigpond.net.au> <pwil3058@gmail.com>.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -381,7 +381,7 @@ impl ManagedMenu {
     }
 
     pub fn popup_at_event(&self, event: &gdk::EventButton) {
-        if self.items.len() > 0 {
+        if !self.items.is_empty() {
             self.menu.popup_easy(event.get_button(), event.get_time());
         }
     }
@@ -625,7 +625,7 @@ impl DualManagedMenu {
     }
 
     pub fn popup_at_event(&self, event: &gdk::EventButton) {
-        if self.sensitivity.len() > 0 {
+        if !self.sensitivity.is_empty() {
             self.menu.popup_easy(event.get_button(), event.get_time());
         }
     }

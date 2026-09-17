@@ -1,4 +1,4 @@
-// Copyright 2019 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
+// Copyright (c) 2026 Peter Williams <pwil3058@bigpond.net.au> <pwil3058@gmail.com>.
 
 //! Provide mechanisms to control the sensitivity and/or visibility
 //! of groups of widgets dependent on a widget and/or an application's
@@ -575,10 +575,10 @@ where
         Ok(())
     }
 
-    pub fn get_widget<Q: ?Sized>(&self, key: &Q) -> Result<W, Error>
+    pub fn get_widget<Q>(&self, key: &Q) -> Result<W, Error>
     where
         K: std::borrow::Borrow<Q>,
-        Q: std::hash::Hash + Eq,
+        Q: std::hash::Hash + Eq + ?Sized,
     {
         let groups = self.0.groups.borrow();
         for group in groups.values() {
