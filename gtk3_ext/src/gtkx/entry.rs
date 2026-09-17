@@ -304,13 +304,13 @@ pub trait PathCompletion: EntryExt + EditableSignals {
         self.set_completion(Some(&entry_completion));
         self.connect_changed(move |editable| {
             list_store.clear();
-            let dir_pathbuf = match PathBuf::from(editable.text().as_str()).parent() {
+            let dir_path_buf = match PathBuf::from(editable.text().as_str()).parent() {
                 Some(path) => path.to_path_buf(),
                 None => PathBuf::new(),
             };
-            let dir_path = match path_utilities::absolute_pathbuf(&dir_pathbuf) {
-                Some(abs_pathbuf) => abs_pathbuf,
-                None => dir_pathbuf.clone(),
+            let dir_path = match path_utilities::absolute_path_buf(&dir_path_buf) {
+                Ok(abs_path_buf) => abs_path_buf,
+                _ => dir_path_buf.clone(),
             };
             if let Ok(entries) = path_utilities::usable_dir_entries(&dir_path) {
                 if dirs_only {
@@ -318,7 +318,7 @@ pub trait PathCompletion: EntryExt + EditableSignals {
                         if !entry.is_dir() {
                             continue;
                         };
-                        let mut path = dir_pathbuf.clone();
+                        let mut path = dir_path_buf.clone();
                         path.push(entry.file_name());
                         if let Some(string) = path.to_str() {
                             list_store.append_row(&[string.to_value()]);
@@ -327,7 +327,7 @@ pub trait PathCompletion: EntryExt + EditableSignals {
                 } else {
                     let msep = format!("{}", MAIN_SEPARATOR);
                     for entry in entries {
-                        let mut path = dir_pathbuf.clone();
+                        let mut path = dir_path_buf.clone();
                         path.push(entry.file_name());
                         if entry.is_dir() {
                             path.push(&msep);

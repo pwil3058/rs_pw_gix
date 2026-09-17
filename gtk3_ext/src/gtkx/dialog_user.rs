@@ -250,12 +250,12 @@ pub trait DialogUser: TopGtkWindow {
             if let Some(file_path) = dialog.filename() {
                 dialog.hide();
                 if absolute {
-                    match path_utilities::absolute_pathbuf(&file_path) {
-                        Some(pathbuf) => Some(pathbuf),
-                        None => Some(file_path),
+                    match path_utilities::absolute_path_buf(&file_path) {
+                        Ok(path_buf) => Some(path_buf),
+                        Err(_) => Some(file_path),
                     }
                 } else {
-                    Some(path_utilities::relative_pathbuf_or_mine(&file_path))
+                    Some(path_utilities::relative_path_buf_or_mine(&file_path))
                 }
             } else {
                 dialog.hide();
