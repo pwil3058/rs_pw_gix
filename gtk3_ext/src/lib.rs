@@ -22,10 +22,10 @@ pub mod gtkx;
 pub mod gdk_pixbufx;
 pub mod gdkx;
 pub mod geometry;
-// pub mod glibx;
 pub mod printer;
 pub mod sample;
 pub mod sav_state;
+pub mod timeout;
 #[macro_use]
 pub mod wrapper;
 
