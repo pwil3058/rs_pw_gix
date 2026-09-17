@@ -9,5 +9,4 @@ members = [
     "gtk_ext_test_gui",
     "recollections",
     "path_utilities",
-    #    "orbtk_test_gui",
 ]

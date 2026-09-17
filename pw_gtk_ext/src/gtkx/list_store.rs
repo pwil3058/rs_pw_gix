@@ -2,7 +2,7 @@
 
 use crate::glib;
 pub use crate::gtkx::tree_model::*;
-use crate::{are_eq_values, are_equal_as, get_row_values_from, matches_list_row, UNEXPECTED};
+use crate::UNEXPECTED;
 use std::marker::PhantomData;
 use std::ops::Deref;
 
