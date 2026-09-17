@@ -1,0 +1,12 @@
+[package]
+name = "gtk3_ext_test_gui"
+version = "0.1.0"
+authors = ["Peter Williams <pwil3058@bigpond.net.au>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+recollections = { git = "https://github.com/pwil3058//recollections" }
+
+gtk3_ext = { path = "../gtk3_ext" }

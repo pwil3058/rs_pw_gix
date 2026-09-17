@@ -7,6 +7,9 @@ members = [
     "pw_gtk_ext_derive",
     "component_test_gui",
     "gtk_ext_test_gui",
+    "gtk3_ext",
+    "gtk3_ext_derive",
+    "gtk3_ext_test_gui",
     "recollections",
     "path_utilities",
 ]

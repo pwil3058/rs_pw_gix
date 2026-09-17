@@ -1,0 +1,34 @@
+[package]
+name = "gtk3_ext"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+gtk = { version = "0.18.2", package = "gtk" }
+
+cairo-rs = "0.18.2"
+
+pango = "0.18.3"
+pangocairo = "0.18.0"
+pango-sys = "0.18.0"
+
+sourceview = "0.9.0"
+
+lazy_static = "1.5.0"
+log = "0.4.33"
+mut_static = "5.0.0"
+num = "0.4"
+num-traits = "0.2.19"
+which = "6"
+
+proc-macro-error = "1.0"
+
+normalised_angles = { git = "https://github.com/pwil3058/rs_normalised_angles.git" }
+num_traits_plus = { git = "https://github.com/pwil3058/rs_num_traits_plus.git" }
+path_utilities = { git = "https://github.com/pwil3058/rust_utilities" }
+recollections = { git = "https://github.com/pwil3058//recollections" }
+
+gtk3_ext_derive = { path = "../gtk3_ext_derive" }
+
+[features]
+default = ["cairo-rs/png"]
