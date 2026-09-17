@@ -18,16 +18,18 @@ pub use sourceview;
 
 #[macro_use]
 pub mod gtkx;
+#[macro_use]
+pub mod wrapper;
 
+pub mod fs_db;
 pub mod gdk_pixbufx;
 pub mod gdkx;
 pub mod geometry;
+pub mod glibx;
 pub mod printer;
 pub mod sample;
 pub mod sav_state;
 pub mod timeout;
-#[macro_use]
-pub mod wrapper;
 
 pub static UNEXPECTED: &str = "Unexpected error: please inform <pwil3058@bigpond.net.au>";
 
