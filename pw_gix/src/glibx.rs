@@ -1,4 +1,4 @@
-// Copyright 2020 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
+// Copyright (c) 2026 Peter Williams <pwil3058@bigpond.net.au> <pwil3058@gmail.com>.
 
 use glib::value::{FromValue, FromValueOptional, Value};
 
@@ -16,7 +16,7 @@ impl GlibValueExt for Value {
     fn get_ok_some<'a, T: FromValueOptional<'a>>(&'a self) -> T {
         self.get::<T>()
             .expect("Programmer Error: type mismatch")
-            .expect("Programmer Error: unexpecte 'None'")
+            .expect("Programmer Error: unexpected 'None'")
     }
 
     fn get_some_ok<'a, T: FromValue<'a>>(&'a self) -> T {

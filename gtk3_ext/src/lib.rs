@@ -25,7 +25,6 @@ pub mod fs_db;
 pub mod gdk_pixbufx;
 pub mod gdkx;
 pub mod geometry;
-pub mod glibx;
 pub mod printer;
 pub mod sample;
 pub mod sav_state;

@@ -1,14 +1,16 @@
-//Copyright 2019 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
+// Copyright (c) 2026 Peter Williams <pwil3058@bigpond.net.au> <pwil3058@gmail.com>.
 
 use gtk;
+use gtk::glib;
+use gtk::prelude::*;
 
-pub use super::tree_model::{self, TreeModelRowOps};
-pub use super::value::Row;
+use crate::gtkx::tree_model::TreeModelRowOps;
+use crate::set_list_row_values;
 
 #[macro_export]
 macro_rules! set_tree_row_values {
     ( $s:expr, $i:expr, $r:expr ) => {{
-        assert_eq!($s.get_n_columns(), $r.len() as i32);
+        // assert_eq!($s.get_n_columns(), $r.len() as i32);
         for (index, item) in $r.iter().enumerate() {
             $s.set_value($i, index as u32, &item);
         }
@@ -60,9 +62,7 @@ macro_rules! prepend_row_to_tree {
     }};
 }
 
-pub trait TreeRowOps:
-    TreeModelRowOps + gtk::TreeStoreExt + gtk::prelude::TreeStoreExtManual
-{
+pub trait TreeRowOps: TreeModelRowOps + TreeStoreExt + gtk::prelude::TreeStoreExtManual {
     fn append_row(&self, row: &[glib::Value], parent: Option<&gtk::TreeIter>) -> gtk::TreeIter {
         append_row_to_tree!(row, self, parent)
     }
