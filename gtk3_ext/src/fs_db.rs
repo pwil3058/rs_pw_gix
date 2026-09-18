@@ -3,7 +3,7 @@
 //! File system database of the current directory to feed file tree
 //! stores/views
 
-use std::{ffi::*, hash::Hasher, path, rc::Rc, sync::LazyLock};
+use std::{ffi::*, path, rc::Rc, sync::LazyLock};
 
 use gtk::{TreeIter, glib};
 

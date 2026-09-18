@@ -1,4 +1,4 @@
-// Copyright 2017 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
+// Copyright (c) 2026 Peter Williams <pwil3058@bigpond.net.au> <pwil3058@gmail.com>.
 use std::rc;
 
 use pw_gtk_ext::gdk_pixbufx::viewer::*;
@@ -68,7 +68,7 @@ enum Xyz {
 }
 
 fn main() {
-    recollections::init("./.recollections");
+    recollections::init("./.recollections").expect("Failed to initialize recollections");
     if gtk::init().is_err() {
         println!("Gtk++ failed to initialize!");
         return;

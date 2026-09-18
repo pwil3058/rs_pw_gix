@@ -30,11 +30,12 @@ lazy_static = "1.4"
 
 log = "0.4"
 
-path_utilities = { path = "../path_utilities" }
-pw_gtk_ext_derive = { path = "../pw_gtk_ext_derive" }
-recollections = { path = "../recollections" }
+path_utilities = { git = "https://github.com/pwil3058/rust_utilities" }
+recollections = { git = "https://github.com/pwil3058/rust_utilities" }
 normalised_angles = { git = "https://github.com/pwil3058/rs_normalised_angles.git" }
 num_traits_plus = { git = "https://github.com/pwil3058/rs_num_traits_plus.git" }
+
+pw_gtk_ext_derive = { path = "../pw_gtk_ext_derive" }
 
 [features]
 default = ["gtk/v3_18", "gio/v2_44", "cairo-rs/png"]
