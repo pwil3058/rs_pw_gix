@@ -26,8 +26,9 @@ proc-macro-error = "1.0"
 
 normalised_angles = { git = "https://github.com/pwil3058/rs_normalised_angles.git" }
 num_traits_plus = { git = "https://github.com/pwil3058/rs_num_traits_plus.git" }
-path_utilities = { git = "https://github.com/pwil3058/rust_utilities" }
-recollections = { git = "https://github.com/pwil3058//recollections" }
+
+path_utilities.workspace = true
+recollections.workspace = true
 
 gtk3_ext_derive = { path = "../gtk3_ext_derive" }
 

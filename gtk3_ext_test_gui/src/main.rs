@@ -76,12 +76,13 @@ enum Xyz {
 }
 
 fn main() {
-    recollections::init("./.recollections");
+    let _ = recollections::init("./.recollections");
     if gtk::init().is_err() {
         println!("Gtk++ failed to initialize!");
         return;
     };
     let win = gtk::Window::new(gtk::WindowType::Toplevel);
+    win.set_geometry_from_recollections("test", (200, 300));
 
     let simple_core = SimpleCore {
         h_box: gtk::Box::builder()

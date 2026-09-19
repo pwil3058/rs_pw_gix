@@ -74,6 +74,7 @@ fn main() {
         return;
     };
     let win = gtk::Window::new(gtk::WindowType::Toplevel);
+    win.set_geometry_from_recollections("test", (200, 300));
 
     let simple_core = SimpleCore {
         h_box: gtk::BoxBuilder::new()

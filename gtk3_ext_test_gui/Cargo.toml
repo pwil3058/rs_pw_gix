@@ -7,6 +7,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-recollections = { git = "https://github.com/pwil3058//recollections" }
+recollections.workspace = true
 
 gtk3_ext = { path = "../gtk3_ext" }

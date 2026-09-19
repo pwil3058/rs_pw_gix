@@ -10,6 +10,12 @@ members = [
     "gtk3_ext",
     "gtk3_ext_derive",
     "gtk3_ext_test_gui",
-    "recollections",
-    "path_utilities",
 ]
+
+resolver = "3"
+
+[workspace.dependencies]
+#path_utilities = { git = "https://github.com/pwil3058/rust_utilities" }
+path_utilities = { path = "../rust_utilities/path_utilities" }
+#recollections = { git = "https://github.com/pwil3058/rust_utilities" }
+recollections = { path = "../rust_utilities/recollections" }
