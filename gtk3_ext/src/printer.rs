@@ -7,9 +7,7 @@ use std::fs;
 use std::path;
 use std::rc::Rc;
 use std::result;
-
-use lazy_static::*;
-use mut_static::*;
+use std::sync::{LazyLock, Mutex};
 
 use crate::gdk::prelude::GdkContextExt;
 use crate::gdk_pixbuf;
@@ -41,21 +39,19 @@ impl RememberedPrinterSettings {
     }
 }
 
-lazy_static! {
-    static ref REMEMBERED_PRINTER_SETTINGS: MutStatic<RememberedPrinterSettings> =
-        MutStatic::from(RememberedPrinterSettings { o_file_path: None });
-}
+static REMEMBERED_PRINTER_SETTINGS: LazyLock<Mutex<RememberedPrinterSettings>> =
+    LazyLock::new(|| Mutex::new(RememberedPrinterSettings { o_file_path: None }));
 
 pub fn init_printer(file_path: &path::Path) {
     REMEMBERED_PRINTER_SETTINGS
-        .write()
+        .lock()
         .unwrap()
         .set_file_path(file_path);
 }
 
 fn get_printer_settings() -> gtk::PrintSettings {
     let settings = gtk::PrintSettings::new();
-    if let Some(ref file_path) = REMEMBERED_PRINTER_SETTINGS.write().unwrap().o_file_path
+    if let Some(ref file_path) = REMEMBERED_PRINTER_SETTINGS.lock().unwrap().o_file_path
         && let Err(err) = settings.load_file(file_path)
     {
         panic!("{:?}: line {:?}: {:?}", file!(), line!(), err)
@@ -64,7 +60,7 @@ fn get_printer_settings() -> gtk::PrintSettings {
 }
 
 fn save_printer_settings(settings: &gtk::PrintSettings) {
-    if let Some(ref file_path) = REMEMBERED_PRINTER_SETTINGS.write().unwrap().o_file_path
+    if let Some(ref file_path) = REMEMBERED_PRINTER_SETTINGS.lock().unwrap().o_file_path
         && let Err(err) = settings.to_file(file_path)
     {
         panic!("{:?}: line {:?}: {:?}", file!(), line!(), err)

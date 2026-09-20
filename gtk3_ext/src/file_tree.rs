@@ -57,14 +57,13 @@ where
     fn get_fso_data_at(&self, posn: (f64, f64)) -> Option<(String, bool)> {
         let x = posn.0 as i32;
         let y = posn.1 as i32;
-        if let Some(location) = self.view().path_at_pos(x, y) {
-            if let Some(path) = location.0 {
-                if let Some(iter) = self.store().iter(&path) {
-                    let name = FSOI::get_path_from_row(self.store(), &iter);
-                    let is_dir = FSOI::row_is_a_dir(self.store(), &iter);
-                    return Some((name, is_dir));
-                }
-            }
+        if let Some(location) = self.view().path_at_pos(x, y)
+            && let Some(path) = location.0
+            && let Some(iter) = self.store().iter(&path)
+        {
+            let name = FSOI::get_path_from_row(self.store(), &iter);
+            let is_dir = FSOI::row_is_a_dir(self.store(), &iter);
+            return Some((name, is_dir));
         }
         None
     }
@@ -81,10 +80,10 @@ where
     }
 
     fn remove_place_holder(&self, dir_iter: &gtk::TreeIter) {
-        if let Some(child_iter) = self.store().iter_children(Some(dir_iter)) {
-            if FSOI::row_is_place_holder(self.store(), &child_iter) {
-                self.store().remove(&child_iter);
-            }
+        if let Some(child_iter) = self.store().iter_children(Some(dir_iter))
+            && FSOI::row_is_place_holder(self.store(), &child_iter)
+        {
+            self.store().remove(&child_iter);
         }
     }
 
@@ -189,7 +188,7 @@ where
             if let Some(iter) = self.store().iter_children(Some(parent_iter)) {
                 child_iter = iter;
                 if FSOI::row_is_place_holder(self.store(), &child_iter) {
-                    o_place_holder_iter = Some(child_iter.clone());
+                    o_place_holder_iter = Some(child_iter);
                     self.store().get_iter_next(&child_iter)
                 } else {
                     Some(&child_iter)
@@ -280,11 +279,11 @@ where
             let n_children = self.store().iter_n_children(Some(parent_iter));
             if n_children == 0 {
                 self.insert_place_holder(parent_iter)
-            } else if n_children > 1 {
-                if let Some(place_holder_iter) = o_place_holder_iter {
-                    //assert_eq!(self.get_value(iter, 0), None);
-                    self.store().remove(&place_holder_iter);
-                }
+            } else if n_children > 1
+                && let Some(place_holder_iter) = o_place_holder_iter
+            {
+                //assert_eq!(self.get_value(iter, 0), None);
+                self.store().remove(&place_holder_iter);
             }
         }
         changed

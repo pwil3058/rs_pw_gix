@@ -1,11 +1,8 @@
-// Copyright 2017 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
+// Copyright (c) 2026 Peter Williams <pwil3058@bigpond.net.au> <pwil3058@gmail.com>.
 
 //! Assist in simplifying GUI programming using the crates
 //! included in the **gtk-rs** project <http://gtk-rs.org/> by providing
 //! mechanisms to do common operations.
-
-#[macro_use]
-extern crate lazy_static;
 
 #[macro_export]
 macro_rules! yield_to_pending_events {
@@ -66,12 +63,12 @@ mod recollect {
         pub fn new(o_file_path: Option<&path::Path>) -> Recollections {
             if let Some(ref file_path) = o_file_path {
                 if !file_path.exists() {
-                    if let Some(dir_path) = file_path.parent() {
-                        if !dir_path.exists() {
-                            fs::create_dir_all(dir_path).unwrap_or_else(|err| {
-                                panic!("{:?}: line {:?}: {:?}", file!(), line!(), err)
-                            });
-                        }
+                    if let Some(dir_path) = file_path.parent()
+                        && !dir_path.exists()
+                    {
+                        fs::create_dir_all(dir_path).unwrap_or_else(|err| {
+                            panic!("{:?}: line {:?}: {:?}", file!(), line!(), err)
+                        });
                     }
                     let file = fs::File::create(file_path).unwrap_or_else(|err| {
                         panic!("{:?}: line {:?}: {:?}", file!(), line!(), err)
@@ -90,12 +87,12 @@ mod recollect {
 
         pub fn set_data_file_path(&mut self, file_path: &path::Path) {
             if !file_path.exists() {
-                if let Some(dir_path) = file_path.parent() {
-                    if !dir_path.exists() {
-                        fs::create_dir_all(dir_path).unwrap_or_else(|err| {
-                            panic!("{:?}: line {:?}: {:?}", file!(), line!(), err)
-                        });
-                    }
+                if let Some(dir_path) = file_path.parent()
+                    && !dir_path.exists()
+                {
+                    fs::create_dir_all(dir_path).unwrap_or_else(|err| {
+                        panic!("{:?}: line {:?}: {:?}", file!(), line!(), err)
+                    });
                 }
                 let file = fs::File::create(file_path)
                     .unwrap_or_else(|err| panic!("{:?}: line {:?}: {:?}", file!(), line!(), err));
@@ -157,13 +154,11 @@ pub mod recollections {
     //! Provide a mechanism for widgets to remember configuration
     //! data (size, position, etc.) from one session to the next.
     use crate::recollect::*;
-    use mut_static::*;
     use std::path;
+    use std::sync::{LazyLock, Mutex};
 
-    lazy_static! {
-        static ref RECOLLECTIONS: MutStatic<Recollections> =
-            MutStatic::from(Recollections::new(None));
-    }
+    static RECOLLECTIONS: LazyLock<Mutex<Recollections>> =
+        LazyLock::new(|| Mutex::new(Recollections::new(None)));
 
     /// Initialise the mechanism by providing the path of the file
     /// where the data should be stored.  This would normally be a
@@ -189,27 +184,27 @@ pub mod recollections {
     /// The operation of the application will not be effected otherwise.
     pub fn init<P: AsRef<path::Path>>(file_path: P) {
         let file_path: &path::Path = file_path.as_ref();
-        RECOLLECTIONS.write().unwrap().set_data_file_path(file_path);
+        RECOLLECTIONS.lock().unwrap().set_data_file_path(file_path);
     }
 
     /// Return the `String` value associated with the given `name` or
     /// `None` if `pw_gix::recollections` has not been initialised or
     /// asked remember data associated with the given `name`.
     pub fn recall(name: &str) -> Option<String> {
-        RECOLLECTIONS.read().unwrap().recall(name)
+        RECOLLECTIONS.lock().unwrap().recall(name)
     }
 
     /// Return the `String` value associated with the given `name` or
     /// `default` if `pw_gix::recollections` has not been initialised or
     /// asked remember data associated with the given `name`.
     pub fn recall_or_else(name: &str, default: &str) -> String {
-        RECOLLECTIONS.read().unwrap().recall_or_else(name, default)
+        RECOLLECTIONS.lock().unwrap().recall_or_else(name, default)
     }
 
     /// Remember the string specified by `value` and associate it with
     /// the given `name` for later recall.
     pub fn remember(name: &str, value: &str) {
-        RECOLLECTIONS.read().unwrap().remember(name, value)
+        RECOLLECTIONS.lock().unwrap().remember(name, value)
     }
 }
 

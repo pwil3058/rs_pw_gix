@@ -1,4 +1,4 @@
-// Copyright 2020 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
+// Copyright (c) 2026 Peter Williams <pwil3058@bigpond.net.au> <pwil3058@gmail.com>.
 
 extern crate proc_macro;
 
@@ -12,29 +12,28 @@ pub fn pwo_derive(input: TokenStream) -> TokenStream {
     let struct_name = parsed_input.ident;
     match parsed_input.data {
         syn::Data::Struct(s) => {
-            if let syn::Fields::Named(fields) = s.fields {
-                if let Some(field) = fields.named.first() {
-                    if let Some(ref ff_id) = field.ident {
-                        if let syn::Type::Path(ref ff_ty) = field.ty {
-                            let (impl_generics, ty_generics, where_clause) =
-                                parsed_input.generics.split_for_impl();
-                            let tokens = quote! {
-                                impl #impl_generics PackableWidgetObject for #struct_name #ty_generics #where_clause {
-                                    type PWT = #ff_ty;
+            if let syn::Fields::Named(fields) = s.fields
+                && let Some(field) = fields.named.first()
+                && let Some(ref ff_id) = field.ident
+            {
+                if let syn::Type::Path(ref ff_ty) = field.ty {
+                    let (impl_generics, ty_generics, where_clause) =
+                        parsed_input.generics.split_for_impl();
+                    let tokens = quote! {
+                        impl #impl_generics PackableWidgetObject for #struct_name #ty_generics #where_clause {
+                            type PWT = #ff_ty;
 
-                                    fn pwo(&self) -> &Self::PWT {
-                                        &self.#ff_id
-                                    }
-                                }
-                            };
-                            return proc_macro::TokenStream::from(tokens);
-                        } else {
-                            let tokens = quote_spanned! {
-                                field.ty.span()=> compile_error!("'PWO': unexpected type")
-                            };
-                            return proc_macro::TokenStream::from(tokens);
+                            fn pwo(&self) -> &Self::PWT {
+                                &self.#ff_id
+                            }
                         }
-                    }
+                    };
+                    return proc_macro::TokenStream::from(tokens);
+                } else {
+                    let tokens = quote_spanned! {
+                        field.ty.span()=> compile_error!("'PWO': unexpected type")
+                    };
+                    return proc_macro::TokenStream::from(tokens);
                 }
             }
         }
@@ -57,29 +56,28 @@ pub fn pwo2_derive(input: TokenStream) -> TokenStream {
     let struct_name = parsed_input.ident;
     match parsed_input.data {
         syn::Data::Struct(s) => {
-            if let syn::Fields::Named(fields) = s.fields {
-                if let Some(field) = fields.named.first() {
-                    if let Some(ref ff_id) = field.ident {
-                        if let syn::Type::Path(ref ff_ty) = field.ty {
-                            let (impl_generics, ty_generics, where_clause) =
-                                parsed_input.generics.split_for_impl();
-                            let tokens = quote! {
-                                impl #impl_generics PackableWidgetObject2 for #struct_name #ty_generics #where_clause {
-                                    type PWT = #ff_ty;
+            if let syn::Fields::Named(fields) = s.fields
+                && let Some(field) = fields.named.first()
+                && let Some(ref ff_id) = field.ident
+            {
+                if let syn::Type::Path(ref ff_ty) = field.ty {
+                    let (impl_generics, ty_generics, where_clause) =
+                        parsed_input.generics.split_for_impl();
+                    let tokens = quote! {
+                        impl #impl_generics PackableWidgetObject2 for #struct_name #ty_generics #where_clause {
+                            type PWT = #ff_ty;
 
-                                    fn pwo(&self) -> &Self::PWT {
-                                        &self.#ff_id
-                                    }
-                                }
-                            };
-                            return proc_macro::TokenStream::from(tokens);
-                        } else {
-                            let tokens = quote_spanned! {
-                                field.ty.span()=> compile_error!("'PWO': unexpected type")
-                            };
-                            return proc_macro::TokenStream::from(tokens);
+                            fn pwo(&self) -> &Self::PWT {
+                                &self.#ff_id
+                            }
                         }
-                    }
+                    };
+                    return proc_macro::TokenStream::from(tokens);
+                } else {
+                    let tokens = quote_spanned! {
+                        field.ty.span()=> compile_error!("'PWO': unexpected type")
+                    };
+                    return proc_macro::TokenStream::from(tokens);
                 }
             }
         }

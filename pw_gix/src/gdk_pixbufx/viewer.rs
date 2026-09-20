@@ -1,4 +1,4 @@
-// Copyright 2020 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
+// Copyright (c) 2026 Peter Williams <pwil3058@bigpond.net.au> <pwil3058@gmail.com>.
 
 use std::{
     cell::{Cell, RefCell},
@@ -566,10 +566,10 @@ impl PixbufViewBuilder {
 
         if self.load_last_image {
             let o_last_file = recollections::recall("image_viewer::last_image_file");
-            if let Some(ref last_file_path) = o_last_file {
-                if let Err(err) = viewer.set_pixbuf_fm_file(last_file_path) {
-                    viewer.report_error("Failed To Load Previous Image", &err);
-                };
+            if let Some(ref last_file_path) = o_last_file
+                && let Err(err) = viewer.set_pixbuf_fm_file(last_file_path)
+            {
+                viewer.report_error("Failed To Load Previous Image", &err);
             };
         };
 

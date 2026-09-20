@@ -1,4 +1,4 @@
-// Copyright 2017 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
+// Copyright (c) 2026 Peter Williams <pwil3058@bigpond.net.au> <pwil3058@gmail.com>.
 
 use std::cell::{Ref, RefCell};
 use std::rc::Rc;
@@ -191,8 +191,7 @@ pub trait RowBuffer<RawData: Default> {
 
     fn needs_init(&self) -> bool {
         let core = self.get_core();
-        let answer = core.borrow().needs_init();
-        answer
+        core.borrow().needs_init()
     }
 
     fn init(&self) {
@@ -215,8 +214,7 @@ pub trait RowBuffer<RawData: Default> {
 
     fn get_rows(&self) -> Rc<Vec<Row>> {
         let core = self.get_core();
-        let rows = core.borrow().rows.clone();
-        rows
+        core.borrow().rows.clone()
     }
 }
 

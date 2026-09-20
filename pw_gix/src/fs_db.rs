@@ -1,4 +1,4 @@
-// Copyright 2019 Peter Williams <pwil3058@gmail.com> <pwil3058@bigpond.net.au>
+// Copyright (c) 2026 Peter Williams <pwil3058@bigpond.net.au> <pwil3058@gmail.com>.
 
 //! File system database of the current directory to feed file tree
 //! stores/views
@@ -259,15 +259,15 @@ macro_rules! impl_os_fs_db {
 #[macro_export]
 macro_rules! impl_simple_fs_object {
     ( $sfso:ident ) => {
-        lazy_static! {
-            pub static ref OS_FS_DB_ROW_SPEC: [glib::Type; 4] =
+        pub static OS_FS_DB_ROW_SPEC: std::sync::LazyLock<[glib::Type; 4]> =
+            std::sync::LazyLock::new(|| {
                 [
-                    glib::Type::String,   // 0 Name
-                    glib::Type::String,   // 1 Path
-                    glib::Type::String,   // 2 Path
-                    bool::static_type(),        // 3 is a directory?
-                ];
-        }
+                    glib::Type::String,  // 0 Name
+                    glib::Type::String,  // 1 Path
+                    glib::Type::String,  // 2 Path
+                    bool::static_type(), // 3 is a directory?
+                ]
+            });
 
         const NAME: i32 = 0;
         const PATH: i32 = 1;
@@ -392,8 +392,8 @@ mod simple_os_fs_db {
     use crypto_hash::{Algorithm, Hasher};
 
     use glib::{types::StaticType, value::ToValue};
-    use gtk::prelude::*;
     use gtk::TreeIter;
+    use gtk::prelude::*;
 
     use super::*;
 
