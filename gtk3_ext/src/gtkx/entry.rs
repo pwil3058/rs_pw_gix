@@ -1,9 +1,9 @@
 // Copyright (c) 2026 Peter Williams <pwil3058@bigpond.net.au> <pwil3058@gmail.com>.
 
 use std::cell::{Cell, RefCell};
-use std::cmp;
 use std::path::{MAIN_SEPARATOR, PathBuf};
 use std::rc::Rc;
+use std::{cmp, mem};
 
 use crate::gdk;
 use crate::glib;
@@ -42,22 +42,64 @@ impl LabelledTextEntry {
     }
 }
 
-// Hex Entry
+pub trait Hexable:
+    num_traits::Unsigned
+    + Default
+    + Ord
+    + Clone
+    + Copy
+    + std::ops::Shr<u8, Output = Self>
+    + std::fmt::UpperHex
+    + std::fmt::LowerHex
+    + 'static
+{
+    fn max_val() -> Self;
+    fn min_val() -> Self;
+    fn bytes() -> usize {
+        mem::size_of::<Self>()
+    }
+}
+
+impl Hexable for u8 {
+    fn max_val() -> Self {
+        Self::MAX
+    }
+    fn min_val() -> Self {
+        Self::MIN
+    }
+}
+
+impl Hexable for u16 {
+    fn max_val() -> Self {
+        Self::MAX
+    }
+    fn min_val() -> Self {
+        Self::MIN
+    }
+}
+
+impl Hexable for u32 {
+    fn max_val() -> Self {
+        Self::MAX
+    }
+    fn min_val() -> Self {
+        Self::MIN
+    }
+}
+
+impl Hexable for u64 {
+    fn max_val() -> Self {
+        Self::MAX
+    }
+    fn min_val() -> Self {
+        Self::MIN
+    }
+}
 
 type ChangeCallback<U> = Box<dyn Fn(U)>;
 
 #[derive(PWO)]
-pub struct HexEntry<U>
-where
-    U: Default
-        + Ord
-        + Copy
-        + num_traits_plus::NumberConstants
-        + num_traits::Num
-        + std::fmt::UpperHex
-        + std::ops::Shr<u8, Output = U>
-        + 'static,
-{
+pub struct HexEntry<U: Hexable> {
     entry: gtk::Entry,
     value: Cell<U>,
     current_step: Cell<U>,
@@ -65,17 +107,7 @@ where
     callbacks: RefCell<Vec<ChangeCallback<U>>>,
 }
 
-impl<U> HexEntry<U>
-where
-    U: Default
-        + Ord
-        + Copy
-        + num_traits_plus::NumberConstants
-        + num_traits::Num
-        + std::fmt::UpperHex
-        + std::ops::Shr<u8, Output = U>
-        + 'static,
-{
+impl<U: Hexable> HexEntry<U> {
     pub fn builder() -> HexEntryBuilder<U> {
         HexEntryBuilder::<U>::default()
     }
@@ -95,11 +127,11 @@ where
 
     fn incr_value(&self) {
         let value = self.value.get();
-        let adj_incr = cmp::min(U::MAX - value, self.current_step.get());
+        let adj_incr = cmp::min(U::max_val() - value, self.current_step.get());
         if adj_incr > U::zero() {
             self.set_value_and_notify(value + adj_incr);
         }
-        if self.value.get() < U::MAX {
+        if self.value.get() < U::max_val() {
             self.bump_current_step()
         }
     }
@@ -110,7 +142,7 @@ where
         if adj_decr > U::zero() {
             self.set_value_and_notify(value - adj_decr);
         }
-        if self.value.get() > U::MIN {
+        if self.value.get() > U::min_val() {
             self.bump_current_step()
         }
     }
@@ -119,7 +151,7 @@ where
         self.entry.set_text(&format!(
             "{:#0width$X}",
             self.value.get(),
-            width = U::BYTES * 2 + 2
+            width = U::bytes() * 2 + 2
         ));
     }
 
@@ -159,32 +191,12 @@ where
 }
 
 #[derive(Default)]
-pub struct HexEntryBuilder<U>
-where
-    U: Default
-        + Ord
-        + Copy
-        + num_traits_plus::NumberConstants
-        + num_traits::Num
-        + std::fmt::UpperHex
-        + std::ops::Shr<u8, Output = U>
-        + 'static,
-{
+pub struct HexEntryBuilder<U: Hexable> {
     initial_value: U,
     editable: bool,
 }
 
-impl<U> HexEntryBuilder<U>
-where
-    U: Default
-        + Ord
-        + Copy
-        + num_traits_plus::NumberConstants
-        + num_traits::Num
-        + std::fmt::UpperHex
-        + std::ops::Shr<u8, Output = U>
-        + 'static,
-{
+impl<U: Hexable> HexEntryBuilder<U> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -202,12 +214,12 @@ where
     #[allow(non_upper_case_globals)]
     pub fn build(&self) -> Rc<HexEntry<U>> {
         let entry = gtk::Entry::builder()
-            .width_chars(U::BYTES as i32 * 2 + 2)
+            .width_chars(U::bytes() as i32 * 2 + 2)
             .editable(self.editable)
             .build();
         let value = Cell::new(self.initial_value);
-        let max_step = cmp::max(U::MAX >> 5, U::ONE);
-        let current_step = Cell::new(U::ONE);
+        let max_step = cmp::max(U::max_val() >> 5, U::one());
+        let current_step = Cell::new(U::one());
         let callbacks: RefCell<Vec<ChangeCallback<U>>> = RefCell::new(Vec::new());
         let hex_entry = Rc::new(HexEntry {
             entry,

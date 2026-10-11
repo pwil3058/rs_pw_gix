@@ -23,7 +23,7 @@ crypto-hash = "0.3"
 proc-macro-error = "1.0"
 
 normalised_angles = { git = "https://github.com/pwil3058/rs_normalised_angles.git" }
-num_traits_plus = { git = "https://github.com/pwil3058/rs_num_traits_plus.git" }
+#num_traits_plus = { git = "https://github.com/pwil3058/rs_num_traits_plus.git" }
 
 path_utilities.workspace = true
 recollections.workspace = true
